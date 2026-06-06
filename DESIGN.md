@@ -34,7 +34,8 @@ World generation should:
 - trace simple downhill rivers from high elevation toward lower elevation
 - assign water, mountain, hill, forest, wetland, dry, plain, and grass terrain from simple natural rules
 - place food and wood based on terrain conditions
-- preserve existing simulation systems while preparing for seasons, biomes, and environmental events
+- cycle simple seasons that influence terrain-based resource regrowth
+- preserve existing simulation systems while preparing for biomes and environmental events
 
 ## Design Priorities
 

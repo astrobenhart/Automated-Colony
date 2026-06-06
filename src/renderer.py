@@ -217,6 +217,8 @@ class PygameRenderer:
         status = "PAUSED" if paused else "RUNNING"
         y = self.draw_stat_row("State", status, content_x, y, content_width, bottom_y)
         y = self.draw_stat_row("Day", self.world.day, content_x, y, content_width, bottom_y)
+        y = self.draw_stat_row("Season", self.world.season, content_x, y, content_width, bottom_y)
+        y = self.draw_stat_row("S Day", self.world.day_of_season, content_x, y, content_width, bottom_y)
         y = self.draw_stat_row("Tick", self.world.tick, content_x, y, content_width, bottom_y)
         y = self.draw_stat_row("Speed", f"{sim_speed}/s", content_x, y, content_width, bottom_y)
         y = self.draw_stat_row("Camera", f"({self.camera_x}, {self.camera_y})", content_x, y, content_width, bottom_y)

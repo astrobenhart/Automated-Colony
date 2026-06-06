@@ -40,6 +40,39 @@ Notes:
 
 ## Completed
 
+### TASK-19
+Title: Add Season System v1
+
+Owner: Gameplay/Worldgen Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #9 by adding simple seasonal changes that affect resource regrowth while keeping water reliable.
+
+Expected Output:
+A visible Spring/Summer/Autumn/Winter cycle with logged season changes and season-aware food and wood regrowth.
+
+Acceptance Criteria:
+- World starts with a valid season.
+- Seasons advance and wrap on schedule.
+- Season changes are logged.
+- Terrain and season both influence resource regrowth.
+- Water remains water across season changes.
+- The right panel shows current season state.
+- Existing tests pass.
+
+Dependencies:
+- TASK-13
+- TASK-16
+- TASK-17
+- TASK-18
+
+Notes:
+- This is Season System v1 only; no droughts, floods, freezing, farming, wildlife, or dynamic terrain conversion were added.
+
+---
+
 ### TASK-18
 Title: Add Terrain Legend UI
 

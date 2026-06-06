@@ -21,6 +21,26 @@ RIVER_COUNT = 3
 RIVER_MIN_LENGTH = 8
 RIVER_SOURCE_ELEVATION = 0.70
 RIVER_WIDEN_CHANCE = 0.06
+DAYS_PER_SEASON = 8
+SEASONS = ["Spring", "Summer", "Autumn", "Winter"]
+SEASON_FOOD_GROWTH_MODIFIERS = {
+    "Spring": 1.45,
+    "Summer": 0.95,
+    "Autumn": 1.20,
+    "Winter": 0.25,
+}
+SEASON_WOOD_GROWTH_MODIFIERS = {
+    "Spring": 1.10,
+    "Summer": 1.00,
+    "Autumn": 0.90,
+    "Winter": 0.65,
+}
+SEASON_MOISTURE_MODIFIERS = {
+    "Spring": 1.10,
+    "Summer": 0.85,
+    "Autumn": 1.00,
+    "Winter": 0.80,
+}
 
 SCREEN_WIDTH = VIEWPORT_WIDTH * TILE_SIZE + PANEL_WIDTH
 SCREEN_HEIGHT = VIEWPORT_HEIGHT * TILE_SIZE

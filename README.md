@@ -9,6 +9,7 @@ The project is designed as an emergent colony screensaver and as a playground fo
 - Modular Python package under `src/`
 - Rule-based terrain generation with grass, forest, plain, hill, wetland, dry, water, mountain, and shelter tiles
 - Larger explorable world with a camera-controlled map viewport
+- Spring, Summer, Autumn, and Winter seasons that affect food and wood regrowth
 - Autonomous villagers with hunger, thirst, fatigue, carried food, and carried wood
 - Goal-based behavior for drinking, eating, sleeping, gathering, building, depositing, and exploring
 - BFS pathfinding with occupied-tile avoidance
@@ -67,6 +68,7 @@ The original single-file prototype is still present as `automated_colony_v0_1.py
 - `src/colony_memory.py` - Shared resource knowledge
 - `src/colony_storage.py` - Abstract shared food and wood storage
 - `src/building_priorities.py` - Construction priority rules
+- `src/seasons.py` - Season cycle and terrain-aware regrowth rules
 - `src/renderer.py` - Pygame rendering and inspection UI
 - `tests/` - Pytest coverage for core systems
 - `ROADMAP.md` - Milestone roadmap
@@ -75,6 +77,6 @@ The original single-file prototype is still present as `automated_colony_v0_1.py
 
 ## Current Milestone
 
-v0.4 is focused on a smarter world: deterministic rule-based terrain generation, larger explorable maps, and future environmental systems.
+v0.4 is focused on a smarter world: deterministic rule-based terrain generation, larger explorable maps, rivers, terrain variety, and seasonal resource pressure.
 
 v0.3.0 completed the colony foundation: villagers can use personal and shared knowledge, recover from blocked movement, coordinate around shelter needs, and use simple shared storage.

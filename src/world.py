@@ -4,6 +4,14 @@ from dataclasses import dataclass, field
 from src.building_priorities import highest_priority, needed_shelters
 from src.colony_memory import ColonyMemory
 from src.colony_storage import ColonyStorage
+from src.seasons import (
+    day_of_season,
+    food_growth_chance,
+    next_season_index,
+    season_for_index,
+    should_advance_season,
+    wood_growth_chance,
+)
 from src.worldgen import generate_world
 from src.agent import Agent
 
@@ -26,6 +34,15 @@ class World:
 
     day: int = 1
     tick: int = 0
+    season_index: int = 0
+
+    @property
+    def season(self) -> str:
+        return season_for_index(self.season_index)
+
+    @property
+    def day_of_season(self) -> int:
+        return day_of_season(self.day)
 
     def generate(self, seed: int | None = None):
         if seed is not None:
@@ -60,9 +77,7 @@ class World:
         self.tick += 1
 
         if self.tick % 50 == 0:
-            self.day += 1
-            self.regrow_resources()
-            self.log(f"Day {self.day} begins.")
+            self.advance_day()
 
         for agent in self.living_agents():
             agent.update_needs()
@@ -71,18 +86,26 @@ class World:
             action.execute(agent, self)
             agent.die_if_needed(self)
 
+    def advance_day(self):
+        self.day += 1
+        if should_advance_season(self.day):
+            self.advance_season()
+
+        self.regrow_resources()
+        self.log(f"Day {self.day} begins.")
+
+    def advance_season(self):
+        self.season_index = next_season_index(self.season_index)
+        self.log(f"{self.season} begins.")
+
     def regrow_resources(self):
         for row in self.tiles:
             for tile in row:
-                if tile.kind == "grass" and random.random() < 0.03:
+                if random.random() < food_growth_chance(tile.kind, self.season):
                     tile.food += 1
 
-                if tile.kind == "forest":
-                    if random.random() < 0.08:
-                        tile.wood += 1
-
-                    if random.random() < 0.04:
-                        tile.food += 1
+                if random.random() < wood_growth_chance(tile.kind, self.season):
+                    tile.wood += 1
 
     def living_agents(self):
         return [agent for agent in self.agents if agent.alive]

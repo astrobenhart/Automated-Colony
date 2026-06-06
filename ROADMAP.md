@@ -68,7 +68,7 @@ Features:
 - [x] Create rivers that flow from high elevation to low elevation
 - [x] Place forests based on moisture and temperature
 - [x] Place mountains, hills, plains, wetlands, and dry areas naturally
-- [ ] Add seasonal changes that affect food growth and water availability
+- [x] Add seasonal changes that affect food growth and water availability
 - [ ] Add basic plant/resource regrowth based on biome conditions
 - [ ] Add environmental events such as drought, heavy rain, wildfire, or flood
 - [ ] Add wildlife spawning based on biome suitability
@@ -82,7 +82,7 @@ Acceptance Criteria:
 - [x] Food and wood availability depend on terrain conditions.
 - [x] Larger worlds can be inspected without covering the right-side panel.
 - [x] Hills, plains, wetlands, and dry areas render and follow expected walkability/resource rules.
-- [ ] Seasonal changes visibly affect resource growth.
+- [x] Seasonal changes visibly affect resource growth.
 - [ ] Agents must adapt to world conditions rather than only random resource placement.
 
 Notes:
@@ -92,7 +92,8 @@ Notes:
 - Phase 2 river generation traces simple downhill paths and converts them to existing unwalkable water tiles.
 - Issue #7 adds `hill`, `plain`, `wetland`, and `dry` terrain using the existing elevation, moisture, and temperature maps.
 - Existing tile kinds remain compatible: `water`, `mountain`, `forest`, and `grass`.
-- Seasons, environmental events, wildlife, and history tracking are still future v0.4 work.
+- Season System v1 cycles Spring, Summer, Autumn, and Winter and changes terrain-based food/wood regrowth without removing water.
+- Environmental events, wildlife, and history tracking are still future v0.4 work.
 
 ## v0.5 - Colony Roles and Production
 
