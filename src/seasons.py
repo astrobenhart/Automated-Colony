@@ -2,26 +2,9 @@ from src.config import (
     COLORS,
     DAYS_PER_SEASON,
     SEASONS,
-    SEASON_FOOD_GROWTH_MODIFIERS,
-    SEASON_MOISTURE_MODIFIERS,
-    SEASON_WOOD_GROWTH_MODIFIERS,
     SEASONAL_TERRAIN_COLORS,
 )
-
-
-BASE_FOOD_GROWTH = {
-    "wetland": 0.16,
-    "forest": 0.045,
-    "plain": 0.055,
-    "grass": 0.045,
-    "hill": 0.025,
-    "dry": 0.006,
-}
-
-BASE_WOOD_GROWTH = {
-    "forest": 0.080,
-    "hill": 0.010,
-}
+from src.resource_ecology import food_growth_chance, wood_growth_chance
 
 
 def season_for_index(index: int) -> str:
@@ -52,25 +35,6 @@ def transition_progress(
         return 1.0
 
     return _clamp(ticks_into_day / (ticks_per_day - 1))
-
-
-def food_growth_chance(tile_kind: str, season: str) -> float:
-    base = BASE_FOOD_GROWTH.get(tile_kind, 0.0)
-    if base == 0.0:
-        return 0.0
-
-    moisture_modifier = SEASON_MOISTURE_MODIFIERS.get(season, 1.0)
-    season_modifier = SEASON_FOOD_GROWTH_MODIFIERS.get(season, 1.0)
-    return base * moisture_modifier * season_modifier
-
-
-def wood_growth_chance(tile_kind: str, season: str) -> float:
-    base = BASE_WOOD_GROWTH.get(tile_kind, 0.0)
-    if base == 0.0:
-        return 0.0
-
-    season_modifier = SEASON_WOOD_GROWTH_MODIFIERS.get(season, 1.0)
-    return base * season_modifier
 
 
 def lerp_color(

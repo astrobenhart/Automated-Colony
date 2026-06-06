@@ -6,13 +6,12 @@ from src.colony_memory import ColonyMemory
 from src.colony_storage import ColonyStorage
 from src.seasons import (
     day_of_season,
-    food_growth_chance,
     next_season_index,
     season_for_index,
     should_advance_season,
     transition_progress,
-    wood_growth_chance,
 )
+from src.resource_ecology import apply_resource_ecology
 from src.worldgen import generate_world
 from src.agent import Agent
 
@@ -123,11 +122,7 @@ class World:
     def regrow_resources(self):
         for row in self.tiles:
             for tile in row:
-                if random.random() < food_growth_chance(tile.kind, self.season):
-                    tile.food += 1
-
-                if random.random() < wood_growth_chance(tile.kind, self.season):
-                    tile.wood += 1
+                apply_resource_ecology(tile, self.season, random)
 
     def living_agents(self):
         return [agent for agent in self.agents if agent.alive]

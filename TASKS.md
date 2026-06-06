@@ -8,6 +8,33 @@ No active task.
 
 ## Backlog
 
+### TASK-24
+Title: Roadmap Settlement Formation
+
+Owner: Planner Agent
+
+Status: Backlog
+
+Description:
+Use GitHub Issue #14 to plan settlement centers, village hubs, local resource radius, clustered building placement, expansion, migration, splinter settlements, and settlement identity.
+
+Expected Output:
+A staged implementation plan for evolving survival colonies into recognizable villages and historical settlements.
+
+Acceptance Criteria:
+- Settlement Center, Settlement Radius, Physical Stockpiles, Expansion/Migration, and Village Identity phases are scoped.
+- v0.5/v0.6/v0.7 milestone placement is clear.
+- Non-goals such as warfare, diplomacy, economy, politics, and kingdoms remain explicitly out of scope.
+- No gameplay code is changed by the planning task.
+
+Dependencies:
+- TASK-23
+
+Notes:
+- Roadmap reference: Issue #14, Roadmap: Settlement and Village Formation Systems.
+
+---
+
 ### TASK-12
 Title: Design Staged Population Growth
 
@@ -39,6 +66,36 @@ Notes:
 ---
 
 ## Completed
+
+### TASK-23
+Title: Add Biome Resource Ecology
+
+Owner: Gameplay/Worldgen Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #13 by making resource growth, caps, and gradual die-off depend on terrain and season.
+
+Expected Output:
+A table-driven ecology system where wetlands, forests, plains, hills, dry terrain, mountains, and water each have distinct growth and decline behavior.
+
+Acceptance Criteria:
+- Resource growth depends on terrain and season.
+- Food and wood can decline gradually under poor conditions.
+- Terrain-based resource caps prevent unbounded growth.
+- Mountains and water remain barren.
+- Resource abundance is visually noticeable.
+- Existing tests pass.
+
+Dependencies:
+- TASK-19
+- TASK-22
+
+Notes:
+- No farming, wildlife, disasters, mining, roles, reproduction, or worldgen rewrite were added.
+
+---
 
 ### TASK-22
 Title: Smooth Seasonal Color Transitions

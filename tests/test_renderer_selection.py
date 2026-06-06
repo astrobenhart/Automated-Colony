@@ -256,3 +256,14 @@ def test_legend_uses_blended_transition_color():
     assert swatch_pixel == renderer.tile_color("plain")
     assert swatch_pixel != seasonal_tile_color("plain", "Spring")
     assert swatch_pixel != seasonal_tile_color("plain", "Summer")
+
+
+def test_resource_symbol_color_reflects_abundance():
+    world = make_world(width=3, height=3)
+    renderer = make_renderer(world)
+
+    low_food = renderer.resource_color("food", amount=1, cap=7)
+    high_food = renderer.resource_color("food", amount=7, cap=7)
+
+    assert low_food != high_food
+    assert sum(high_food) > sum(low_food)

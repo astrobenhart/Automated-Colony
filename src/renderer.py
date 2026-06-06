@@ -14,6 +14,7 @@ from src.config import (
     SYMBOL_LABELS,
     FPS,
 )
+from src.resource_ecology import max_food, max_wood
 from src.seasons import seasonal_tile_color
 from src.agent import Agent
 from src.world import World
@@ -143,10 +144,10 @@ class PygameRenderer:
                     pygame.draw.rect(self.screen, COLORS["grid"], rect, 1)
 
                 if tile.food > 0:
-                    self.draw_centered_symbol("f", screen_x, screen_y, COLORS["food"])
+                    self.draw_centered_symbol("f", screen_x, screen_y, self.resource_color("food", tile.food, max_food(tile)))
 
                 if tile.wood > 0:
-                    self.draw_centered_symbol("w", screen_x, screen_y, COLORS["wood"])
+                    self.draw_centered_symbol("w", screen_x, screen_y, self.resource_color("wood", tile.wood, max_wood(tile)))
 
                 agent = self.world.agent_at(x, y)
                 if agent:
@@ -330,6 +331,19 @@ class PygameRenderer:
             self.world.season,
             self.world.next_season,
             self.world.transition_progress,
+        )
+
+    def resource_color(self, resource: str, amount: int, cap: int):
+        base = COLORS[resource]
+        if cap <= 1:
+            strength = 1.0
+        else:
+            strength = max(0.35, min(1.0, amount / cap))
+
+        muted = tuple(max(40, round(channel * 0.45)) for channel in base)
+        return tuple(
+            round(muted_channel + (base_channel - muted_channel) * strength)
+            for muted_channel, base_channel in zip(muted, base)
         )
 
     def draw_section_header(self, text: str, x: int, y: int, width: int, bottom_y: int):

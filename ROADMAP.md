@@ -69,7 +69,7 @@ Features:
 - [x] Place forests based on moisture and temperature
 - [x] Place mountains, hills, plains, wetlands, and dry areas naturally
 - [x] Add seasonal changes that affect food growth and water availability
-- [ ] Add basic plant/resource regrowth based on biome conditions
+- [x] Add basic plant/resource regrowth based on biome conditions
 - [ ] Add environmental events such as drought, heavy rain, wildfire, or flood
 - [ ] Add wildlife spawning based on biome suitability
 - [ ] Add world history tracking for major environmental events
@@ -83,6 +83,7 @@ Acceptance Criteria:
 - [x] Larger worlds can be inspected without covering the right-side panel.
 - [x] Hills, plains, wetlands, and dry areas render and follow expected walkability/resource rules.
 - [x] Seasonal changes visibly affect resource growth.
+- [x] Terrain-based resource caps and gradual die-off create long-term ecological pressure.
 - [ ] Agents must adapt to world conditions rather than only random resource placement.
 
 Notes:
@@ -94,30 +95,34 @@ Notes:
 - Existing tile kinds remain compatible: `water`, `mountain`, `forest`, and `grass`.
 - Season System v1 cycles Spring, Summer, Autumn, and Winter over 20-day seasons and changes terrain-based food/wood regrowth without removing water.
 - Seasonal terrain colors make Spring, Summer, Autumn, and Winter visually distinct without changing tile kinds, with final-day color blending into the next season.
+- Resource ecology now applies terrain and season based growth, caps, and gradual die-off in `src/resource_ecology.py`.
 - Environmental events, wildlife, and history tracking are still future v0.4 work.
 
 ## v0.5 - Colony Roles and Production
 
-Goal: Give the colony more structure and long-term survival tools.
+Goal: Give the colony more structure and long-term survival tools, turning shelter clusters into early village hubs.
 
 Features:
-- [ ] Physical storage or stockpile locations
-- [ ] Hauling or task claiming for shared resources
 - [ ] Roles
+- [ ] Settlement center
+- [ ] Village hub behavior around the settlement center
+- [ ] Physical storage or stockpile locations
+- [ ] Clustered building placement near the village hub
+- [ ] Hauling or task claiming for shared resources
 - [ ] Farming
-- [ ] Phase 1 population replenishment through migration
+- [ ] Local resource use radius
 - [ ] Population cap or carrying capacity
 - [ ] Expanded building priorities
 - [ ] Job assignment or task claiming
 
 Notes:
-- Population growth should start with migration before biological reproduction.
-- Migration should depend on stable survival, food surplus, shelter capacity, and population cap.
-- Full reproduction should wait until lifecycle and relationship systems exist.
+- Current playtests show believable shelter clustering after early survival pressure.
+- v0.5 should formalize that behavior into a settlement center, local work radius, physical storage, and clustered building placement.
+- Physical stockpiles and building clusters are prerequisites for richer settlement identity and expansion.
 
 ## v0.6 - Social Simulation
 
-Goal: Add relationships and social structure.
+Goal: Add relationships and social structure so stable colonies begin to feel like villages.
 
 Features:
 - [ ] Age and lifecycle states
@@ -127,16 +132,70 @@ Features:
 - [ ] Reputation
 - [ ] Group decisions
 - [ ] Pair bonds and family relationships without scripted romance
+- [ ] Social behavior shaped by settlement membership
+
+Notes:
+- Social systems should build on stable settlement centers rather than scripted story events.
+- Leadership, families, and reputation should affect how villagers organize locally before broader politics exist.
 
 ## v0.7 - History and Emergence
 
-Goal: Make the world generate stories over time.
+Goal: Make the world generate stories over time through named places, movement, lineage, and ruins.
 
 Features:
-- [ ] Lineage and ancestry tracking
 - [ ] Named settlements
+- [ ] Migration between settlements
+- [ ] Splinter settlements when resources become scarce
+- [ ] Lineage and ancestry tracking
 - [ ] Major historical events
 - [ ] Timeline view
 - [ ] Disasters
 - [ ] Ruins
 - [ ] Myths or legends
+
+Notes:
+- Migration should start as a recovery/expansion mechanism before full reproduction and family history are deeply modeled.
+- Splinter settlements should emerge from resource pressure, population pressure, distance, or social conditions.
+- Ruins and lineage should connect past settlements to current play rather than appear as isolated flavor.
+
+## v0.8 - Village Formation and Historical Settlements
+
+Goal: Evolve survival colonies into recognizable villages and, eventually, multiple historical settlements with distinct identities.
+
+Roadmap Issue:
+- Issue #14: Roadmap: Settlement and Village Formation Systems
+
+Settlement Formation Stages:
+- Phase 1: Settlement Center
+- Phase 2: Settlement Radius and Local Resource Use
+- Phase 3: Physical Stockpiles and Building Clusters
+- Phase 4: Expansion and Migration
+- Phase 5: Village Identity and History
+
+Features:
+- [ ] Settlement centers as explicit anchors for colony activity
+- [ ] Village hubs that attract shelter, storage, and production buildings
+- [ ] Clustered building placement around hubs
+- [ ] Local resource use radius for routine work
+- [ ] Expansion when nearby food, wood, or water access becomes strained
+- [ ] Migration to recover population or found new settlements
+- [ ] Splinter settlements that emerge from pressure rather than scripts
+- [ ] Settlement identity, names, founding dates, notable events, and remembered residents
+- [ ] Historical links between settlements, ruins, migration, and lineage
+
+Design Notes:
+- Current behavior: villagers cluster near shelters, explore locally, and often stabilize in a small area after early die-off.
+- Desired future behavior: those clusters become recognizable villages with centers, storage, building clusters, and local work patterns.
+- Long-term behavior: worlds can contain multiple settlements with separate identities, histories, migration paths, ruins, and lineages.
+- Settlement growth should remain emergent: resource pressure, population needs, shelter capacity, social ties, and geography should drive expansion.
+
+Non-Goals For Now:
+- Warfare
+- Diplomacy
+- Economy
+- Politics
+- Kingdoms
+
+Notes:
+- These are future possibilities, not scheduled systems.
+- The near-term path should stay grounded in survival, settlement centers, local work, and village identity before scaling up to larger institutions.

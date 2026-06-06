@@ -11,6 +11,7 @@ The project is designed as an emergent colony screensaver and as a playground fo
 - Larger explorable world with a camera-controlled map viewport
 - 20-day Spring, Summer, Autumn, and Winter seasons that affect food and wood regrowth
 - Seasonal terrain colors with final-day blending so the map visibly shifts across the year
+- Terrain-based resource ecology with growth caps and gradual seasonal die-off
 - Autonomous villagers with hunger, thirst, fatigue, carried food, and carried wood
 - Goal-based behavior for drinking, eating, sleeping, gathering, building, depositing, and exploring
 - BFS pathfinding with occupied-tile avoidance
@@ -69,6 +70,7 @@ The original single-file prototype is still present as `automated_colony_v0_1.py
 - `src/colony_memory.py` - Shared resource knowledge
 - `src/colony_storage.py` - Abstract shared food and wood storage
 - `src/building_priorities.py` - Construction priority rules
+- `src/resource_ecology.py` - Terrain and season based resource growth, caps, and die-off
 - `src/seasons.py` - Season cycle and terrain-aware regrowth rules
 - `src/renderer.py` - Pygame rendering and inspection UI
 - `tests/` - Pytest coverage for core systems
