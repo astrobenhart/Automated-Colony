@@ -2,7 +2,36 @@
 
 ## Active
 
+### TASK-7
+Title: Add Basic Tests
 
+Owner: Tester Agent
+
+Status: Backlog
+
+Description:
+Write a suite of automated unit tests covering key simulation subsystems such as world coordinate logic, pathfinding, agent memory, and goal utility selection.
+
+Expected Output:
+Automated test scripts using `pytest`.
+
+Acceptance Criteria:
+- Tests run successfully using the command `pytest`.
+- Tests verify pathfinding logic on simple mock worlds (e.g., finding paths, obstacle avoidance, unreachable targets).
+- Tests verify world boundary checking and tile walkability.
+- Tests verify agent memory updates (adding and removing resource coordinates).
+- Tests verify basic goal priority scoring (e.g., high thirst leads to water goal).
+
+Dependencies:
+- TASK-2
+- TASK-3
+- TASK-4
+- TASK-5
+
+Notes:
+- Use fixed seeds and mock grids in tests to avoid randomness issues.
+
+---
 
 
 ## Backlog
