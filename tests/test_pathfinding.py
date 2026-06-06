@@ -6,6 +6,7 @@ All worlds are hand-built (no random generation) so results are deterministic.
 from src.world import World
 from src.tile import Tile
 from src.pathfinding import find_path
+from src.agent import Agent
 
 
 # ---------------------------------------------------------------------------
@@ -132,3 +133,25 @@ def test_every_step_is_walkable():
     path = find_path(world, (0, 0), (9, 9))
     for x, y in path:
         assert world.tile_at(x, y).walkable, f"Step ({x},{y}) is not walkable."
+
+
+def test_path_can_avoid_occupied_tiles():
+    world = make_world(5, 3)
+    blocker = Agent("Blocker", 2, 1)
+    world.agents.append(blocker)
+
+    path = find_path(world, (0, 1), (4, 1), avoid_occupied=True)
+
+    assert path
+    assert (2, 1) not in path
+    assert path[-1] == (4, 1)
+
+
+def test_path_returns_empty_when_occupied_destination_is_avoided():
+    world = make_world(3, 1)
+    blocker = Agent("Blocker", 2, 0)
+    world.agents.append(blocker)
+
+    path = find_path(world, (0, 0), (2, 0), avoid_occupied=True)
+
+    assert path == []

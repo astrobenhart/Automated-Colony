@@ -10,6 +10,7 @@ def find_path(
     world: World,
     start: tuple[int, int],
     destination: tuple[int, int],
+    avoid_occupied: bool = False,
 ) -> list[tuple[int, int]]:
     """
     BFS pathfinding from start to destination.
@@ -20,8 +21,11 @@ def find_path(
     - destination is unreachable
 
     Paths avoid water and mountain tiles unless the destination itself is
-    impassable (e.g. a water tile), in which case the path leads to the
-    nearest walkable tile adjacent to the destination.
+    impassable (e.g. a water tile), in which case the path leads to a
+    walkable tile adjacent to the destination.
+
+    If avoid_occupied is True, paths avoid occupied tiles except the start
+    tile occupied by the moving agent.
     """
     if start == destination:
         return []
@@ -35,9 +39,11 @@ def find_path(
     # wants to drink from), retarget to the closest walkable neighbour.
     dest_tile = world.tile_at(dx_map, dy_map)
     if not dest_tile.walkable:
-        destination = _nearest_walkable_neighbor(world, destination)
+        destination = _nearest_walkable_neighbor(world, start, destination, avoid_occupied)
         if destination is None or destination == start:
             return []
+    elif avoid_occupied and destination != start and world.agent_at(*destination) is not None:
+        return []
 
     queue: deque[tuple[int, int]] = deque()
     queue.append(start)
@@ -61,6 +67,8 @@ def find_path(
                 continue
             if not world.tile_at(nx, ny).walkable:
                 continue
+            if avoid_occupied and neighbor != start and world.agent_at(nx, ny) is not None:
+                continue
 
             visited[neighbor] = current
             queue.append(neighbor)
@@ -70,16 +78,27 @@ def find_path(
 
 def _nearest_walkable_neighbor(
     world: World,
+    start: tuple[int, int],
     pos: tuple[int, int],
+    avoid_occupied: bool = False,
 ) -> tuple[int, int] | None:
     """Return the first walkable cardinal neighbour of pos, or None."""
     px, py = pos
+    candidates: list[tuple[int, int]] = []
+
     for ddx, ddy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
         nx, ny = px + ddx, py + ddy
         if 0 <= nx < world.width and 0 <= ny < world.height:
             if world.tile_at(nx, ny).walkable:
-                return (nx, ny)
-    return None
+                neighbor = (nx, ny)
+                if avoid_occupied and neighbor != start and world.agent_at(nx, ny) is not None:
+                    continue
+                candidates.append(neighbor)
+
+    if not candidates:
+        return None
+
+    return min(candidates, key=lambda candidate: abs(candidate[0] - start[0]) + abs(candidate[1] - start[1]))
 
 
 def _reconstruct_path(

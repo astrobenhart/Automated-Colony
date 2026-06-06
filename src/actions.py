@@ -31,6 +31,7 @@ class EatAction(Action):
 
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)
+        agent.reset_stuck()
         agent.food -= 1
         agent.hunger = max(0, agent.hunger - 60)
         world.log(f"{agent.name} eats stored food.")
@@ -47,6 +48,7 @@ class DrinkAction(Action):
 
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)
+        agent.reset_stuck()
         agent.thirst = 0
         world.log(f"{agent.name} drinks water.")
 
@@ -62,6 +64,7 @@ class GatherFoodAction(Action):
 
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)
+        agent.reset_stuck()
         tile = world.tile_at(agent.x, agent.y)
         tile.food -= 1
         agent.food += 1
@@ -84,6 +87,7 @@ class GatherWoodAction(Action):
 
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)
+        agent.reset_stuck()
         tile = world.tile_at(agent.x, agent.y)
         tile.wood -= 1
         agent.wood += 1
@@ -104,6 +108,7 @@ class BuildShelterAction(Action):
 
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)
+        agent.reset_stuck()
         tile = world.tile_at(agent.x, agent.y)
         tile.kind = "shelter"
         agent.wood -= 3
@@ -121,6 +126,7 @@ class SleepAction(Action):
 
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)
+        agent.reset_stuck()
         agent.fatigue = 0
         world.log(f"{agent.name} sleeps in a shelter.")
 
@@ -144,6 +150,7 @@ class WanderAction(Action):
             if world.can_move_to(nx, ny):
                 agent.x = nx
                 agent.y = ny
+                agent.reset_stuck()
                 return
 
 
@@ -177,9 +184,10 @@ def _step_along_path(agent: Agent, world: World, target: tuple[int, int]) -> boo
     # Recompute path if target changed or path is exhausted.
     if agent.current_target != target or not agent.current_path:
         agent.current_target = target
-        agent.current_path = find_path(world, start, target)
+        agent.current_path = find_path(world, start, target, avoid_occupied=True)
 
     if not agent.current_path:
+        agent.record_path_blocked()
         return False  # Unreachable.
 
     next_step = agent.current_path[0]
@@ -189,10 +197,11 @@ def _step_along_path(agent: Agent, world: World, target: tuple[int, int]) -> boo
         agent.current_path.pop(0)
         agent.x = nx
         agent.y = ny
+        agent.reset_stuck()
         return True
 
-    # Path is blocked (another agent moved in); recompute next tick.
-    agent.current_path = []
+    # Path is blocked (another agent moved in); recover and recompute later.
+    agent.record_path_blocked()
     return False
 
 

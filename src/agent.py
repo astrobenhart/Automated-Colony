@@ -9,6 +9,7 @@ from src.config import (
     FATIGUE_RATE,
     HUNGER_DEATH_THRESHOLD,
     HUNGER_RATE,
+    STUCK_TICK_LIMIT,
     THIRST_DEATH_THRESHOLD,
     THIRST_RATE,
 )
@@ -53,6 +54,7 @@ class Agent:
     # Active path being followed (list of (x,y) steps, nearest first)
     current_path: list[tuple[int, int]] = field(default_factory=list, repr=False)
     current_target: tuple[int, int] | None = field(default=None, repr=False)
+    stuck_ticks: int = 0
 
     def update_needs(self):
         self.hunger += HUNGER_RATE
@@ -119,6 +121,16 @@ class Agent:
     def choose_action(self, world: World) -> Action:
         goal = self.choose_goal(world)
         return goal.choose_action(self, world)
+
+    def reset_stuck(self):
+        self.stuck_ticks = 0
+
+    def record_path_blocked(self):
+        self.stuck_ticks = min(self.stuck_ticks + 1, STUCK_TICK_LIMIT)
+        self.current_path = []
+
+        if self.stuck_ticks >= STUCK_TICK_LIMIT:
+            self.current_target = None
 
     def die_if_needed(self, world: World):
         if self.hunger >= HUNGER_DEATH_THRESHOLD:
