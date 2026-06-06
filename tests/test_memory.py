@@ -1,7 +1,7 @@
 from src.world import World
 from src.tile import Tile
 from src.agent import Agent
-from src.actions import SeekWaterAction
+from src.actions import SeekFoodAction, SeekWaterAction, SeekWoodAction
 
 
 def test_agent_memory_scanning():
@@ -87,3 +87,59 @@ def test_colony_memory_shares_water_between_agents():
     assert thirsty_agent.current_action == "Seeking water"
     assert thirsty_agent.current_target == (10, 5)
     assert (thirsty_agent.x, thirsty_agent.y) != (0, 5)
+
+
+def test_colony_memory_shares_food_between_agents():
+    world = World(12, 11)
+    world.tiles = [[Tile("grass") for _ in range(12)] for _ in range(11)]
+    world.tiles[5][10].food = 2
+
+    scout = Agent("Scout", 5, 5)
+    hungry_agent = Agent("Hungry", 0, 5, hunger=80)
+    world.agents.extend([scout, hungry_agent])
+
+    scout.scan_surroundings(world)
+
+    assert (10, 5) in scout.remembered_food
+    assert (10, 5) in world.colony_memory.known_food
+    assert not hungry_agent.remembered_food
+
+    action = hungry_agent.choose_action(world)
+
+    assert hungry_agent.current_goal == "Gather food"
+    assert isinstance(action, SeekFoodAction)
+
+    action.execute(hungry_agent, world)
+
+    assert hungry_agent.current_action == "Seeking food"
+    assert hungry_agent.current_target == (10, 5)
+    assert (hungry_agent.x, hungry_agent.y) != (0, 5)
+
+
+def test_colony_memory_shares_wood_between_agents():
+    world = World(12, 11)
+    world.tiles = [[Tile("grass") for _ in range(12)] for _ in range(11)]
+    world.tiles[5][10].kind = "forest"
+    world.tiles[5][10].wood = 3
+
+    scout = Agent("Scout", 5, 5)
+    builder = Agent("Builder", 0, 5)
+    world.agents.extend([scout, builder])
+
+    scout.scan_surroundings(world)
+
+    assert (10, 5) in scout.remembered_wood
+    assert (10, 5) in world.colony_memory.known_wood
+    assert not builder.remembered_wood
+    assert world.needs_more_shelters()
+
+    action = builder.choose_action(world)
+
+    assert builder.current_goal == "Gather wood"
+    assert isinstance(action, SeekWoodAction)
+
+    action.execute(builder, world)
+
+    assert builder.current_action == "Seeking wood"
+    assert builder.current_target == (10, 5)
+    assert (builder.x, builder.y) != (0, 5)

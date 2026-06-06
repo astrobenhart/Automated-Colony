@@ -40,14 +40,16 @@ Acceptance Criteria:
 Goal: Make villagers behave more like a colony by sharing useful knowledge and coordinating around group needs.
 
 Features:
-- [ ] Add shared colony memory
-- [ ] Let agents use personal memory first and colony memory second
-- [ ] Verify shared knowledge improves survival without removing scarcity
+- [x] Add shared colony memory
+- [x] Let agents use personal memory first and colony memory second
+- [x] Verify shared knowledge is written and read while preserving scarcity
 - [ ] Improve building priorities
 - [ ] Add simple storage
 
 Notes:
-- A local `src/colony_memory.py` implementation exists in the working tree, but shared colony memory still needs to be treated as the next formal implementation/verification task before it is marked complete on the roadmap.
+- Shared colony memory is implemented in `src/colony_memory.py`.
+- Agents publish visible food, water, wood, and shelters to `world.colony_memory`.
+- Seek actions use personal memory first and colony memory second.
 
 ## v0.4 - Smarter World
 

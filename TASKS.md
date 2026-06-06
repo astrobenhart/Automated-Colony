@@ -8,38 +8,6 @@ No active task.
 
 ## Backlog
 
-### TASK-9
-Title: Add Shared Colony Memory
-
-Owner: Gameplay Agent
-
-Status: Backlog
-
-Description:
-Create a colony-level knowledge system so discoveries made by one agent can benefit the group.
-
-Expected Output:
-A shared memory system that tracks known food, water, wood, and shelter locations and allows agents to use that knowledge after checking personal memory.
-
-Acceptance Criteria:
-- Knowledge spreads through the colony.
-- Agents use personal memory first.
-- Agents use colony memory second.
-- Agents can seek resources discovered by other agents.
-- Survival improves without removing scarcity.
-- `python -m pytest` passes.
-- `python -m src.main` launches.
-
-Dependencies:
-- TASK-3
-- TASK-4
-- TASK-5
-
-Notes:
-- A local `src/colony_memory.py` implementation exists in the working tree and should be verified or reconciled as part of this task.
-
----
-
 ### TASK-10
 Title: Improve Building Priorities
 
@@ -89,6 +57,39 @@ Dependencies:
 ---
 
 ## Completed
+
+### TASK-9
+Title: Add Shared Colony Memory
+
+Owner: Gameplay Agent
+
+Status: Completed
+
+Description:
+Create a colony-level knowledge system so discoveries made by one agent can benefit the group.
+
+Expected Output:
+A shared memory system that tracks known food, water, wood, and shelter locations and allows agents to use that knowledge after checking personal memory.
+
+Acceptance Criteria:
+- Knowledge spreads through the colony.
+- Agents use personal memory first.
+- Agents use colony memory second.
+- Agents can seek resources discovered by other agents.
+- Survival improves without removing scarcity.
+- `python -m pytest` passes.
+- `python -m src.main` launches.
+
+Dependencies:
+- TASK-3
+- TASK-4
+- TASK-5
+
+Notes:
+- Implemented in `src/colony_memory.py`.
+- Verified for water, food, and wood shared-memory consumption.
+
+---
 
 ### TASK-1
 Title: Create Project Documents
