@@ -93,12 +93,28 @@ class GatherWoodGoal(Goal):
         SeekWoodAction,
     )
 
+    def can_do(self, agent: Agent, world: World) -> bool:
+        return world.needs_more_shelters() and super().can_do(agent, world)
+
+    def score(self, agent: Agent, world: World) -> int:
+        if not world.needs_more_shelters():
+            return 0
+        return super().score(agent, world)
+
 
 class BuildShelterGoal(Goal):
     name = "Build shelter"
     action_types = (
         BuildShelterAction,
     )
+
+    def can_do(self, agent: Agent, world: World) -> bool:
+        return world.needs_more_shelters() and super().can_do(agent, world)
+
+    def score(self, agent: Agent, world: World) -> int:
+        if not world.needs_more_shelters():
+            return 0
+        return super().score(agent, world)
 
 
 class ExploreGoal(Goal):

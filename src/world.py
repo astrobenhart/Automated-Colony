@@ -1,6 +1,8 @@
 import random
+import math
 from dataclasses import dataclass, field
 
+from src.config import SHELTER_CAPACITY
 from src.tile import Tile
 from src.agent import Agent
 
@@ -135,6 +137,15 @@ class World:
             for tile in row
             if tile.kind == kind
         )
+
+    def needed_shelters(self):
+        living_count = len(self.living_agents())
+        if living_count == 0:
+            return 0
+        return math.ceil(living_count / SHELTER_CAPACITY)
+
+    def needs_more_shelters(self):
+        return self.count_tiles("shelter") < self.needed_shelters()
 
     def total_food_on_map(self):
         return sum(tile.food for row in self.tiles for tile in row)

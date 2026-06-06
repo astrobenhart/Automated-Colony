@@ -5,6 +5,13 @@ from typing import TYPE_CHECKING
 from src.actions import (
     Action,
 )
+from src.config import (
+    FATIGUE_RATE,
+    HUNGER_DEATH_THRESHOLD,
+    HUNGER_RATE,
+    THIRST_DEATH_THRESHOLD,
+    THIRST_RATE,
+)
 from src.goals import (
     DrinkGoal,
     EatGoal,
@@ -48,9 +55,9 @@ class Agent:
     current_target: tuple[int, int] | None = field(default=None, repr=False)
 
     def update_needs(self):
-        self.hunger += 1
-        self.thirst += 2
-        self.fatigue += 1
+        self.hunger += HUNGER_RATE
+        self.thirst += THIRST_RATE
+        self.fatigue += FATIGUE_RATE
 
     def scan_surroundings(self, world: World):
         for dy in range(-5, 6):
@@ -105,11 +112,11 @@ class Agent:
         return goal.choose_action(self, world)
 
     def die_if_needed(self, world: World):
-        if self.hunger >= 100:
+        if self.hunger >= HUNGER_DEATH_THRESHOLD:
             self.alive = False
             self.current_action = "Dead"
             world.log(f"{self.name} died of starvation.")
-        elif self.thirst >= 100:
+        elif self.thirst >= THIRST_DEATH_THRESHOLD:
             self.alive = False
             self.current_action = "Dead"
             world.log(f"{self.name} died of thirst.")

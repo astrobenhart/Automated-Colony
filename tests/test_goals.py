@@ -10,6 +10,7 @@ from src.actions import (
     SleepAction,
     WanderAction,
 )
+from src.goals import BuildShelterGoal, GatherWoodGoal
 from src.tile import Tile
 from src.world import World
 
@@ -18,6 +19,11 @@ def make_world(width: int = 5, height: int = 5) -> World:
     world = World(width, height)
     world.tiles = [[Tile("grass") for _ in range(width)] for _ in range(height)]
     return world
+
+
+def add_shelters(world: World, positions: list[tuple[int, int]]):
+    for x, y in positions:
+        world.tiles[y][x].kind = "shelter"
 
 
 def test_thirst_prioritization():
@@ -49,6 +55,19 @@ def test_thirsty_agent_seeks_remembered_water():
     assert agent.current_action == "Seeking water"
     assert (agent.x, agent.y) != (0, 2)
     assert agent.current_target == (4, 2)
+
+
+def test_thirsty_agent_still_prioritizes_water_over_building():
+    world = make_world()
+    world.tiles[2][4].kind = "water"
+    agent = Agent("TestAgent", 0, 2, thirst=80, wood=3)
+    agent.remembered_water.add((4, 2))
+    world.agents.append(agent)
+
+    action = agent.choose_action(world)
+
+    assert agent.current_goal == "Drink"
+    assert isinstance(action, SeekWaterAction)
 
 
 def test_hunger_prioritization():
@@ -138,6 +157,54 @@ def test_agent_can_choose_shelter_building():
 
     assert agent.current_goal == "Build shelter"
     assert isinstance(action, BuildShelterAction)
+
+
+def test_build_shelter_goal_available_when_below_capacity():
+    world = make_world()
+    agent = Agent("TestAgent", 2, 2, wood=3)
+    world.agents.append(agent)
+
+    goal = BuildShelterGoal()
+
+    assert world.needed_shelters() == 1
+    assert world.count_tiles("shelter") == 0
+    assert goal.can_do(agent, world)
+    assert goal.score(agent, world) == 80
+
+
+def test_build_shelter_goal_unavailable_when_capacity_met():
+    world = make_world()
+    add_shelters(world, [(0, 0)])
+    agent = Agent("TestAgent", 2, 2, wood=3)
+    world.agents.append(agent)
+
+    goal = BuildShelterGoal()
+    action = agent.choose_action(world)
+
+    assert world.needed_shelters() == 1
+    assert world.count_tiles("shelter") == 1
+    assert not goal.can_do(agent, world)
+    assert goal.score(agent, world) == 0
+    assert agent.current_goal != "Build shelter"
+    assert not isinstance(action, BuildShelterAction)
+
+
+def test_gather_wood_goal_deprioritized_when_shelter_capacity_met():
+    world = make_world()
+    add_shelters(world, [(0, 0)])
+    world.tiles[2][2].kind = "forest"
+    world.tiles[2][2].wood = 2
+    agent = Agent("TestAgent", 2, 2)
+    world.agents.append(agent)
+
+    goal = GatherWoodGoal()
+    action = agent.choose_action(world)
+
+    assert world.needed_shelters() == 1
+    assert not goal.can_do(agent, world)
+    assert goal.score(agent, world) == 0
+    assert agent.current_goal != "Gather wood"
+    assert not isinstance(action, GatherWoodAction)
 
 
 def test_unavailable_survival_goal_does_not_block_building():

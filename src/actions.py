@@ -75,6 +75,8 @@ class GatherWoodAction(Action):
         return world.tile_at(agent.x, agent.y).wood > 0
 
     def score(self, agent: Agent, world: World) -> int:
+        if not world.needs_more_shelters():
+            return 1
         if agent.wood < 3:
             return 35
         return 8
@@ -92,12 +94,12 @@ class BuildShelterAction(Action):
 
     def can_do(self, agent: Agent, world: World) -> bool:
         tile = world.tile_at(agent.x, agent.y)
-        return agent.wood >= 3 and tile.kind == "grass"
+        return agent.wood >= 3 and tile.kind == "grass" and world.needs_more_shelters()
 
     def score(self, agent: Agent, world: World) -> int:
-        if world.count_tiles("shelter") < 3:
+        if world.needs_more_shelters():
             return 80
-        return 12
+        return 0
 
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)

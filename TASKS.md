@@ -153,6 +153,36 @@ Notes:
 
 ## Completed
 
+### TASK-8
+Title: Balance Thirst and Shelter Construction
+
+Owner: Balance Agent
+
+Status: Completed
+
+Description:
+Resolve GitHub Issue #2 by softening early thirst pacing and preventing villagers from endlessly building shelters after the colony has enough shelter capacity.
+
+Expected Output:
+Small balance changes using readable constants and focused goal/action gates.
+
+Acceptance Criteria:
+- Thirst remains dangerous but no longer causes most villagers to die immediately.
+- Agents still prioritize water when thirsty.
+- Shelter building happens when the colony lacks capacity.
+- Shelter construction stops or slows once shelter capacity is met.
+- Automated tests cover thirst priority, shelter capacity, and wood-gathering deprioritization.
+
+Dependencies:
+- TASK-5
+- TASK-6
+- TASK-7
+
+Notes:
+- Implemented for GitHub Issue #2.
+
+---
+
 ### TASK-3
 Title: Add BFS Pathfinding
 
