@@ -40,6 +40,89 @@ Notes:
 
 ## Completed
 
+### TASK-22
+Title: Smooth Seasonal Color Transitions
+
+Owner: Renderer Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #12 by blending seasonal terrain colors during the final day of each season.
+
+Expected Output:
+Seasonal map and legend colors gradually transition into the next season rather than snapping at the season boundary.
+
+Acceptance Criteria:
+- Seasons last roughly 20 in-game days.
+- The final day of each season blends into the next season.
+- Map tiles and legend swatches use the same blended color source.
+- Seasonal labels show the current transition when blending.
+- Existing tests pass.
+
+Dependencies:
+- TASK-21
+
+Notes:
+- This is renderer/UI polish only; no gameplay, worldgen, pathfinding, resource, water, or balance behavior changed beyond the requested season length.
+
+---
+
+### TASK-21
+Title: Update Terrain Legend Seasonal Colors
+
+Owner: Renderer Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #11 by making terrain legend swatches use the same season-aware colors as map tiles.
+
+Expected Output:
+A terrain legend that always matches the active season's visible map colors.
+
+Acceptance Criteria:
+- Map and legend use the shared seasonal color helper.
+- Legend swatches change with the current season.
+- Legend remains compact and readable.
+- Existing tests pass.
+
+Dependencies:
+- TASK-20
+
+Notes:
+- This is a UI consistency fix only; no gameplay, worldgen, pathfinding, or season mechanics changed.
+
+---
+
+### TASK-20
+Title: Add Visible Seasonal Terrain Effects
+
+Owner: Renderer Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #10 by making seasons visually noticeable through renderer-only terrain color changes.
+
+Expected Output:
+Season-aware map colors that make Spring, Summer, Autumn, and Winter feel distinct without changing tile kinds or gameplay rules.
+
+Acceptance Criteria:
+- Seasonal color lookup varies terrain across seasons.
+- Wetlands, forests, plains, dry terrain, hills, mountains, and water have visible seasonal variants.
+- Tile kinds are not destructively changed by visual effects.
+- Water and rivers remain stable water sources.
+- Existing tests pass.
+
+Dependencies:
+- TASK-19
+
+Notes:
+- This uses renderer tinting/color variants only; no droughts, floods, freezing, river removal, or pathfinding changes were added.
+
+---
+
 ### TASK-19
 Title: Add Season System v1
 

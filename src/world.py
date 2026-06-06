@@ -10,6 +10,7 @@ from src.seasons import (
     next_season_index,
     season_for_index,
     should_advance_season,
+    transition_progress,
     wood_growth_chance,
 )
 from src.worldgen import generate_world
@@ -44,6 +45,26 @@ class World:
     def day_of_season(self) -> int:
         return day_of_season(self.day)
 
+    @property
+    def next_season(self) -> str:
+        return season_for_index(next_season_index(self.season_index))
+
+    @property
+    def ticks_into_day(self) -> int:
+        from src.config import TICKS_PER_DAY
+        return self.tick % TICKS_PER_DAY
+
+    @property
+    def transition_progress(self) -> float:
+        from src.config import TICKS_PER_DAY
+        return transition_progress(self.day_of_season, self.ticks_into_day, TICKS_PER_DAY)
+
+    @property
+    def season_label(self) -> str:
+        if self.transition_progress > 0.0:
+            return f"{self.season} -> {self.next_season}"
+        return self.season
+
     def generate(self, seed: int | None = None):
         if seed is not None:
             self.seed = seed
@@ -76,7 +97,8 @@ class World:
     def update(self):
         self.tick += 1
 
-        if self.tick % 50 == 0:
+        from src.config import TICKS_PER_DAY
+        if self.tick % TICKS_PER_DAY == 0:
             self.advance_day()
 
         for agent in self.living_agents():

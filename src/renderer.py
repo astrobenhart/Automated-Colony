@@ -14,6 +14,7 @@ from src.config import (
     SYMBOL_LABELS,
     FPS,
 )
+from src.seasons import seasonal_tile_color
 from src.agent import Agent
 from src.world import World
 
@@ -137,7 +138,7 @@ class PygameRenderer:
                     TILE_SIZE,
                 )
 
-                pygame.draw.rect(self.screen, COLORS[tile.kind], rect)
+                pygame.draw.rect(self.screen, self.tile_color(tile.kind), rect)
                 if DEBUG_DRAW_GRID:
                     pygame.draw.rect(self.screen, COLORS["grid"], rect, 1)
 
@@ -217,7 +218,7 @@ class PygameRenderer:
         status = "PAUSED" if paused else "RUNNING"
         y = self.draw_stat_row("State", status, content_x, y, content_width, bottom_y)
         y = self.draw_stat_row("Day", self.world.day, content_x, y, content_width, bottom_y)
-        y = self.draw_stat_row("Season", self.world.season, content_x, y, content_width, bottom_y)
+        y = self.draw_stat_row("Season", self.world.season_label, content_x, y, content_width, bottom_y)
         y = self.draw_stat_row("S Day", self.world.day_of_season, content_x, y, content_width, bottom_y)
         y = self.draw_stat_row("Tick", self.world.tick, content_x, y, content_width, bottom_y)
         y = self.draw_stat_row("Speed", f"{sim_speed}/s", content_x, y, content_width, bottom_y)
@@ -290,7 +291,7 @@ class PygameRenderer:
         return y
 
     def draw_legend(self, x: int, y: int, width: int, bottom_y: int):
-        y = self.draw_section_header("Legend", x, y, width, bottom_y)
+        y = self.draw_section_header(f"Legend ({self.world.season_label})", x, y, width, bottom_y)
         column_width = width // 2
         row_height = self.font.get_height() + 3
         items = list(TERRAIN_LABELS.items())
@@ -314,7 +315,7 @@ class PygameRenderer:
         swatch_y = y + max(0, (self.font.get_height() - swatch_size) // 2)
         pygame.draw.rect(
             self.screen,
-            COLORS[kind],
+            self.tile_color(kind),
             pygame.Rect(x, swatch_y, swatch_size, swatch_size),
         )
 
@@ -322,6 +323,14 @@ class PygameRenderer:
         text_width = max(0, width - swatch_size - 6)
         surface = self.font.render(self.fit_text(label, self.font, text_width), True, COLORS["text"])
         self.screen.blit(surface, (text_x, y))
+
+    def tile_color(self, kind: str):
+        return seasonal_tile_color(
+            kind,
+            self.world.season,
+            self.world.next_season,
+            self.world.transition_progress,
+        )
 
     def draw_section_header(self, text: str, x: int, y: int, width: int, bottom_y: int):
         y = self.draw_text_line(text, x, y, width, bottom_y, self.big_font)

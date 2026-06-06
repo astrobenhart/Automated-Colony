@@ -21,7 +21,8 @@ RIVER_COUNT = 3
 RIVER_MIN_LENGTH = 8
 RIVER_SOURCE_ELEVATION = 0.70
 RIVER_WIDEN_CHANCE = 0.06
-DAYS_PER_SEASON = 8
+DAYS_PER_SEASON = 20
+TICKS_PER_DAY = 50
 SEASONS = ["Spring", "Summer", "Autumn", "Winter"]
 SEASON_FOOD_GROWTH_MODIFIERS = {
     "Spring": 1.45,
@@ -69,6 +70,53 @@ COLORS = {
     "warning": (240, 180, 80),
     "selection": (255, 235, 90),
     "selection_agent": (120, 215, 255),
+}
+
+SEASONAL_TERRAIN_COLORS = {
+    "Spring": {
+        "grass": (88, 165, 82),
+        "forest": (32, 115, 45),
+        "plain": (122, 174, 86),
+        "hill": (138, 150, 92),
+        "wetland": (60, 140, 116),
+        "dry": (162, 146, 90),
+        "water": (54, 116, 188),
+        "mountain": (120, 124, 118),
+        "shelter": (145, 95, 45),
+    },
+    "Summer": {
+        "grass": (94, 142, 66),
+        "forest": (30, 92, 37),
+        "plain": (156, 151, 76),
+        "hill": (142, 126, 78),
+        "wetland": (74, 118, 86),
+        "dry": (176, 140, 68),
+        "water": (38, 82, 150),
+        "mountain": (106, 104, 98),
+        "shelter": (145, 95, 45),
+    },
+    "Autumn": {
+        "grass": (112, 138, 66),
+        "forest": (112, 82, 32),
+        "plain": (150, 122, 64),
+        "hill": (136, 108, 72),
+        "wetland": (83, 110, 82),
+        "dry": (150, 118, 72),
+        "water": (44, 92, 158),
+        "mountain": (112, 104, 96),
+        "shelter": (145, 95, 45),
+    },
+    "Winter": {
+        "grass": (142, 154, 138),
+        "forest": (72, 92, 80),
+        "plain": (160, 164, 142),
+        "hill": (152, 152, 138),
+        "wetland": (112, 140, 148),
+        "dry": (156, 148, 126),
+        "water": (74, 102, 150),
+        "mountain": (172, 174, 168),
+        "shelter": (135, 105, 76),
+    },
 }
 
 TERRAIN_LABELS = {

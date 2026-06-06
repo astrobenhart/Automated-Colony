@@ -11,10 +11,12 @@ from src.config import (
     SYMBOL_LABELS,
     TILE_SIZE,
     TERRAIN_LABELS,
+    TICKS_PER_DAY,
     VIEWPORT_HEIGHT,
     VIEWPORT_WIDTH,
 )
 from src.renderer import PygameRenderer
+from src.seasons import seasonal_tile_color
 from src.tile import Tile
 from src.world import World
 
@@ -185,7 +187,7 @@ def test_adjacent_tiles_draw_without_grid_gap():
     renderer.draw_world()
 
     boundary_pixel = renderer.screen.get_at((TILE_SIZE, TILE_SIZE // 2))[:3]
-    assert boundary_pixel == COLORS["grass"]
+    assert boundary_pixel == renderer.tile_color("grass")
 
 
 def test_selection_highlight_aligns_with_camera_offset():
@@ -209,3 +211,48 @@ def test_legend_draws_terrain_swatch_and_symbol_labels():
 
     assert "water" in TERRAIN_LABELS
     assert "@" in SYMBOL_LABELS
+
+
+def test_legend_swatch_uses_current_seasonal_color():
+    world = make_world(width=3, height=3)
+    world.season_index = 1
+    renderer = make_renderer(world)
+    x = 20
+    y = 20
+
+    renderer.draw_legend_item("wetland", "Wetland", x, y, 120)
+
+    swatch_pixel = renderer.screen.get_at((x + 1, y + 3))[:3]
+    assert swatch_pixel == renderer.tile_color("wetland")
+
+
+def test_map_and_legend_use_same_seasonal_color_source():
+    world = make_world(width=3, height=3)
+    world.tiles[0][0] = Tile("wetland")
+    world.season_index = 3
+    renderer = make_renderer(world)
+
+    renderer.draw_world()
+    map_pixel = renderer.screen.get_at((1, 1))[:3]
+
+    renderer.draw_legend_item("wetland", "Wetland", 40, 40, 120)
+    legend_pixel = renderer.screen.get_at((41, 43))[:3]
+
+    assert map_pixel == renderer.tile_color("wetland")
+    assert legend_pixel == map_pixel
+
+
+def test_legend_uses_blended_transition_color():
+    world = make_world(width=3, height=3)
+    world.day = 20
+    world.tick = TICKS_PER_DAY // 2
+    renderer = make_renderer(world)
+    x = 20
+    y = 20
+
+    renderer.draw_legend_item("plain", "Plain", x, y, 120)
+
+    swatch_pixel = renderer.screen.get_at((x + 1, y + 3))[:3]
+    assert swatch_pixel == renderer.tile_color("plain")
+    assert swatch_pixel != seasonal_tile_color("plain", "Spring")
+    assert swatch_pixel != seasonal_tile_color("plain", "Summer")

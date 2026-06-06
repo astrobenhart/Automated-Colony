@@ -92,7 +92,8 @@ Notes:
 - Phase 2 river generation traces simple downhill paths and converts them to existing unwalkable water tiles.
 - Issue #7 adds `hill`, `plain`, `wetland`, and `dry` terrain using the existing elevation, moisture, and temperature maps.
 - Existing tile kinds remain compatible: `water`, `mountain`, `forest`, and `grass`.
-- Season System v1 cycles Spring, Summer, Autumn, and Winter and changes terrain-based food/wood regrowth without removing water.
+- Season System v1 cycles Spring, Summer, Autumn, and Winter over 20-day seasons and changes terrain-based food/wood regrowth without removing water.
+- Seasonal terrain colors make Spring, Summer, Autumn, and Winter visually distinct without changing tile kinds, with final-day color blending into the next season.
 - Environmental events, wildlife, and history tracking are still future v0.4 work.
 
 ## v0.5 - Colony Roles and Production

@@ -9,7 +9,8 @@ The project is designed as an emergent colony screensaver and as a playground fo
 - Modular Python package under `src/`
 - Rule-based terrain generation with grass, forest, plain, hill, wetland, dry, water, mountain, and shelter tiles
 - Larger explorable world with a camera-controlled map viewport
-- Spring, Summer, Autumn, and Winter seasons that affect food and wood regrowth
+- 20-day Spring, Summer, Autumn, and Winter seasons that affect food and wood regrowth
+- Seasonal terrain colors with final-day blending so the map visibly shifts across the year
 - Autonomous villagers with hunger, thirst, fatigue, carried food, and carried wood
 - Goal-based behavior for drinking, eating, sleeping, gathering, building, depositing, and exploring
 - BFS pathfinding with occupied-tile avoidance

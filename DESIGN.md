@@ -35,6 +35,7 @@ World generation should:
 - assign water, mountain, hill, forest, wetland, dry, plain, and grass terrain from simple natural rules
 - place food and wood based on terrain conditions
 - cycle simple seasons that influence terrain-based resource regrowth
+- tint terrain by season in the renderer, blending during the final day, without changing gameplay tile kinds
 - preserve existing simulation systems while preparing for biomes and environmental events
 
 ## Design Priorities
