@@ -2,64 +2,187 @@
 
 ## Active
 
-### TASK-7
-Title: Add Basic Tests
-
-Owner: Tester Agent
-
-Status: Completed
-
-Description:
-Write a suite of automated unit tests covering key simulation subsystems such as world coordinate logic, pathfinding, agent memory, and goal utility selection.
-
-Expected Output:
-Automated test scripts using `pytest`.
-
-Acceptance Criteria:
-- Tests run successfully using the command `pytest`.
-- Tests verify pathfinding logic on simple mock worlds (e.g., finding paths, obstacle avoidance, unreachable targets).
-- Tests verify world boundary checking and tile walkability.
-- Tests verify agent memory updates (adding and removing resource coordinates).
-- Tests verify basic goal priority scoring (e.g., high thirst leads to water goal).
-
-Dependencies:
-- TASK-2
-- TASK-3
-- TASK-4
-- TASK-5
-
-Notes:
-- Use fixed seeds and mock grids in tests to avoid randomness issues.
+No active task.
 
 ---
 
-
 ## Backlog
 
-### TASK-3
-Title: Add BFS Pathfinding
+### TASK-9
+Title: Add Shared Colony Memory
 
 Owner: Gameplay Agent
 
 Status: Backlog
 
 Description:
-Implement a generic Breadth-First Search (BFS) pathfinding system that agents can use to find the shortest path to target tiles.
+Create a colony-level knowledge system so discoveries made by one agent can benefit the group.
 
 Expected Output:
-A dedicated pathfinding utility module that computes valid coordinate paths avoiding obstacles.
+A shared memory system that tracks known food, water, wood, and shelter locations and allows agents to use that knowledge after checking personal memory.
 
 Acceptance Criteria:
-- A `find_path(world, start, destination)` function is created in a separate system module (e.g., `src/systems/pathfinding.py` or similar).
-- Computed paths avoid water and mountain tiles.
-- The pathfinder returns an empty path if the destination is unreachable.
-- Path selection handles out-of-bounds inputs safely.
+- Knowledge spreads through the colony.
+- Agents use personal memory first.
+- Agents use colony memory second.
+- Agents can seek resources discovered by other agents.
+- Survival improves without removing scarcity.
+- `python -m pytest` passes.
+- `python -m src.main` launches.
+
+Dependencies:
+- TASK-3
+- TASK-4
+- TASK-5
+
+Notes:
+- A local `src/colony_memory.py` implementation exists in the working tree and should be verified or reconciled as part of this task.
+
+---
+
+### TASK-10
+Title: Improve Building Priorities
+
+Owner: Gameplay Agent
+
+Status: Backlog
+
+Description:
+Refine how villagers decide what to build and when, building on shelter-capacity logic without adding a large construction system.
+
+Expected Output:
+Small goal/action scoring refinements for construction priorities.
+
+Acceptance Criteria:
+- Shelter construction remains bounded by colony needs.
+- Building-related work does not dominate survival goals.
+- Tests cover any changed construction priority rules.
+
+Dependencies:
+- TASK-8
+- TASK-9
+
+---
+
+### TASK-11
+Title: Add Simple Storage
+
+Owner: Gameplay Agent
+
+Status: Backlog
+
+Description:
+Add basic colony storage so gathered food and wood can support the group rather than only individual carriers.
+
+Expected Output:
+A minimal storage model that can hold shared food and wood.
+
+Acceptance Criteria:
+- Agents can deposit resources into storage.
+- Agents can use stored resources when appropriate.
+- Scarcity remains meaningful.
+- Tests cover storage interactions.
+
+Dependencies:
+- TASK-9
+
+---
+
+## Completed
+
+### TASK-1
+Title: Create Project Documents
+
+Owner: Docs Agent
+
+Status: Completed
+
+Description:
+Establish the base project documentation to guide development and keep agents and humans aligned. This includes README.md, DESIGN.md, ROADMAP.md, and TASKS.md.
+
+Expected Output:
+Completed core project documentation files in the repository root.
+
+Acceptance Criteria:
+- README.md explains the project concept and run instructions.
+- DESIGN.md explains the core simulation loop and design priorities.
+- ROADMAP.md outlines planned milestones.
+- TASKS.md tracks active, backlog, and completed work.
+
+Dependencies:
+- None
+
+---
+
+### TASK-2
+Title: Refactor Single-File Prototype
+
+Owner: Architect Agent
+
+Status: Completed
+
+Description:
+Split the single-file Pygame prototype into a modular package structure under `src/`.
+
+Expected Output:
+A clean modular structure under `src/` with clear imports and separated simulation/rendering responsibilities.
+
+Acceptance Criteria:
+- Game launches from `python -m src.main`.
+- Imports resolve cleanly.
+- Constants live in `src/config.py`.
+- Rendering does not control simulation update logic.
+
+Dependencies:
+- TASK-1
+
+---
+
+### TASK-3
+Title: Add BFS Pathfinding
+
+Owner: Gameplay Agent
+
+Status: Completed
+
+Description:
+Implement a generic Breadth-First Search pathfinding system that agents can use to find shortest paths to target tiles.
+
+Expected Output:
+A dedicated pathfinding utility module.
+
+Acceptance Criteria:
+- `find_path(world, start, destination)` exists.
+- Paths avoid water and mountain tiles.
+- Unreachable destinations return an empty path.
+- Out-of-bounds inputs are handled safely.
 
 Dependencies:
 - TASK-2
 
-Notes:
-- Agents should not run the pathfinding code internally; they should query the system.
+---
+
+### TASK-4
+Title: Add Agent Memory
+
+Owner: Gameplay Agent
+
+Status: Completed
+
+Description:
+Give agents personal memory of visible resource locations.
+
+Expected Output:
+Agent memory attributes and scan/update logic.
+
+Acceptance Criteria:
+- Agents scan surroundings during updates.
+- Memory tracks visible food, water, wood, and shelters.
+- Depleted or invalid visible resource memories are removed.
+- Memory is inspectable for future UI.
+
+Dependencies:
+- TASK-2
 
 ---
 
@@ -71,23 +194,20 @@ Owner: Gameplay Agent
 Status: Completed
 
 Description:
-Replace the current purely reactive action selection with a utility-scored, goal-based decision model.
+Replace purely reactive action selection with a utility-scored, goal-based decision model.
 
 Expected Output:
-A goal system where agents evaluate and choose high-level goals (Drink, Eat, Sleep, Gather, Explore) based on needs.
+A goal system where agents evaluate and choose high-level goals based on needs.
 
 Acceptance Criteria:
-- Thirsty agents prioritize finding and moving toward water.
-- Hungry agents prioritize finding and moving toward food.
-- Tired agents prioritize finding and moving toward shelter.
-- Agents default to exploration when needs are stable and they have no active tasks.
-- Agents survive significantly longer on average compared to v0.1.
+- Thirsty agents prioritize water.
+- Hungry agents prioritize food.
+- Tired agents prioritize shelter/sleep.
+- Agents default to exploration when needs are stable.
+- Survival improves compared with the v0.1 behavior.
 
 Dependencies:
 - TASK-4
-
-Notes:
-- Use simple utility scoring to resolve competing goals.
 
 ---
 
@@ -99,24 +219,21 @@ Owner: Renderer Agent
 Status: Completed
 
 Description:
-Implement interactive clicking in Pygame to select and inspect a specific agent's status, needs, inventory, goals, and targets.
+Implement read-only clicking in Pygame to inspect a selected agent or tile.
 
 Expected Output:
-An inspection panel in the UI rendering selected agent details, along with a visual highlight on the selected agent.
+Selection highlighting and side-panel details for agents and tiles.
 
 Acceptance Criteria:
 - Clicking a tile with an agent selects that agent.
-- Clicking an empty tile shows tile information instead.
-- The side panel renders the selected agent's name, needs (hunger, thirst, fatigue), inventory, current action, and active goal/target.
-- The selected agent is visually highlighted on the grid (e.g., with a border).
-- Restarting the world or agent death resets selection state safely without crashing.
+- Clicking an empty tile selects that tile.
+- The side panel renders selected agent or tile details.
+- Restarting the world clears selection safely.
+- Dead selected agents do not crash the UI.
 
 Dependencies:
 - TASK-2
 - TASK-5
-
-Notes:
-- Selection is read-only and must not influence agent behavior or alter simulation state.
 
 ---
 
@@ -128,30 +245,27 @@ Owner: Tester Agent
 Status: Completed
 
 Description:
-Write a suite of automated unit tests covering key simulation subsystems such as world coordinate logic, pathfinding, agent memory, and goal utility selection.
+Write automated unit tests covering core simulation subsystems.
 
 Expected Output:
-Automated test scripts using `pytest`.
+Pytest tests for pathfinding, world logic, memory, goals, balance rules, and renderer selection helpers.
 
 Acceptance Criteria:
-- Tests run successfully using the command `pytest`.
-- Tests verify pathfinding logic on simple mock worlds (e.g., finding paths, obstacle avoidance, unreachable targets).
-- Tests verify world boundary checking and tile walkability.
-- Tests verify agent memory updates (adding and removing resource coordinates).
-- Tests verify basic goal priority scoring (e.g., high thirst leads to water goal).
+- `python -m pytest` passes.
+- Tests verify pathfinding behavior.
+- Tests verify world boundary and walkability logic.
+- Tests verify agent memory.
+- Tests verify goal priority and action selection.
+- Tests verify renderer selection safety.
 
 Dependencies:
 - TASK-2
 - TASK-3
 - TASK-4
 - TASK-5
-
-Notes:
-- Use fixed seeds and mock grids in tests to avoid randomness issues.
+- TASK-6
 
 ---
-
-## Completed
 
 ### TASK-8
 Title: Balance Thirst and Shelter Construction
@@ -161,143 +275,19 @@ Owner: Balance Agent
 Status: Completed
 
 Description:
-Resolve GitHub Issue #2 by softening early thirst pacing and preventing villagers from endlessly building shelters after the colony has enough shelter capacity.
+Resolve the early thirst pacing and runaway shelter construction balance issues.
 
 Expected Output:
-Small balance changes using readable constants and focused goal/action gates.
+Small readable balance constants and bounded shelter construction rules.
 
 Acceptance Criteria:
-- Thirst remains dangerous but no longer causes most villagers to die immediately.
+- Thirst remains dangerous but less instantly lethal.
 - Agents still prioritize water when thirsty.
-- Shelter building happens when the colony lacks capacity.
-- Shelter construction stops or slows once shelter capacity is met.
-- Automated tests cover thirst priority, shelter capacity, and wood-gathering deprioritization.
+- Shelter building happens when capacity is lacking.
+- Shelter construction slows or stops once capacity is met.
+- Tests cover thirst priority, shelter capacity, and wood-gathering deprioritization.
 
 Dependencies:
 - TASK-5
 - TASK-6
 - TASK-7
-
-Notes:
-- Implemented for GitHub Issue #2.
-
----
-
-### TASK-3
-Title: Add BFS Pathfinding
-
-Owner: Gameplay Agent
-
-Status: Backlog
-
-Description:
-Implement a generic Breadth-First Search (BFS) pathfinding system that agents can use to find the shortest path to target tiles.
-
-Expected Output:
-A dedicated pathfinding utility module that computes valid coordinate paths avoiding obstacles.
-
-Acceptance Criteria:
-- A `find_path(world, start, destination)` function is created in a separate system module (e.g., `src/systems/pathfinding.py` or similar).
-- Computed paths avoid water and mountain tiles.
-- The pathfinder returns an empty path if the destination is unreachable.
-- Path selection handles out-of-bounds inputs safely.
-
-Dependencies:
-- TASK-2
-
-Notes:
-- Agents should not run the pathfinding code internally; they should query the system.
-
----
-
-### TASK-2
-Title: Refactor Single-File Prototype
-
-Owner: Architect Agent
-
-Status: Pending Verification
-
-Description:
-Split the single-file Pygame prototype `automated_colony_v0_1.py` into a modular package structure under `src/` to support future development.
-
-Expected Output:
-A clean, modularized structure under `src/` where imports are clear, constants live in a config file, and simulation code is separate from rendering.
-
-Target Structure:
-```text
-src/
-  main.py
-  config.py
-  tile.py
-  world.py
-  agent.py
-  actions.py
-  renderer.py
-```
-
-Acceptance Criteria:
-- The game launches and runs exactly as before.
-- No gameplay or behavior changes are introduced in this step.
-- All import statements are clean and resolve correctly without circular dependencies.
-- Magic numbers and simulation constants are moved to `src/config.py`.
-- The rendering system does not contain or control simulation update logic.
-
-Dependencies:
-- TASK-1
-
-Notes:
-- This is a pure refactoring task. Do not add new gameplay features or assets.
-
----
-
-### TASK-4
-Title: Add Agent Memory
-
-Owner: Gameplay Agent
-
-Status: Pending Verification
-
-Description:
-Give agents a memory structure that allows them to scan nearby tiles (within their vision range) and remember resource locations (food, wood, water, shelters) for future use.
-
-Expected Output:
-Memory attributes added to the agent model with scan and update logic.
-
-Acceptance Criteria:
-- Agents scan surroundings at regular intervals or during updates.
-- Memory tracks coordinate locations of visible water, food, wood, and shelters.
-- Depleted or invalid resource memories are removed when an agent arrives and sees the resource is gone.
-- Memory data is inspectable/accessible for future display in the UI.
-
-Dependencies:
-- TASK-2
-
-Notes:
-- Agents should not have omniscient knowledge of the entire map; they must explore to populate their memories.
-
----
-
-### TASK-1
-Title: Create Project Documents
-
-Owner: Docs Agent
-
-Status: Completed
-
-Description:
-Establish the base project documentation to guide development and keep agents and humans aligned. This includes creating and verifying README.md, DESIGN.md, ROADMAP.md, and TASKS.md.
-
-Expected Output:
-Completed core project documentation files in the repository root.
-
-Acceptance Criteria:
-- README.md exists and explains the project concept and run instructions.
-- DESIGN.md exists and explains the core simulation loop and design priorities.
-- ROADMAP.md exists and outlines milestones from v0.1 to v0.5.
-- TASKS.md exists and outlines the active tasks and backlog for v0.2.
-
-Dependencies:
-- None
-
-Notes:
-- Completed during initial planning phase.

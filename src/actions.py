@@ -155,6 +155,13 @@ def _nearest(agent_x: int, agent_y: int, memory: set[tuple[int, int]]) -> tuple[
     return min(memory, key=lambda pos: max(abs(pos[0] - agent_x), abs(pos[1] - agent_y)))
 
 
+def _shared_memory(agent_memory: set[tuple[int, int]], colony_memory: set[tuple[int, int]]) -> set[tuple[int, int]]:
+    """Use personal memory first, falling back to colony memory."""
+    if agent_memory:
+        return agent_memory
+    return colony_memory
+
+
 def _step_along_path(agent: Agent, world: World, target: tuple[int, int]) -> bool:
     """
     Move the agent one step along a BFS path toward target.
@@ -196,7 +203,8 @@ class SeekWaterAction(Action):
         # Only seek if thirsty, knows water, and isn't already adjacent.
         if agent.thirst <= 15:
             return False
-        if not agent.remembered_water:
+        memory = _shared_memory(agent.remembered_water, world.colony_memory.known_water)
+        if not memory:
             return False
         return not world.nearby_tile_kind(agent.x, agent.y, "water")
 
@@ -205,7 +213,8 @@ class SeekWaterAction(Action):
 
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)
-        target = _nearest(agent.x, agent.y, agent.remembered_water)
+        memory = _shared_memory(agent.remembered_water, world.colony_memory.known_water)
+        target = _nearest(agent.x, agent.y, memory)
         _step_along_path(agent, world, target)
 
 
@@ -216,7 +225,8 @@ class SeekFoodAction(Action):
     def can_do(self, agent: Agent, world: World) -> bool:
         if agent.hunger <= 20:
             return False
-        if not agent.remembered_food:
+        memory = _shared_memory(agent.remembered_food, world.colony_memory.known_food)
+        if not memory:
             return False
         return world.tile_at(agent.x, agent.y).food == 0
 
@@ -225,7 +235,8 @@ class SeekFoodAction(Action):
 
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)
-        target = _nearest(agent.x, agent.y, agent.remembered_food)
+        memory = _shared_memory(agent.remembered_food, world.colony_memory.known_food)
+        target = _nearest(agent.x, agent.y, memory)
         _step_along_path(agent, world, target)
 
 
@@ -236,7 +247,8 @@ class SeekWoodAction(Action):
     def can_do(self, agent: Agent, world: World) -> bool:
         if agent.wood >= 3:
             return False
-        if not agent.remembered_wood:
+        memory = _shared_memory(agent.remembered_wood, world.colony_memory.known_wood)
+        if not memory:
             return False
         return world.tile_at(agent.x, agent.y).wood == 0
 
@@ -245,7 +257,8 @@ class SeekWoodAction(Action):
 
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)
-        target = _nearest(agent.x, agent.y, agent.remembered_wood)
+        memory = _shared_memory(agent.remembered_wood, world.colony_memory.known_wood)
+        target = _nearest(agent.x, agent.y, memory)
         _step_along_path(agent, world, target)
 
 
@@ -256,7 +269,8 @@ class SeekShelterAction(Action):
     def can_do(self, agent: Agent, world: World) -> bool:
         if agent.fatigue <= 40:
             return False
-        if not agent.remembered_shelters:
+        memory = _shared_memory(agent.remembered_shelters, world.colony_memory.known_shelters)
+        if not memory:
             return False
         return world.tile_at(agent.x, agent.y).kind != "shelter"
 
@@ -265,5 +279,6 @@ class SeekShelterAction(Action):
 
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)
-        target = _nearest(agent.x, agent.y, agent.remembered_shelters)
+        memory = _shared_memory(agent.remembered_shelters, world.colony_memory.known_shelters)
+        target = _nearest(agent.x, agent.y, memory)
         _step_along_path(agent, world, target)

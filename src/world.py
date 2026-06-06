@@ -2,6 +2,7 @@ import random
 import math
 from dataclasses import dataclass, field
 
+from src.colony_memory import ColonyMemory
 from src.config import SHELTER_CAPACITY
 from src.tile import Tile
 from src.agent import Agent
@@ -15,6 +16,7 @@ class World:
     tiles: list = field(default_factory=list)
     agents: list = field(default_factory=list)
     events: list = field(default_factory=list)
+    colony_memory: ColonyMemory = field(default_factory=ColonyMemory)
 
     day: int = 1
     tick: int = 0

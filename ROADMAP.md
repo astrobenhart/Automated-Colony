@@ -15,17 +15,41 @@ Features:
 
 ## v0.2 - Smarter Survival
 
-Goal: Make agents survive through memory, goals, and pathfinding.
+Goal: Make agents survive through modular systems, memory, goals, pathfinding, UI inspection, tests, and basic balance.
 
 Features:
-- [/] Refactor into modules
-- [ ] Add BFS pathfinding
-- [ ] Add agent memory
-- [ ] Add goal system
-- [ ] Add selected-agent UI
-- [ ] Add lightweight tests
+- [x] Refactor into modules
+- [x] Add BFS pathfinding
+- [x] Add agent memory
+- [x] Add goal-based behavior
+- [x] Add selected-agent and selected-tile UI
+- [x] Add lightweight automated tests
+- [x] Balance thirst pacing and shelter construction
 
-## v0.3 - Smarter World
+Acceptance Criteria:
+- [x] Simulation is split into `src/` modules.
+- [x] Agents can pathfind toward remembered resources.
+- [x] Agents remember visible food, water, wood, and shelters.
+- [x] Agents choose high-level goals and execute low-level actions.
+- [x] Players can inspect agents and tiles.
+- [x] Core systems are covered by pytest.
+- [x] Early thirst and runaway shelter construction are reduced.
+
+## v0.3 - Colony Coordination
+
+Goal: Make villagers behave more like a colony by sharing useful knowledge and coordinating around group needs.
+
+Features:
+- [ ] Add shared colony memory
+- [ ] Let agents use personal memory first and colony memory second
+- [ ] Verify shared knowledge improves survival without removing scarcity
+- [ ] Improve building priorities
+- [ ] Add simple storage
+
+Notes:
+- A local `src/colony_memory.py` implementation exists in the working tree, but shared colony memory still needs to be treated as the next formal implementation/verification task before it is marked complete on the roadmap.
+
+## v0.4 - Smarter World
 
 Goal: Make the world feel more believable by generating terrain from simple natural rules and allowing the environment to evolve over time.
 
@@ -43,26 +67,25 @@ Features:
 - [ ] Expose world-generation settings such as seed, size, water level, forest density, and climate harshness
 
 Acceptance Criteria:
-- Worlds no longer look uniformly random
-- Rivers connect logically from high ground toward lower ground
-- Forests appear more often near water or in wet regions
-- Food and wood availability depend on biome
-- Seasonal changes visibly affect resource growth
-- Agents must adapt to world conditions rather than only random resource placement
+- Worlds no longer look uniformly random.
+- Rivers connect logically from high ground toward lower ground.
+- Forests appear more often near water or in wet regions.
+- Food and wood availability depend on biome.
+- Seasonal changes visibly affect resource growth.
+- Agents must adapt to world conditions rather than only random resource placement.
 
-## v0.4 - Colony Behavior
+## v0.5 - Colony Roles and Production
 
-Goal: Make agents act more like a colony.
+Goal: Give the colony more structure and long-term survival tools.
 
 Features:
-- [ ] Shared knowledge
 - [ ] Roles
-- [ ] Storage
 - [ ] Farming
-- [ ] Building priorities
 - [ ] Migration or population replenishment
+- [ ] Expanded building priorities
+- [ ] Job assignment or task claiming
 
-## v0.5 - Social Simulation
+## v0.6 - Social Simulation
 
 Goal: Add relationships and social structure.
 
@@ -70,11 +93,10 @@ Features:
 - [ ] Families
 - [ ] Friendships and rivalries
 - [ ] Leadership
-- [ ] Jobs
 - [ ] Reputation
 - [ ] Group decisions
 
-## v0.6 - History and Emergence
+## v0.7 - History and Emergence
 
 Goal: Make the world generate stories over time.
 

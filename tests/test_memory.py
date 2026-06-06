@@ -1,6 +1,7 @@
 from src.world import World
 from src.tile import Tile
 from src.agent import Agent
+from src.actions import SeekWaterAction
 
 
 def test_agent_memory_scanning():
@@ -41,6 +42,10 @@ def test_agent_memory_scanning():
     assert (10, 5) in agent.remembered_water
     assert (0, 5) in agent.remembered_wood
     assert (0, 0) in agent.remembered_shelters
+    assert (2, 2) in world.colony_memory.known_food
+    assert (10, 5) in world.colony_memory.known_water
+    assert (0, 5) in world.colony_memory.known_wood
+    assert (0, 0) in world.colony_memory.known_shelters
 
     # Assertions for out-of-range resources
     assert (11, 5) not in agent.remembered_food
@@ -54,3 +59,31 @@ def test_agent_memory_scanning():
 
     # Food at (2, 2) should be removed from memory
     assert (2, 2) not in agent.remembered_food
+    assert (2, 2) not in world.colony_memory.known_food
+
+
+def test_colony_memory_shares_water_between_agents():
+    world = World(12, 11)
+    world.tiles = [[Tile("grass") for _ in range(12)] for _ in range(11)]
+    world.tiles[5][10].kind = "water"
+
+    scout = Agent("Scout", 5, 5)
+    thirsty_agent = Agent("Thirsty", 0, 5, thirst=80)
+    world.agents.extend([scout, thirsty_agent])
+
+    scout.scan_surroundings(world)
+
+    assert (10, 5) in scout.remembered_water
+    assert (10, 5) in world.colony_memory.known_water
+    assert not thirsty_agent.remembered_water
+
+    action = thirsty_agent.choose_action(world)
+
+    assert thirsty_agent.current_goal == "Drink"
+    assert isinstance(action, SeekWaterAction)
+
+    action.execute(thirsty_agent, world)
+
+    assert thirsty_agent.current_action == "Seeking water"
+    assert thirsty_agent.current_target == (10, 5)
+    assert (thirsty_agent.x, thirsty_agent.y) != (0, 5)

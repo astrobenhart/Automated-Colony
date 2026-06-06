@@ -67,30 +67,39 @@ class Agent:
 
                 if 0 <= nx < world.width and 0 <= ny < world.height:
                     tile = world.tile_at(nx, ny)
+                    pos = (nx, ny)
 
                     # Food memory
                     if tile.food > 0:
-                        self.remembered_food.add((nx, ny))
-                    elif (nx, ny) in self.remembered_food:
-                        self.remembered_food.remove((nx, ny))
+                        self.remembered_food.add(pos)
+                        world.colony_memory.remember_food(pos)
+                    else:
+                        self.remembered_food.discard(pos)
+                        world.colony_memory.forget_food(pos)
 
                     # Wood memory
                     if tile.kind == "forest" and tile.wood > 0:
-                        self.remembered_wood.add((nx, ny))
-                    elif (nx, ny) in self.remembered_wood:
-                        self.remembered_wood.remove((nx, ny))
+                        self.remembered_wood.add(pos)
+                        world.colony_memory.remember_wood(pos)
+                    else:
+                        self.remembered_wood.discard(pos)
+                        world.colony_memory.forget_wood(pos)
 
                     # Water memory
                     if tile.kind == "water":
-                        self.remembered_water.add((nx, ny))
-                    elif (nx, ny) in self.remembered_water:
-                        self.remembered_water.remove((nx, ny))
+                        self.remembered_water.add(pos)
+                        world.colony_memory.remember_water(pos)
+                    else:
+                        self.remembered_water.discard(pos)
+                        world.colony_memory.forget_water(pos)
 
                     # Shelter memory
                     if tile.kind == "shelter":
-                        self.remembered_shelters.add((nx, ny))
-                    elif (nx, ny) in self.remembered_shelters:
-                        self.remembered_shelters.remove((nx, ny))
+                        self.remembered_shelters.add(pos)
+                        world.colony_memory.remember_shelter(pos)
+                    else:
+                        self.remembered_shelters.discard(pos)
+                        world.colony_memory.forget_shelter(pos)
 
     def choose_goal(self, world: World) -> Goal:
         goals = [

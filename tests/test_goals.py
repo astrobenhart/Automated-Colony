@@ -57,6 +57,23 @@ def test_thirsty_agent_seeks_remembered_water():
     assert agent.current_target == (4, 2)
 
 
+def test_personal_memory_takes_priority_over_colony_memory():
+    world = make_world()
+    world.tiles[2][4].kind = "water"
+    world.tiles[4][0].kind = "water"
+    agent = Agent("TestAgent", 0, 2, hunger=1, thirst=80, fatigue=1)
+    agent.remembered_water.add((4, 2))
+    world.colony_memory.remember_water((0, 4))
+    world.agents.append(agent)
+
+    action = agent.choose_action(world)
+    action.execute(agent, world)
+
+    assert agent.current_goal == "Drink"
+    assert isinstance(action, SeekWaterAction)
+    assert agent.current_target == (4, 2)
+
+
 def test_thirsty_agent_still_prioritizes_water_over_building():
     world = make_world()
     world.tiles[2][4].kind = "water"
