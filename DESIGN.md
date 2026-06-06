@@ -35,6 +35,7 @@ World generation should:
 - assign water, mountain, hill, forest, wetland, dry, plain, and grass terrain from simple natural rules
 - place food and wood based on terrain conditions
 - apply terrain and season based resource growth, caps, and gradual die-off
+- create rare visible environmental events such as drought and heavy rain
 - cycle simple seasons that influence terrain-based resource regrowth
 - tint terrain by season in the renderer, blending during the final day, without changing gameplay tile kinds
 - preserve existing simulation systems while preparing for biomes and environmental events

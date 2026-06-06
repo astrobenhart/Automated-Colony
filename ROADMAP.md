@@ -70,7 +70,7 @@ Features:
 - [x] Place mountains, hills, plains, wetlands, and dry areas naturally
 - [x] Add seasonal changes that affect food growth and water availability
 - [x] Add basic plant/resource regrowth based on biome conditions
-- [ ] Add environmental events such as drought, heavy rain, wildfire, or flood
+- [x] Add environmental events such as drought, heavy rain, wildfire, or flood
 - [ ] Add wildlife spawning based on biome suitability
 - [ ] Add world history tracking for major environmental events
 - [ ] Expose world-generation settings such as seed, size, water level, forest density, and climate harshness
@@ -84,6 +84,7 @@ Acceptance Criteria:
 - [x] Hills, plains, wetlands, and dry areas render and follow expected walkability/resource rules.
 - [x] Seasonal changes visibly affect resource growth.
 - [x] Terrain-based resource caps and gradual die-off create long-term ecological pressure.
+- [x] Drought and heavy rain events are logged, visible, temporary, and mildly affect resource ecology.
 - [ ] Agents must adapt to world conditions rather than only random resource placement.
 
 Notes:
@@ -96,7 +97,8 @@ Notes:
 - Season System v1 cycles Spring, Summer, Autumn, and Winter over 20-day seasons and changes terrain-based food/wood regrowth without removing water.
 - Seasonal terrain colors make Spring, Summer, Autumn, and Winter visually distinct without changing tile kinds, with final-day color blending into the next season.
 - Resource ecology now applies terrain and season based growth, caps, and gradual die-off in `src/resource_ecology.py`.
-- Environmental events, wildlife, and history tracking are still future v0.4 work.
+- Environmental Event v1 adds rare drought and heavy rain events in `src/environment_events.py`.
+- Wildfire, flood, wildlife, and history tracking are still future v0.4 work.
 
 ## v0.5 - Colony Roles and Production
 

@@ -14,6 +14,7 @@ from src.config import (
     SYMBOL_LABELS,
     FPS,
 )
+from src.environment_events import active_event_names, environmental_tile_color
 from src.resource_ecology import max_food, max_wood
 from src.seasons import seasonal_tile_color
 from src.agent import Agent
@@ -224,6 +225,7 @@ class PygameRenderer:
         y = self.draw_stat_row("Tick", self.world.tick, content_x, y, content_width, bottom_y)
         y = self.draw_stat_row("Speed", f"{sim_speed}/s", content_x, y, content_width, bottom_y)
         y = self.draw_stat_row("Camera", f"({self.camera_x}, {self.camera_y})", content_x, y, content_width, bottom_y)
+        y = self.draw_stat_row("Events", active_event_names(self.world.active_environment_events), content_x, y, content_width, bottom_y)
 
         y += self.panel_gap
         y = self.draw_section_header("Controls", content_x, y, content_width, bottom_y)
@@ -326,12 +328,13 @@ class PygameRenderer:
         self.screen.blit(surface, (text_x, y))
 
     def tile_color(self, kind: str):
-        return seasonal_tile_color(
+        season_color = seasonal_tile_color(
             kind,
             self.world.season,
             self.world.next_season,
             self.world.transition_progress,
         )
+        return environmental_tile_color(season_color, kind, self.world.active_environment_events)
 
     def resource_color(self, resource: str, amount: int, cap: int):
         base = COLORS[resource]

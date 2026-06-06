@@ -3,6 +3,11 @@ from src.config import (
     SEASON_MOISTURE_MODIFIERS,
     SEASON_WOOD_GROWTH_MODIFIERS,
 )
+from src.environment_events import (
+    food_dieoff_event_multiplier,
+    food_growth_event_multiplier,
+    wood_growth_event_multiplier,
+)
 from src.tile import Tile
 
 
@@ -73,7 +78,9 @@ def max_wood(tile: Tile | str) -> int:
     return WOOD_CAPS.get(_kind(tile), 0)
 
 
-def food_growth_chance(tile: Tile | str, season: str) -> float:
+def food_growth_chance(tile: Tile | str, season: str, active_events=None) -> float:
+    if active_events is None:
+        active_events = []
     kind = _kind(tile)
     if max_food(kind) == 0:
         return 0.0
@@ -81,20 +88,24 @@ def food_growth_chance(tile: Tile | str, season: str) -> float:
     base = FOOD_GROWTH_BASE.get(kind, 0.0)
     moisture_modifier = SEASON_MOISTURE_MODIFIERS.get(season, 1.0)
     season_modifier = SEASON_FOOD_GROWTH_MODIFIERS.get(season, 1.0)
-    return base * moisture_modifier * season_modifier
+    return base * moisture_modifier * season_modifier * food_growth_event_multiplier(kind, active_events)
 
 
-def wood_growth_chance(tile: Tile | str, season: str) -> float:
+def wood_growth_chance(tile: Tile | str, season: str, active_events=None) -> float:
+    if active_events is None:
+        active_events = []
     kind = _kind(tile)
     if max_wood(kind) == 0:
         return 0.0
 
     base = WOOD_GROWTH_BASE.get(kind, 0.0)
     season_modifier = SEASON_WOOD_GROWTH_MODIFIERS.get(season, 1.0)
-    return base * season_modifier
+    return base * season_modifier * wood_growth_event_multiplier(kind, active_events)
 
 
-def food_dieoff_chance(tile: Tile | str, season: str) -> float:
+def food_dieoff_chance(tile: Tile | str, season: str, active_events=None) -> float:
+    if active_events is None:
+        active_events = []
     kind = _kind(tile)
     if max_food(kind) == 0:
         return 0.0
@@ -103,7 +114,7 @@ def food_dieoff_chance(tile: Tile | str, season: str) -> float:
     season_modifier = SEASON_FOOD_DIEOFF_MODIFIERS.get(season, 1.0)
     if season == "Summer" and kind == "dry":
         season_modifier *= SUMMER_DRY_FOOD_DIEOFF_MULTIPLIER
-    return base * season_modifier
+    return base * season_modifier * food_dieoff_event_multiplier(kind, active_events)
 
 
 def wood_dieoff_chance(tile: Tile | str, season: str) -> float:
@@ -116,7 +127,9 @@ def wood_dieoff_chance(tile: Tile | str, season: str) -> float:
     return base * season_modifier
 
 
-def apply_resource_ecology(tile: Tile, season: str, rng) -> None:
+def apply_resource_ecology(tile: Tile, season: str, rng, active_events=None) -> None:
+    if active_events is None:
+        active_events = []
     food_cap = max_food(tile)
     wood_cap = max_wood(tile)
 
@@ -124,9 +137,9 @@ def apply_resource_ecology(tile: Tile, season: str, rng) -> None:
         tile.food = 0
     else:
         tile.food = min(tile.food, food_cap)
-        if tile.food > 0 and rng.random() < food_dieoff_chance(tile, season):
+        if tile.food > 0 and rng.random() < food_dieoff_chance(tile, season, active_events):
             tile.food -= 1
-        if tile.food < food_cap and rng.random() < food_growth_chance(tile, season):
+        if tile.food < food_cap and rng.random() < food_growth_chance(tile, season, active_events):
             tile.food += 1
 
     if wood_cap == 0:
@@ -135,7 +148,7 @@ def apply_resource_ecology(tile: Tile, season: str, rng) -> None:
         tile.wood = min(tile.wood, wood_cap)
         if tile.wood > 0 and rng.random() < wood_dieoff_chance(tile, season):
             tile.wood -= 1
-        if tile.wood < wood_cap and rng.random() < wood_growth_chance(tile, season):
+        if tile.wood < wood_cap and rng.random() < wood_growth_chance(tile, season, active_events):
             tile.wood += 1
 
 

@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from src.building_priorities import highest_priority, needed_shelters
 from src.colony_memory import ColonyMemory
 from src.colony_storage import ColonyStorage
+from src.environment_events import update_environment_events
 from src.seasons import (
     day_of_season,
     next_season_index,
@@ -31,6 +32,7 @@ class World:
     moisture_map: list[list[float]] = field(default_factory=list, repr=False)
     temperature_map: list[list[float]] = field(default_factory=list, repr=False)
     river_paths: list[list[tuple[int, int]]] = field(default_factory=list, repr=False)
+    active_environment_events: list = field(default_factory=list)
 
     day: int = 1
     tick: int = 0
@@ -112,6 +114,7 @@ class World:
         if should_advance_season(self.day):
             self.advance_season()
 
+        update_environment_events(self, random)
         self.regrow_resources()
         self.log(f"Day {self.day} begins.")
 
@@ -122,7 +125,7 @@ class World:
     def regrow_resources(self):
         for row in self.tiles:
             for tile in row:
-                apply_resource_ecology(tile, self.season, random)
+                apply_resource_ecology(tile, self.season, random, self.active_environment_events)
 
     def living_agents(self):
         return [agent for agent in self.agents if agent.alive]

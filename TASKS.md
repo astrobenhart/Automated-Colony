@@ -67,6 +67,38 @@ Notes:
 
 ## Completed
 
+### TASK-25
+Title: Add Basic Environmental Events
+
+Owner: Gameplay/Worldgen Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #15 by adding rare, visible, temporary drought and heavy rain events.
+
+Expected Output:
+Environmental events that are stored on the world, logged, visible on the map, and mildly affect resource ecology without causing catastrophic collapse.
+
+Acceptance Criteria:
+- Drought and heavy rain can start and expire.
+- Event start/end messages are logged.
+- Active events are stored on the world.
+- Active events are visible or inspectable in the renderer.
+- Events mildly influence resource growth or die-off.
+- Permanent water and rivers remain water.
+- Existing tests pass.
+
+Dependencies:
+- TASK-19
+- TASK-23
+
+Notes:
+- Wildfire and flood remain future work.
+- No wildlife, farming, roles, reproduction, particles, complex weather, or destructive water changes were added.
+
+---
+
 ### TASK-23
 Title: Add Biome Resource Ecology
 
