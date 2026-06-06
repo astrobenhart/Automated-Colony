@@ -3,72 +3,7 @@
 ## Active
 
 
-### TASK-2
-Title: Refactor Single-File Prototype
 
-Owner: Architect Agent
-
-Status: Pending Verification
-
-Description:
-Split the single-file Pygame prototype `automated_colony_v0_1.py` into a modular package structure under `src/` to support future development.
-
-Expected Output:
-A clean, modularized structure under `src/` where imports are clear, constants live in a config file, and simulation code is separate from rendering.
-
-Target Structure:
-```text
-src/
-  main.py
-  config.py
-  tile.py
-  world.py
-  agent.py
-  actions.py
-  renderer.py
-```
-
-Acceptance Criteria:
-- The game launches and runs exactly as before.
-- No gameplay or behavior changes are introduced in this step.
-- All import statements are clean and resolve correctly without circular dependencies.
-- Magic numbers and simulation constants are moved to `src/config.py`.
-- The rendering system does not contain or control simulation update logic.
-
-Dependencies:
-- TASK-1
-
-Notes:
-- This is a pure refactoring task. Do not add new gameplay features or assets.
-
----
-
-### TASK-4
-Title: Add Agent Memory
-
-Owner: Gameplay Agent
-
-Status: Pending Verification
-
-Description:
-Give agents a memory structure that allows them to scan nearby tiles (within their vision range) and remember resource locations (food, wood, water, shelters) for future use.
-
-Expected Output:
-Memory attributes added to the agent model with scan and update logic.
-
-Acceptance Criteria:
-- Agents scan surroundings at regular intervals or during updates.
-- Memory tracks coordinate locations of visible water, food, wood, and shelters.
-- Depleted or invalid resource memories are removed when an agent arrives and sees the resource is gone.
-- Memory data is inspectable/accessible for future display in the UI.
-
-Dependencies:
-- TASK-2
-
-Notes:
-- Agents should not have omniscient knowledge of the entire map; they must explore to populate their memories.
-
----
 
 ## Backlog
 
@@ -188,6 +123,100 @@ Notes:
 ---
 
 ## Completed
+
+### TASK-3
+Title: Add BFS Pathfinding
+
+Owner: Gameplay Agent
+
+Status: Backlog
+
+Description:
+Implement a generic Breadth-First Search (BFS) pathfinding system that agents can use to find the shortest path to target tiles.
+
+Expected Output:
+A dedicated pathfinding utility module that computes valid coordinate paths avoiding obstacles.
+
+Acceptance Criteria:
+- A `find_path(world, start, destination)` function is created in a separate system module (e.g., `src/systems/pathfinding.py` or similar).
+- Computed paths avoid water and mountain tiles.
+- The pathfinder returns an empty path if the destination is unreachable.
+- Path selection handles out-of-bounds inputs safely.
+
+Dependencies:
+- TASK-2
+
+Notes:
+- Agents should not run the pathfinding code internally; they should query the system.
+
+---
+
+### TASK-2
+Title: Refactor Single-File Prototype
+
+Owner: Architect Agent
+
+Status: Pending Verification
+
+Description:
+Split the single-file Pygame prototype `automated_colony_v0_1.py` into a modular package structure under `src/` to support future development.
+
+Expected Output:
+A clean, modularized structure under `src/` where imports are clear, constants live in a config file, and simulation code is separate from rendering.
+
+Target Structure:
+```text
+src/
+  main.py
+  config.py
+  tile.py
+  world.py
+  agent.py
+  actions.py
+  renderer.py
+```
+
+Acceptance Criteria:
+- The game launches and runs exactly as before.
+- No gameplay or behavior changes are introduced in this step.
+- All import statements are clean and resolve correctly without circular dependencies.
+- Magic numbers and simulation constants are moved to `src/config.py`.
+- The rendering system does not contain or control simulation update logic.
+
+Dependencies:
+- TASK-1
+
+Notes:
+- This is a pure refactoring task. Do not add new gameplay features or assets.
+
+---
+
+### TASK-4
+Title: Add Agent Memory
+
+Owner: Gameplay Agent
+
+Status: Pending Verification
+
+Description:
+Give agents a memory structure that allows them to scan nearby tiles (within their vision range) and remember resource locations (food, wood, water, shelters) for future use.
+
+Expected Output:
+Memory attributes added to the agent model with scan and update logic.
+
+Acceptance Criteria:
+- Agents scan surroundings at regular intervals or during updates.
+- Memory tracks coordinate locations of visible water, food, wood, and shelters.
+- Depleted or invalid resource memories are removed when an agent arrives and sees the resource is gone.
+- Memory data is inspectable/accessible for future display in the UI.
+
+Dependencies:
+- TASK-2
+
+Notes:
+- Agents should not have omniscient knowledge of the entire map; they must explore to populate their memories.
+
+---
 
 ### TASK-1
 Title: Create Project Documents
