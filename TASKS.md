@@ -56,6 +56,36 @@ Dependencies:
 
 ---
 
+### TASK-12
+Title: Design Staged Population Growth
+
+Owner: Planner Agent
+
+Status: Backlog
+
+Description:
+Design a staged path for population recovery and future reproduction, starting with migration before lifecycle and family systems.
+
+Expected Output:
+A design issue and implementation plan for migration, lifecycle, family relationships, and lineage/history integration.
+
+Acceptance Criteria:
+- Phase 1 migration/replenishment rules are defined.
+- Later lifecycle, family, and lineage phases are scoped separately.
+- Dependencies on food surplus, shelter capacity, storage or settlement center, and carrying capacity are documented.
+- The design avoids scripted romance and hardcoded story events.
+
+Dependencies:
+- TASK-5
+- TASK-8
+- TASK-9
+- TASK-11
+
+Notes:
+- This is a planning task only; do not implement reproduction until prerequisites are stable.
+
+---
+
 ## Completed
 
 ### TASK-9

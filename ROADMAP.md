@@ -83,26 +83,35 @@ Goal: Give the colony more structure and long-term survival tools.
 Features:
 - [ ] Roles
 - [ ] Farming
-- [ ] Migration or population replenishment
+- [ ] Phase 1 population replenishment through migration
+- [ ] Population cap or carrying capacity
 - [ ] Expanded building priorities
 - [ ] Job assignment or task claiming
+
+Notes:
+- Population growth should start with migration before biological reproduction.
+- Migration should depend on stable survival, food surplus, shelter capacity, and population cap.
+- Full reproduction should wait until lifecycle and relationship systems exist.
 
 ## v0.6 - Social Simulation
 
 Goal: Add relationships and social structure.
 
 Features:
+- [ ] Age and lifecycle states
 - [ ] Families
 - [ ] Friendships and rivalries
 - [ ] Leadership
 - [ ] Reputation
 - [ ] Group decisions
+- [ ] Pair bonds and family relationships without scripted romance
 
 ## v0.7 - History and Emergence
 
 Goal: Make the world generate stories over time.
 
 Features:
+- [ ] Lineage and ancestry tracking
 - [ ] Named settlements
 - [ ] Major historical events
 - [ ] Timeline view
