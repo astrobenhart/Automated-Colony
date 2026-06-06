@@ -8,6 +8,31 @@ No active task.
 
 ## Backlog
 
+### TASK-13
+Title: Add Rule-Based World Generation
+
+Owner: Architect Agent
+
+Status: Backlog
+
+Description:
+Replace purely random terrain with simple rule-based world generation using natural terrain patterns.
+
+Expected Output:
+World generation that produces more believable terrain and resource placement while preserving simulation performance.
+
+Acceptance Criteria:
+- Terrain is less uniformly random.
+- Water, forests, mountains, and food placement follow readable rules.
+- Tests cover deterministic generation with fixed seeds.
+
+Dependencies:
+- TASK-3
+- TASK-5
+- TASK-9
+
+---
+
 ### TASK-12
 Title: Design Staged Population Growth
 
@@ -39,6 +64,30 @@ Notes:
 ---
 
 ## Completed
+
+### TASK-14
+Title: Prepare v0.3.0 Milestone
+
+Owner: Release Agent
+
+Status: Completed
+
+Description:
+Close out the v0.3 colony foundation milestone with documentation, verification, and release notes.
+
+Expected Output:
+Updated roadmap, task tracker, changelog, README, and release recommendation.
+
+Acceptance Criteria:
+- `python -m pytest` passes.
+- `python -m src.main` launches.
+- v0.3 completed work is documented.
+- Next milestone work is clear.
+
+Dependencies:
+- TASK-11
+
+---
 
 ### TASK-11
 Title: Add Simple Storage

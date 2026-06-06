@@ -1,49 +1,78 @@
 # Automated Colony Simulation
 
-A world simulation where autonomous agents explore, gather resources, build shelters, cooperate, and survive in an emergent environment. The player does not directly command units, but instead generates the world and observes the emergent stories and history that unfold.
+An automated Pygame colony simulation where autonomous villagers explore, remember resources, share knowledge, gather supplies, build shelters, and try to survive without direct player commands.
 
-*Note: Built as an automated colony simulation to serve as a distracting screensaver and showcase agentic AI programming.*
+The project is designed as an emergent colony screensaver and as a playground for agentic simulation systems.
 
-## Current Features (v0.1)
-- **Random World Generation**: Dynamic map generation featuring grass, forest, water, mountains, and shelters.
-- **Autonomous Villagers**: Agents with individual needs (hunger, thirst, fatigue) that make survival-based decisions.
-- **Resource Gathering**: Agents gather food and wood from the environment to survive and build.
-- **Shelter Building & Sleep**: Villagers collect wood to build shelters and sleep to recover fatigue.
-- **Event Log**: Live text updates logging meaningful world events.
-- **Pygame Renderer**: Custom visual rendering utilizing ASCII-like symbols (`@`, `f`, `w`) and interactive side panel.
+## Current Features
+
+- Modular Python package under `src/`
+- Random terrain generation with grass, forest, water, mountain, and shelter tiles
+- Autonomous villagers with hunger, thirst, fatigue, carried food, and carried wood
+- Goal-based behavior for drinking, eating, sleeping, gathering, building, depositing, and exploring
+- BFS pathfinding with occupied-tile avoidance
+- Stuck recovery when paths collide or become blocked
+- Personal agent memory for visible food, water, wood, and shelters
+- Shared colony memory so discoveries can benefit other villagers
+- Shelter capacity and building-priority logic
+- Abstract colony storage for shared food and wood
+- Selected-agent and selected-tile inspection UI
+- Readable right-side status panel with simulation, controls, colony, selection, and event sections
+- Automated tests for pathfinding, memory, goals, building priorities, storage, movement recovery, world logic, and renderer selection helpers
 
 ## Controls
-- `SPACE` - Pause / Unpause simulation
-- `UP` - Increase simulation speed (ticks per second)
-- `DOWN` - Decrease simulation speed (ticks per second)
-- `R` - Restart simulation (regenerates world and respawns agents)
-- `ESC` - Quit simulation
+
+- `SPACE` - Pause or unpause
+- `UP` - Increase simulation speed
+- `DOWN` - Decrease simulation speed
+- `R` - Restart the world
+- `ESC` - Quit
+- Left click an agent - Inspect that villager
+- Left click an empty tile - Inspect that tile
 
 ## Installation
-Requires Python 3.x and Pygame.
 
-1. Install Pygame:
-   ```bash
-   pip install pygame
-   ```
+Requires Python 3.10+ and Pygame.
 
-## Running
-Run the single-file prototype:
 ```bash
-python automated_colony_v0_1.py
+pip install pygame pytest
 ```
 
-## Project Structure
-- [automated_colony_v0_1.py](file:///c:/Users/astro/Documents/Projects/Automated-Colony/automated_colony_v0_1.py): The single-file prototype simulation and renderer.
-- [DESIGN.md](file:///c:/Users/astro/Documents/Projects/Automated-Colony/DESIGN.md): The core design vision, priorities, and survival rules.
-- [ROADMAP.md](file:///c:/Users/astro/Documents/Projects/Automated-Colony/ROADMAP.md): Overview of developmental phases from v0.1 to v0.5.
-- [TASKS.md](file:///c:/Users/astro/Documents/Projects/Automated-Colony/TASKS.md): The tracking sheet for active tasks and the backlog.
-- [AGENTS/](file:///c:/Users/astro/Documents/Projects/Automated-Colony/AGENTS): Guideline markdown files defining specialist agent responsibilities.
+## Running
 
-## Future Plans (v0.2 - Intelligent Survival)
-The next milestone focuses on enhancing agent decision-making:
-- Refactoring the single-file prototype into modular Python files (`src/`).
-- Introducing BFS pathfinding to replace random-walk movement.
-- Implementing agent memory so villagers remember resource locations.
-- Introducing utility-scored goal-based behavior.
-- Adding interactive agent selection to inspect individual needs, inventory, and active goals.
+Run the current modular simulation:
+
+```bash
+python -m src.main
+```
+
+Run the automated test suite:
+
+```bash
+python -m pytest
+```
+
+The original single-file prototype is still present as `automated_colony_v0_1.py` for historical reference.
+
+## Project Structure
+
+- `src/main.py` - Pygame application loop
+- `src/world.py` - World state, ticking, terrain, agents, shared systems
+- `src/agent.py` - Agent state, needs, memory scanning, goal selection
+- `src/actions.py` - Low-level executable actions
+- `src/goals.py` - High-level goal selection layer
+- `src/pathfinding.py` - BFS pathfinding
+- `src/colony_memory.py` - Shared resource knowledge
+- `src/colony_storage.py` - Abstract shared food and wood storage
+- `src/building_priorities.py` - Construction priority rules
+- `src/renderer.py` - Pygame rendering and inspection UI
+- `tests/` - Pytest coverage for core systems
+- `ROADMAP.md` - Milestone roadmap
+- `TASKS.md` - Task tracker
+- `CHANGELOG.md` - Release notes
+
+## Current Milestone
+
+v0.3.0 completes the colony foundation: villagers can use personal and shared knowledge, recover from blocked movement, coordinate around shelter needs, and use simple shared storage.
+
+Next work is expected to focus on v0.4 world generation and longer-term colony systems.

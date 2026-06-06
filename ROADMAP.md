@@ -45,6 +45,7 @@ Features:
 - [x] Verify shared knowledge is written and read while preserving scarcity
 - [x] Improve building priorities
 - [x] Add simple storage
+- [x] Add movement stuck recovery for path collisions
 
 Notes:
 - Shared colony memory is implemented in `src/colony_memory.py`.
@@ -54,6 +55,7 @@ Notes:
 - Shelter construction and construction wood gathering are driven by the current building priority.
 - Abstract colony storage is implemented in `src/colony_storage.py`.
 - Villagers can deposit extra food/wood and eat from stored food.
+- Pathfinding can avoid occupied tiles and agents clear blocked paths after repeated stuck ticks.
 
 ## v0.4 - Smarter World
 
@@ -85,6 +87,8 @@ Acceptance Criteria:
 Goal: Give the colony more structure and long-term survival tools.
 
 Features:
+- [ ] Physical storage or stockpile locations
+- [ ] Hauling or task claiming for shared resources
 - [ ] Roles
 - [ ] Farming
 - [ ] Phase 1 population replenishment through migration
