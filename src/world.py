@@ -1,9 +1,8 @@
 import random
-import math
 from dataclasses import dataclass, field
 
+from src.building_priorities import highest_priority, needed_shelters
 from src.colony_memory import ColonyMemory
-from src.config import SHELTER_CAPACITY
 from src.tile import Tile
 from src.agent import Agent
 
@@ -141,13 +140,27 @@ class World:
         )
 
     def needed_shelters(self):
-        living_count = len(self.living_agents())
-        if living_count == 0:
-            return 0
-        return math.ceil(living_count / SHELTER_CAPACITY)
+        return needed_shelters(self)
 
     def needs_more_shelters(self):
-        return self.count_tiles("shelter") < self.needed_shelters()
+        return self.building_priority() is not None
+
+    def building_priority(self):
+        return highest_priority(self)
+
+    def highest_building_priority(self):
+        priority = self.building_priority()
+        if priority is None:
+            return None
+        return priority.building_type
+
+    def should_gather_wood_for_construction(self, agent):
+        from src.building_priorities import should_gather_wood_for_construction
+        return should_gather_wood_for_construction(agent, self)
+
+    def should_build_shelter(self, agent):
+        from src.building_priorities import should_build_shelter
+        return should_build_shelter(agent, self)
 
     def total_food_on_map(self):
         return sum(tile.food for row in self.tiles for tile in row)

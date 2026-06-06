@@ -72,14 +72,15 @@ class GatherWoodAction(Action):
     name = "Gathering wood"
 
     def can_do(self, agent: Agent, world: World) -> bool:
-        return world.tile_at(agent.x, agent.y).wood > 0
+        return (
+            world.should_gather_wood_for_construction(agent)
+            and world.tile_at(agent.x, agent.y).wood > 0
+        )
 
     def score(self, agent: Agent, world: World) -> int:
-        if not world.needs_more_shelters():
-            return 1
-        if agent.wood < 3:
+        if world.should_gather_wood_for_construction(agent):
             return 35
-        return 8
+        return 0
 
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)
@@ -94,10 +95,10 @@ class BuildShelterAction(Action):
 
     def can_do(self, agent: Agent, world: World) -> bool:
         tile = world.tile_at(agent.x, agent.y)
-        return agent.wood >= 3 and tile.kind == "grass" and world.needs_more_shelters()
+        return tile.kind == "grass" and world.should_build_shelter(agent)
 
     def score(self, agent: Agent, world: World) -> int:
-        if world.needs_more_shelters():
+        if world.should_build_shelter(agent):
             return 80
         return 0
 
@@ -245,7 +246,7 @@ class SeekWoodAction(Action):
     name = "Seeking wood"
 
     def can_do(self, agent: Agent, world: World) -> bool:
-        if agent.wood >= 3:
+        if not world.should_gather_wood_for_construction(agent):
             return False
         memory = _shared_memory(agent.remembered_wood, world.colony_memory.known_wood)
         if not memory:

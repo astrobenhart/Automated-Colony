@@ -94,10 +94,10 @@ class GatherWoodGoal(Goal):
     )
 
     def can_do(self, agent: Agent, world: World) -> bool:
-        return world.needs_more_shelters() and super().can_do(agent, world)
+        return world.should_gather_wood_for_construction(agent) and super().can_do(agent, world)
 
     def score(self, agent: Agent, world: World) -> int:
-        if not world.needs_more_shelters():
+        if not world.should_gather_wood_for_construction(agent):
             return 0
         return super().score(agent, world)
 
@@ -109,10 +109,10 @@ class BuildShelterGoal(Goal):
     )
 
     def can_do(self, agent: Agent, world: World) -> bool:
-        return world.needs_more_shelters() and super().can_do(agent, world)
+        return world.should_build_shelter(agent) and super().can_do(agent, world)
 
     def score(self, agent: Agent, world: World) -> int:
-        if not world.needs_more_shelters():
+        if not world.should_build_shelter(agent):
             return 0
         return super().score(agent, world)
 

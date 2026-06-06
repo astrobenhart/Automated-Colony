@@ -8,30 +8,6 @@ No active task.
 
 ## Backlog
 
-### TASK-10
-Title: Improve Building Priorities
-
-Owner: Gameplay Agent
-
-Status: Backlog
-
-Description:
-Refine how villagers decide what to build and when, building on shelter-capacity logic without adding a large construction system.
-
-Expected Output:
-Small goal/action scoring refinements for construction priorities.
-
-Acceptance Criteria:
-- Shelter construction remains bounded by colony needs.
-- Building-related work does not dominate survival goals.
-- Tests cover any changed construction priority rules.
-
-Dependencies:
-- TASK-8
-- TASK-9
-
----
-
 ### TASK-11
 Title: Add Simple Storage
 
@@ -87,6 +63,35 @@ Notes:
 ---
 
 ## Completed
+
+### TASK-10
+Title: Improve Building Priorities
+
+Owner: Gameplay Agent
+
+Status: Completed
+
+Description:
+Refine how villagers decide what to build and when, building on shelter-capacity logic without adding a large construction system.
+
+Expected Output:
+Small goal/action scoring refinements for construction priorities.
+
+Acceptance Criteria:
+- Shelter construction remains bounded by colony needs.
+- Building-related work does not dominate survival goals.
+- Tests cover changed construction priority rules.
+- The priority system is ready for future building types.
+
+Dependencies:
+- TASK-8
+- TASK-9
+
+Notes:
+- Implemented in `src/building_priorities.py`.
+- Shelter remains the only buildable structure for now.
+
+---
 
 ### TASK-9
 Title: Add Shared Colony Memory

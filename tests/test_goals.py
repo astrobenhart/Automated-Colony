@@ -224,6 +224,27 @@ def test_gather_wood_goal_deprioritized_when_shelter_capacity_met():
     assert not isinstance(action, GatherWoodAction)
 
 
+def test_gather_wood_goal_valid_only_when_construction_needs_wood():
+    world = make_world()
+    world.tiles[2][2].kind = "forest"
+    world.tiles[2][2].wood = 2
+    agent = Agent("TestAgent", 2, 2)
+    world.agents.append(agent)
+
+    goal = GatherWoodGoal()
+
+    assert world.needs_more_shelters()
+    assert world.should_gather_wood_for_construction(agent)
+    assert goal.can_do(agent, world)
+    assert goal.score(agent, world) == 35
+
+    agent.wood = 3
+
+    assert not world.should_gather_wood_for_construction(agent)
+    assert not goal.can_do(agent, world)
+    assert goal.score(agent, world) == 0
+
+
 def test_unavailable_survival_goal_does_not_block_building():
     world = make_world()
     agent = Agent("TestAgent", 2, 2, hunger=1, thirst=30, fatigue=1, wood=3)
