@@ -7,7 +7,7 @@ The project is designed as an emergent colony screensaver and as a playground fo
 ## Current Features
 
 - Modular Python package under `src/`
-- Rule-based terrain generation with grass, forest, water, mountain, and shelter tiles
+- Rule-based terrain generation with grass, forest, plain, hill, wetland, dry, water, mountain, and shelter tiles
 - Larger explorable world with a camera-controlled map viewport
 - Autonomous villagers with hunger, thirst, fatigue, carried food, and carried wood
 - Goal-based behavior for drinking, eating, sleeping, gathering, building, depositing, and exploring

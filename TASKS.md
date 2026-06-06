@@ -40,6 +40,62 @@ Notes:
 
 ## Completed
 
+### TASK-18
+Title: Add Terrain Legend UI
+
+Owner: Renderer Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #8 by adding a compact terrain and symbol legend to the right-side panel.
+
+Expected Output:
+A readable in-game legend with terrain color swatches and basic symbol explanations.
+
+Acceptance Criteria:
+- Current terrain kinds have labels.
+- Current terrain kinds have colors.
+- The right panel renders a compact legend without changing simulation behavior.
+- Tests cover terrain label/color coverage.
+
+Dependencies:
+- TASK-17
+
+Notes:
+- This is a UI-only change; no world generation or agent behavior was changed.
+
+---
+
+### TASK-17
+Title: Add Natural Terrain Variety
+
+Owner: Architect Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #7 by placing mountains, hills, plains, wetlands, and dry areas naturally using elevation, moisture, and temperature.
+
+Expected Output:
+More varied rule-based terrain that renders correctly and keeps existing movement, resources, and survival behavior compatible.
+
+Acceptance Criteria:
+- Generated worlds include hills, plains, wetlands, and dry areas under suitable conditions.
+- New terrain kinds have renderer colors.
+- Water and mountains remain unwalkable; new land terrain remains walkable.
+- Resource placement reflects terrain type.
+- Existing pathfinding, memory, goals, storage, and renderer tests pass.
+
+Dependencies:
+- TASK-13
+- TASK-16
+
+Notes:
+- No movement costs, farming, minerals, wildlife, or seasonal systems were added.
+
+---
+
 ### TASK-16
 Title: Add Simple Rivers
 

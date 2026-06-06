@@ -1,5 +1,6 @@
 from src.world import World
-from src.config import HEIGHT, WIDTH
+from src.config import COLORS, HEIGHT, TERRAIN_LABELS, WIDTH
+from src.tile import Tile
 
 
 def layout_signature(world: World):
@@ -69,6 +70,40 @@ def test_core_terrain_types_are_generated():
     assert {"water", "mountain", "forest", "grass"}.issubset(kinds)
 
 
+def test_natural_terrain_variety_is_generated():
+    world = make_generated_world(seed=22, width=WIDTH, height=HEIGHT)
+    kinds = {tile.kind for row in world.tiles for tile in row}
+
+    assert {"hill", "plain", "wetland", "dry"}.issubset(kinds)
+
+
+def test_all_generated_terrain_kinds_have_colors():
+    world = make_generated_world(seed=23, width=WIDTH, height=HEIGHT)
+    kinds = {tile.kind for row in world.tiles for tile in row}
+
+    assert kinds.issubset(COLORS.keys())
+
+
+def test_all_generated_terrain_kinds_have_labels():
+    world = make_generated_world(seed=23, width=WIDTH, height=HEIGHT)
+    kinds = {tile.kind for row in world.tiles for tile in row}
+
+    assert kinds.issubset(TERRAIN_LABELS.keys())
+    assert all(TERRAIN_LABELS[kind] for kind in kinds)
+
+
+def test_configured_terrain_labels_have_colors():
+    assert set(TERRAIN_LABELS).issubset(COLORS.keys())
+
+
+def test_new_terrain_walkability_rules():
+    walkable = ["hill", "plain", "wetland", "dry", "forest", "grass", "shelter"]
+
+    assert all(Tile(kind).walkable for kind in walkable)
+    assert not Tile("water").walkable
+    assert not Tile("mountain").walkable
+
+
 def test_forest_tiles_tend_to_have_wood():
     world = make_generated_world(seed=4)
     forests = [tile for row in world.tiles for tile in row if tile.kind == "forest"]
@@ -76,6 +111,24 @@ def test_forest_tiles_tend_to_have_wood():
 
     assert forests
     assert len(forests_with_wood) / len(forests) >= 0.9
+
+
+def test_wetlands_can_have_food():
+    world = make_generated_world(seed=24, width=WIDTH, height=HEIGHT)
+    wetlands = [tile for row in world.tiles for tile in row if tile.kind == "wetland"]
+    wetlands_with_food = [tile for tile in wetlands if tile.food > 0]
+
+    assert wetlands
+    assert wetlands_with_food
+
+
+def test_dry_areas_are_food_sparse():
+    world = make_generated_world(seed=25, width=WIDTH, height=HEIGHT)
+    dry_tiles = [tile for row in world.tiles for tile in row if tile.kind == "dry"]
+    dry_with_food = [tile for tile in dry_tiles if tile.food > 0]
+
+    assert dry_tiles
+    assert len(dry_with_food) / len(dry_tiles) <= 0.05
 
 
 def test_water_and_mountains_remain_unwalkable():
@@ -100,6 +153,14 @@ def test_water_and_mountains_do_not_have_resources():
             if tile.kind in ("water", "mountain"):
                 assert tile.food == 0
                 assert tile.wood == 0
+
+
+def test_mountains_remain_barren():
+    world = make_generated_world(seed=26, width=WIDTH, height=HEIGHT)
+    mountains = [tile for row in world.tiles for tile in row if tile.kind == "mountain"]
+
+    assert mountains
+    assert all(tile.food == 0 and tile.wood == 0 for tile in mountains)
 
 
 def test_generated_worlds_contain_river_paths():

@@ -31,6 +31,10 @@ SIM_TICKS_PER_SECOND = 8
 COLORS = {
     "grass": (75, 145, 75),
     "forest": (25, 95, 35),
+    "plain": (104, 156, 82),
+    "hill": (126, 136, 86),
+    "wetland": (55, 118, 104),
+    "dry": (150, 132, 82),
     "water": (45, 95, 170),
     "mountain": (110, 110, 110),
     "shelter": (145, 95, 45),
@@ -45,4 +49,22 @@ COLORS = {
     "warning": (240, 180, 80),
     "selection": (255, 235, 90),
     "selection_agent": (120, 215, 255),
+}
+
+TERRAIN_LABELS = {
+    "water": "Water",
+    "forest": "Forest",
+    "mountain": "Mountain",
+    "hill": "Hill",
+    "plain": "Plain",
+    "wetland": "Wetland",
+    "dry": "Dry",
+    "grass": "Grass",
+    "shelter": "Shelter",
+}
+
+SYMBOL_LABELS = {
+    "@": "Villager",
+    "f": "Food",
+    "w": "Wood",
 }

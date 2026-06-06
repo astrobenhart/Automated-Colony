@@ -117,8 +117,20 @@ def _terrain_for(elevation: float, moisture: float, temperature: float) -> str:
     if elevation > 0.74:
         return "mountain"
 
-    if 0.30 <= elevation <= 0.72 and moisture > 0.55 and temperature > 0.25:
+    if elevation > 0.64:
+        return "hill"
+
+    if elevation < 0.38 and moisture > 0.62:
+        return "wetland"
+
+    if moisture < 0.28 or (temperature > 0.82 and moisture < 0.42):
+        return "dry"
+
+    if 0.34 <= elevation <= 0.64 and moisture > 0.56 and temperature > 0.25:
         return "forest"
+
+    if 0.30 <= elevation <= 0.62 and 0.28 <= moisture <= 0.62 and temperature > 0.22:
+        return "plain"
 
     return "grass"
 
@@ -267,12 +279,27 @@ def _place_resources(tile: Tile, moisture: float, temperature: float, rng: rando
         if moisture > 0.55 and 0.25 < temperature < 0.9 and rng.random() < 0.28:
             tile.food = rng.randint(1, 2)
 
-    elif tile.kind == "grass":
+    elif tile.kind == "wetland":
+        if rng.random() < 0.24:
+            tile.food = rng.randint(1, 3)
+
+    elif tile.kind in ("plain", "grass"):
         fertile = moisture > 0.45 and 0.25 < temperature < 0.85
-        food_chance = 0.12 if fertile else 0.03
+        food_chance = 0.10 if tile.kind == "plain" and fertile else 0.06 if fertile else 0.02
 
         if rng.random() < food_chance:
             tile.food = rng.randint(1, 3)
+
+    elif tile.kind == "hill":
+        if moisture > 0.48 and temperature > 0.25 and rng.random() < 0.05:
+            tile.food = 1
+
+        if moisture > 0.58 and rng.random() < 0.12:
+            tile.wood = rng.randint(1, 2)
+
+    elif tile.kind == "dry":
+        if rng.random() < 0.01:
+            tile.food = 1
 
 
 def _clamp(value: float) -> float:

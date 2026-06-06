@@ -10,6 +10,8 @@ from src.config import (
     CAMERA_STEP,
     DEBUG_DRAW_GRID,
     COLORS,
+    TERRAIN_LABELS,
+    SYMBOL_LABELS,
     FPS,
 )
 from src.agent import Agent
@@ -237,6 +239,9 @@ class PygameRenderer:
         y = self.draw_selection_details(content_x, y, content_width, bottom_y)
 
         y += self.panel_gap
+        y = self.draw_legend(content_x, y, content_width, bottom_y)
+
+        y += self.panel_gap
         y = self.draw_section_header("Recent Events", content_x, y, content_width, bottom_y)
         line_height = self.font.get_height() + 3
         max_events = max(0, (bottom_y - y) // line_height)
@@ -281,6 +286,40 @@ class PygameRenderer:
             y = self.draw_stat_row(label, value, x, y, width, bottom_y, color=color)
 
         return y
+
+    def draw_legend(self, x: int, y: int, width: int, bottom_y: int):
+        y = self.draw_section_header("Legend", x, y, width, bottom_y)
+        column_width = width // 2
+        row_height = self.font.get_height() + 3
+        items = list(TERRAIN_LABELS.items())
+
+        for index in range(0, len(items), 2):
+            if y + row_height > bottom_y:
+                return y
+
+            for column, (kind, label) in enumerate(items[index:index + 2]):
+                item_x = x + column * column_width
+                self.draw_legend_item(kind, label, item_x, y, column_width - 8)
+
+            y += row_height
+
+        symbol_text = "  ".join(f"{symbol} {label}" for symbol, label in SYMBOL_LABELS.items())
+        y = self.draw_text_line(symbol_text, x, y, width, bottom_y, color=COLORS["muted"])
+        return y
+
+    def draw_legend_item(self, kind: str, label: str, x: int, y: int, width: int):
+        swatch_size = 10
+        swatch_y = y + max(0, (self.font.get_height() - swatch_size) // 2)
+        pygame.draw.rect(
+            self.screen,
+            COLORS[kind],
+            pygame.Rect(x, swatch_y, swatch_size, swatch_size),
+        )
+
+        text_x = x + swatch_size + 6
+        text_width = max(0, width - swatch_size - 6)
+        surface = self.font.render(self.fit_text(label, self.font, text_width), True, COLORS["text"])
+        self.screen.blit(surface, (text_x, y))
 
     def draw_section_header(self, text: str, x: int, y: int, width: int, bottom_y: int):
         y = self.draw_text_line(text, x, y, width, bottom_y, self.big_font)

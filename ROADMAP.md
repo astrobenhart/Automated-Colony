@@ -67,7 +67,7 @@ Features:
 - [x] Add larger generated maps with camera panning
 - [x] Create rivers that flow from high elevation to low elevation
 - [x] Place forests based on moisture and temperature
-- [ ] Place mountains, hills, plains, wetlands, and dry areas naturally
+- [x] Place mountains, hills, plains, wetlands, and dry areas naturally
 - [ ] Add seasonal changes that affect food growth and water availability
 - [ ] Add basic plant/resource regrowth based on biome conditions
 - [ ] Add environmental events such as drought, heavy rain, wildfire, or flood
@@ -81,6 +81,7 @@ Acceptance Criteria:
 - [x] Forests appear more often in wet moderate regions.
 - [x] Food and wood availability depend on terrain conditions.
 - [x] Larger worlds can be inspected without covering the right-side panel.
+- [x] Hills, plains, wetlands, and dry areas render and follow expected walkability/resource rules.
 - [ ] Seasonal changes visibly affect resource growth.
 - [ ] Agents must adapt to world conditions rather than only random resource placement.
 
@@ -89,6 +90,7 @@ Notes:
 - Worlds now generate deterministic elevation, moisture, and temperature maps when given a seed.
 - Default worlds are larger than the on-screen viewport and can be inspected with WASD camera panning.
 - Phase 2 river generation traces simple downhill paths and converts them to existing unwalkable water tiles.
+- Issue #7 adds `hill`, `plain`, `wetland`, and `dry` terrain using the existing elevation, moisture, and temperature maps.
 - Existing tile kinds remain compatible: `water`, `mountain`, `forest`, and `grass`.
 - Seasons, environmental events, wildlife, and history tracking are still future v0.4 work.
 

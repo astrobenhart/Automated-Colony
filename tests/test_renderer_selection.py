@@ -8,7 +8,9 @@ from src.agent import Agent
 from src.config import (
     COLORS,
     DEBUG_DRAW_GRID,
+    SYMBOL_LABELS,
     TILE_SIZE,
+    TERRAIN_LABELS,
     VIEWPORT_HEIGHT,
     VIEWPORT_WIDTH,
 )
@@ -197,3 +199,13 @@ def test_selection_highlight_aligns_with_camera_offset():
 
     highlight_pixel = renderer.screen.get_at((2 * TILE_SIZE, 3 * TILE_SIZE))[:3]
     assert highlight_pixel == COLORS["selection"]
+
+
+def test_legend_draws_terrain_swatch_and_symbol_labels():
+    world = make_world(width=3, height=3)
+    renderer = make_renderer(world)
+
+    renderer.draw_panel(paused=False, sim_speed=1)
+
+    assert "water" in TERRAIN_LABELS
+    assert "@" in SYMBOL_LABELS
