@@ -34,7 +34,26 @@ class EatAction(Action):
         agent.reset_stuck()
         agent.food -= 1
         agent.hunger = max(0, agent.hunger - 60)
-        world.log(f"{agent.name} eats stored food.")
+        world.log(f"{agent.name} eats carried food.")
+
+
+class EatFromStorageAction(Action):
+    name = "Eating from storage"
+
+    def can_do(self, agent: Agent, world: World) -> bool:
+        return agent.food == 0 and agent.hunger > 20 and world.colony_storage.food > 0
+
+    def score(self, agent: Agent, world: World) -> int:
+        return agent.hunger * 3
+
+    def execute(self, agent: Agent, world: World):
+        super().execute(agent, world)
+        withdrawn = world.colony_storage.withdraw_food(1)
+
+        if withdrawn > 0:
+            agent.reset_stuck()
+            agent.hunger = max(0, agent.hunger - 60)
+            world.log(f"{agent.name} eats colony food.")
 
 
 class DrinkAction(Action):
@@ -71,6 +90,24 @@ class GatherFoodAction(Action):
         world.log(f"{agent.name} gathers food.")
 
 
+class DepositFoodAction(Action):
+    name = "Depositing food"
+
+    def can_do(self, agent: Agent, world: World) -> bool:
+        return agent.food > 1
+
+    def score(self, agent: Agent, world: World) -> int:
+        return 15
+
+    def execute(self, agent: Agent, world: World):
+        super().execute(agent, world)
+        agent.reset_stuck()
+        amount = agent.food - 1
+        deposited = world.colony_storage.deposit_food(amount)
+        agent.food -= deposited
+        world.log(f"{agent.name} stores {deposited} food.")
+
+
 class GatherWoodAction(Action):
     name = "Gathering wood"
 
@@ -92,6 +129,23 @@ class GatherWoodAction(Action):
         tile.wood -= 1
         agent.wood += 1
         world.log(f"{agent.name} gathers wood.")
+
+
+class DepositWoodAction(Action):
+    name = "Depositing wood"
+
+    def can_do(self, agent: Agent, world: World) -> bool:
+        return agent.wood > 0 and not world.needs_more_shelters()
+
+    def score(self, agent: Agent, world: World) -> int:
+        return 12
+
+    def execute(self, agent: Agent, world: World):
+        super().execute(agent, world)
+        agent.reset_stuck()
+        deposited = world.colony_storage.deposit_wood(agent.wood)
+        agent.wood -= deposited
+        world.log(f"{agent.name} stores {deposited} wood.")
 
 
 class BuildShelterAction(Action):

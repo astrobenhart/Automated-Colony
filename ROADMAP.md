@@ -44,7 +44,7 @@ Features:
 - [x] Let agents use personal memory first and colony memory second
 - [x] Verify shared knowledge is written and read while preserving scarcity
 - [x] Improve building priorities
-- [ ] Add simple storage
+- [x] Add simple storage
 
 Notes:
 - Shared colony memory is implemented in `src/colony_memory.py`.
@@ -52,6 +52,8 @@ Notes:
 - Seek actions use personal memory first and colony memory second.
 - Building priorities are implemented in `src/building_priorities.py`.
 - Shelter construction and construction wood gathering are driven by the current building priority.
+- Abstract colony storage is implemented in `src/colony_storage.py`.
+- Villagers can deposit extra food/wood and eat from stored food.
 
 ## v0.4 - Smarter World
 

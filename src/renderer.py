@@ -168,6 +168,8 @@ class PygameRenderer:
         y = self.draw_stat_row("Shelters", self.world.count_tiles("shelter"), content_x, y, content_width, bottom_y)
         y = self.draw_stat_row("Food", self.world.total_food_on_map(), content_x, y, content_width, bottom_y)
         y = self.draw_stat_row("Wood", self.world.total_wood_on_map(), content_x, y, content_width, bottom_y)
+        y = self.draw_stat_row("Stored F", self.world.colony_storage.food, content_x, y, content_width, bottom_y)
+        y = self.draw_stat_row("Stored W", self.world.colony_storage.wood, content_x, y, content_width, bottom_y)
 
         y += self.panel_gap
         y = self.draw_selection_details(content_x, y, content_width, bottom_y)

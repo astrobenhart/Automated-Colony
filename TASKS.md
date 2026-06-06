@@ -8,30 +8,6 @@ No active task.
 
 ## Backlog
 
-### TASK-11
-Title: Add Simple Storage
-
-Owner: Gameplay Agent
-
-Status: Backlog
-
-Description:
-Add basic colony storage so gathered food and wood can support the group rather than only individual carriers.
-
-Expected Output:
-A minimal storage model that can hold shared food and wood.
-
-Acceptance Criteria:
-- Agents can deposit resources into storage.
-- Agents can use stored resources when appropriate.
-- Scarcity remains meaningful.
-- Tests cover storage interactions.
-
-Dependencies:
-- TASK-9
-
----
-
 ### TASK-12
 Title: Design Staged Population Growth
 
@@ -63,6 +39,35 @@ Notes:
 ---
 
 ## Completed
+
+### TASK-11
+Title: Add Simple Storage
+
+Owner: Gameplay Agent
+
+Status: Completed
+
+Description:
+Add basic colony storage so gathered food and wood can support the group rather than only individual carriers.
+
+Expected Output:
+A minimal storage model that can hold shared food and wood.
+
+Acceptance Criteria:
+- Agents can deposit resources into storage.
+- Agents can use stored resources when appropriate.
+- Scarcity remains meaningful.
+- Tests cover storage interactions.
+- Stored totals are visible in the UI.
+
+Dependencies:
+- TASK-9
+
+Notes:
+- Implemented in `src/colony_storage.py`.
+- Storage is abstract; no physical stockpile or hauling system exists yet.
+
+---
 
 ### TASK-10
 Title: Improve Building Priorities

@@ -3,8 +3,11 @@ from typing import TYPE_CHECKING
 
 from src.actions import (
     Action,
+    DepositFoodAction,
+    DepositWoodAction,
     DrinkAction,
     EatAction,
+    EatFromStorageAction,
     GatherFoodAction,
     GatherWoodAction,
     BuildShelterAction,
@@ -67,11 +70,25 @@ class EatGoal(Goal):
     )
 
 
+class EatFromStorageGoal(Goal):
+    name = "Eat from storage"
+    action_types = (
+        EatFromStorageAction,
+    )
+
+
 class GatherFoodGoal(Goal):
     name = "Gather food"
     action_types = (
         GatherFoodAction,
         SeekFoodAction,
+    )
+
+
+class DepositFoodGoal(Goal):
+    name = "Deposit food"
+    action_types = (
+        DepositFoodAction,
     )
 
 
@@ -115,6 +132,13 @@ class BuildShelterGoal(Goal):
         if not world.should_build_shelter(agent):
             return 0
         return super().score(agent, world)
+
+
+class DepositWoodGoal(Goal):
+    name = "Deposit wood"
+    action_types = (
+        DepositWoodAction,
+    )
 
 
 class ExploreGoal(Goal):

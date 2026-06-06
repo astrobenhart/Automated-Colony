@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 
 from src.building_priorities import highest_priority, needed_shelters
 from src.colony_memory import ColonyMemory
+from src.colony_storage import ColonyStorage
 from src.tile import Tile
 from src.agent import Agent
 
@@ -16,6 +17,7 @@ class World:
     agents: list = field(default_factory=list)
     events: list = field(default_factory=list)
     colony_memory: ColonyMemory = field(default_factory=ColonyMemory)
+    colony_storage: ColonyStorage = field(default_factory=ColonyStorage)
 
     day: int = 1
     tick: int = 0

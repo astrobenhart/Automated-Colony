@@ -16,10 +16,13 @@ from src.config import (
 from src.goals import (
     DrinkGoal,
     EatGoal,
+    EatFromStorageGoal,
     SleepGoal,
     GatherFoodGoal,
+    DepositFoodGoal,
     GatherWoodGoal,
     BuildShelterGoal,
+    DepositWoodGoal,
     ExploreGoal,
     Goal,
 )
@@ -107,10 +110,13 @@ class Agent:
         goals = [
             DrinkGoal(),
             EatGoal(),
+            EatFromStorageGoal(),
             SleepGoal(),
             GatherFoodGoal(),
+            DepositFoodGoal(),
             GatherWoodGoal(),
             BuildShelterGoal(),
+            DepositWoodGoal(),
             ExploreGoal(),
         ]
         valid_goals = [goal for goal in goals if goal.can_do(self, world)]
