@@ -3,17 +3,17 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from src.actions import (
-    EatAction,
-    DrinkAction,
-    GatherFoodAction,
-    GatherWoodAction,
-    BuildShelterAction,
-    SleepAction,
-    WanderAction,
-    SeekWaterAction,
-    SeekFoodAction,
-    SeekWoodAction,
-    SeekShelterAction,
+    Action,
+)
+from src.goals import (
+    DrinkGoal,
+    EatGoal,
+    SleepGoal,
+    GatherFoodGoal,
+    GatherWoodGoal,
+    BuildShelterGoal,
+    ExploreGoal,
+    Goal,
 )
 
 if TYPE_CHECKING:
@@ -35,6 +35,7 @@ class Agent:
 
     alive: bool = True
     current_action: str = "Idle"
+    current_goal: str = "Explore"
 
     # Memory of coordinate locations
     remembered_food: set[tuple[int, int]] = field(default_factory=set, repr=False)
@@ -84,23 +85,24 @@ class Agent:
                     elif (nx, ny) in self.remembered_shelters:
                         self.remembered_shelters.remove((nx, ny))
 
-    def choose_action(self, world: World):
-        actions = [
-            EatAction(),
-            DrinkAction(),
-            GatherFoodAction(),
-            GatherWoodAction(),
-            BuildShelterAction(),
-            SleepAction(),
-            SeekWaterAction(),
-            SeekFoodAction(),
-            SeekWoodAction(),
-            SeekShelterAction(),
-            WanderAction(),
+    def choose_goal(self, world: World) -> Goal:
+        goals = [
+            DrinkGoal(),
+            EatGoal(),
+            SleepGoal(),
+            GatherFoodGoal(),
+            GatherWoodGoal(),
+            BuildShelterGoal(),
+            ExploreGoal(),
         ]
+        valid_goals = [goal for goal in goals if goal.can_do(self, world)]
+        goal = max(valid_goals, key=lambda candidate: candidate.score(self, world))
+        self.current_goal = goal.name
+        return goal
 
-        valid_actions = [action for action in actions if action.can_do(self, world)]
-        return max(valid_actions, key=lambda action: action.score(self, world))
+    def choose_action(self, world: World) -> Action:
+        goal = self.choose_goal(world)
+        return goal.choose_action(self, world)
 
     def die_if_needed(self, world: World):
         if self.hunger >= 100:

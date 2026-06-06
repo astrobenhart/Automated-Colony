@@ -68,7 +68,7 @@ Title: Add Goal-Based Behavior
 
 Owner: Gameplay Agent
 
-Status: Backlog
+Status: In Progress
 
 Description:
 Replace the current purely reactive action selection with a utility-scored, goal-based decision model.
