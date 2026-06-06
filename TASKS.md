@@ -96,7 +96,7 @@ Title: Add Selected-Agent UI
 
 Owner: Renderer Agent
 
-Status: Backlog
+Status: Pending Verification
 
 Description:
 Implement interactive clicking in Pygame to select and inspect a specific agent's status, needs, inventory, goals, and targets.

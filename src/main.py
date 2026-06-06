@@ -23,6 +23,9 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
 
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                renderer.select_tile_at_pixel(*event.pos)
+
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     running = False
@@ -39,6 +42,7 @@ def main():
                 elif event.key == pygame.K_r:
                     world = create_world()
                     renderer.world = world
+                    renderer.clear_selection()
                     accumulator = 0
 
         if not paused and len(world.living_agents()) > 0:
