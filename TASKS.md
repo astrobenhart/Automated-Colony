@@ -7,7 +7,7 @@ Title: Add Basic Tests
 
 Owner: Tester Agent
 
-Status: Backlog
+Status: Completed
 
 Description:
 Write a suite of automated unit tests covering key simulation subsystems such as world coordinate logic, pathfinding, agent memory, and goal utility selection.
@@ -68,7 +68,7 @@ Title: Add Goal-Based Behavior
 
 Owner: Gameplay Agent
 
-Status: Pending Verification
+Status: Completed
 
 Description:
 Replace the current purely reactive action selection with a utility-scored, goal-based decision model.
@@ -96,7 +96,7 @@ Title: Add Selected-Agent UI
 
 Owner: Renderer Agent
 
-Status: Pending Verification
+Status: Completed
 
 Description:
 Implement interactive clicking in Pygame to select and inspect a specific agent's status, needs, inventory, goals, and targets.
@@ -125,7 +125,7 @@ Title: Add Basic Tests
 
 Owner: Tester Agent
 
-Status: Backlog
+Status: Completed
 
 Description:
 Write a suite of automated unit tests covering key simulation subsystems such as world coordinate logic, pathfinding, agent memory, and goal utility selection.
