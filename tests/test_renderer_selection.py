@@ -5,7 +5,13 @@ os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 import pygame
 
 from src.agent import Agent
-from src.config import TILE_SIZE, VIEWPORT_HEIGHT, VIEWPORT_WIDTH
+from src.config import (
+    COLORS,
+    DEBUG_DRAW_GRID,
+    TILE_SIZE,
+    VIEWPORT_HEIGHT,
+    VIEWPORT_WIDTH,
+)
 from src.renderer import PygameRenderer
 from src.tile import Tile
 from src.world import World
@@ -163,3 +169,31 @@ def test_visible_tile_bounds_stay_inside_world():
     assert 0 <= start_y < end_y <= world.height
     assert end_x - start_x <= VIEWPORT_WIDTH
     assert end_y - start_y <= VIEWPORT_HEIGHT
+
+
+def test_tiles_are_smaller_and_grid_is_disabled_by_default():
+    assert TILE_SIZE == 16
+    assert not DEBUG_DRAW_GRID
+
+
+def test_adjacent_tiles_draw_without_grid_gap():
+    world = make_world(width=2, height=1)
+    renderer = make_renderer(world)
+
+    renderer.draw_world()
+
+    boundary_pixel = renderer.screen.get_at((TILE_SIZE, TILE_SIZE // 2))[:3]
+    assert boundary_pixel == COLORS["grass"]
+
+
+def test_selection_highlight_aligns_with_camera_offset():
+    world = make_world(width=80, height=45)
+    renderer = make_renderer(world)
+    renderer.camera_x = 10
+    renderer.camera_y = 5
+    renderer.select_tile(12, 8)
+
+    renderer.draw_world()
+
+    highlight_pixel = renderer.screen.get_at((2 * TILE_SIZE, 3 * TILE_SIZE))[:3]
+    assert highlight_pixel == COLORS["selection"]

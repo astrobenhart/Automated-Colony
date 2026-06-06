@@ -8,6 +8,7 @@ from src.config import (
     VIEWPORT_HEIGHT,
     TILE_SIZE,
     CAMERA_STEP,
+    DEBUG_DRAW_GRID,
     COLORS,
     FPS,
 )
@@ -24,8 +25,8 @@ class PygameRenderer:
         pygame.display.set_caption("Automated ASCII Colony v0.1")
 
         self.clock = pygame.time.Clock()
-        self.font = pygame.font.SysFont("consolas", 14)
-        self.big_font = pygame.font.SysFont("consolas", 18, bold=True)
+        self.font = pygame.font.SysFont("consolas", 13)
+        self.big_font = pygame.font.SysFont("consolas", 17, bold=True)
 
         self.selected_agent: Agent | None = None
         self.selected_tile: tuple[int, int] | None = None
@@ -135,7 +136,8 @@ class PygameRenderer:
                 )
 
                 pygame.draw.rect(self.screen, COLORS[tile.kind], rect)
-                pygame.draw.rect(self.screen, COLORS["grid"], rect, 1)
+                if DEBUG_DRAW_GRID:
+                    pygame.draw.rect(self.screen, COLORS["grid"], rect, 1)
 
                 if tile.food > 0:
                     self.draw_centered_symbol("f", screen_x, screen_y, COLORS["food"])
@@ -173,7 +175,7 @@ class PygameRenderer:
             TILE_SIZE,
             TILE_SIZE,
         )
-        pygame.draw.rect(self.screen, color, rect, 3)
+        pygame.draw.rect(self.screen, color, rect, 2)
 
     def draw_centered_symbol(self, symbol: str, x: int, y: int, color: tuple):
         surface = self.font.render(symbol, True, color)
