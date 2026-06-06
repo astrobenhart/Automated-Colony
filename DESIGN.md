@@ -31,9 +31,10 @@ Agents should:
 World generation should:
 - create deterministic worlds when given a seed
 - generate elevation, moisture, and temperature maps
+- trace simple downhill rivers from high elevation toward lower elevation
 - assign terrain from simple natural rules
 - place food and wood based on terrain conditions
-- preserve existing simulation systems while preparing for rivers, seasons, biomes, and environmental events
+- preserve existing simulation systems while preparing for seasons, biomes, and environmental events
 
 ## Design Priorities
 

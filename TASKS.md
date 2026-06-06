@@ -40,6 +40,35 @@ Notes:
 
 ## Completed
 
+### TASK-16
+Title: Add Simple Rivers
+
+Owner: Architect Agent
+
+Status: Completed
+
+Description:
+Generate simple rivers from high elevation toward low elevation as part of v0.4 smarter world generation.
+
+Expected Output:
+Deterministic river paths that become ordinary unwalkable water tiles and integrate with existing terrain, pathfinding, and agent water behavior.
+
+Acceptance Criteria:
+- Rivers appear in generated worlds.
+- Rivers generally move downhill from higher elevation to lower elevation.
+- River tiles use the existing `water` terrain.
+- River water remains unwalkable and pathfinding-compatible.
+- Tests cover deterministic rivers, river water tiles, and downhill movement.
+
+Dependencies:
+- TASK-13
+- TASK-15
+
+Notes:
+- This does not add bridges, flooding, erosion, boats, or advanced hydrology.
+
+---
+
 ### TASK-15
 Title: Add Larger Map Support
 

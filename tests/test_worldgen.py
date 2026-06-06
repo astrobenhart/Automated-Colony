@@ -23,6 +23,7 @@ def test_same_seed_generates_same_world_layout():
     assert first.elevation_map == second.elevation_map
     assert first.moisture_map == second.moisture_map
     assert first.temperature_map == second.temperature_map
+    assert first.river_paths == second.river_paths
 
 
 def test_different_seeds_usually_generate_different_layouts():
@@ -99,3 +100,36 @@ def test_water_and_mountains_do_not_have_resources():
             if tile.kind in ("water", "mountain"):
                 assert tile.food == 0
                 assert tile.wood == 0
+
+
+def test_generated_worlds_contain_river_paths():
+    world = make_generated_world(seed=12, width=WIDTH, height=HEIGHT)
+
+    assert world.river_paths
+    assert any(len(path) >= 8 for path in world.river_paths)
+
+
+def test_river_path_tiles_are_unwalkable_water():
+    world = make_generated_world(seed=13, width=WIDTH, height=HEIGHT)
+
+    river_tiles = {pos for path in world.river_paths for pos in path}
+
+    assert river_tiles
+    for x, y in river_tiles:
+        tile = world.tile_at(x, y)
+        assert tile.kind == "water"
+        assert not tile.walkable
+
+
+def test_at_least_one_river_generally_moves_downhill():
+    world = make_generated_world(seed=14, width=WIDTH, height=HEIGHT)
+
+    downhill_paths = []
+    for path in world.river_paths:
+        start_x, start_y = path[0]
+        end_x, end_y = path[-1]
+        start_elevation = world.elevation_map[start_y][start_x]
+        end_elevation = world.elevation_map[end_y][end_x]
+        downhill_paths.append(end_elevation < start_elevation)
+
+    assert any(downhill_paths)

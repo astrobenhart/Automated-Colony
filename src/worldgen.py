@@ -1,6 +1,12 @@
 from __future__ import annotations
 import random
 
+from src.config import (
+    RIVER_COUNT,
+    RIVER_MIN_LENGTH,
+    RIVER_SOURCE_ELEVATION,
+    RIVER_WIDEN_CHANCE,
+)
 from src.tile import Tile
 
 
@@ -9,6 +15,9 @@ def generate_world(width: int, height: int, seed: int | None = None):
     elevation = _normalize_map(_smooth_map(_random_map(width, height, rng), passes=3))
     moisture = _normalize_map(_smooth_map(_random_map(width, height, rng), passes=3))
     temperature = _temperature_map(width, height, rng)
+    river_paths = _generate_river_paths(elevation, rng)
+    river_tiles = _river_tile_set(river_paths, elevation, rng)
+    _add_river_moisture(moisture, river_tiles)
 
     tiles: list[list[Tile]] = []
 
@@ -19,14 +28,14 @@ def generate_world(width: int, height: int, seed: int | None = None):
             elev = elevation[y][x]
             moist = moisture[y][x]
             temp = temperature[y][x]
-            kind = _terrain_for(elev, moist, temp)
+            kind = "water" if (x, y) in river_tiles else _terrain_for(elev, moist, temp)
             tile = Tile(kind)
             _place_resources(tile, moist, temp, rng)
             row.append(tile)
 
         tiles.append(row)
 
-    return tiles, elevation, moisture, temperature
+    return tiles, elevation, moisture, temperature, river_paths
 
 
 def _random_map(width: int, height: int, rng: random.Random) -> list[list[float]]:
@@ -112,6 +121,143 @@ def _terrain_for(elevation: float, moisture: float, temperature: float) -> str:
         return "forest"
 
     return "grass"
+
+
+def _generate_river_paths(
+    elevation: list[list[float]],
+    rng: random.Random,
+) -> list[list[tuple[int, int]]]:
+    height = len(elevation)
+    width = len(elevation[0])
+    candidates = [
+        (x, y)
+        for y in range(1, height - 1)
+        for x in range(1, width - 1)
+        if elevation[y][x] >= RIVER_SOURCE_ELEVATION
+    ]
+    rng.shuffle(candidates)
+    candidates.sort(key=lambda pos: elevation[pos[1]][pos[0]], reverse=True)
+
+    paths: list[list[tuple[int, int]]] = []
+    used_sources: list[tuple[int, int]] = []
+
+    for source in candidates:
+        if len(paths) >= RIVER_COUNT:
+            break
+        if any(_distance(source, existing) < max(6, RIVER_MIN_LENGTH) for existing in used_sources):
+            continue
+
+        path = _trace_river(elevation, source, rng)
+        if len(path) >= RIVER_MIN_LENGTH and _drops_downhill(elevation, path):
+            paths.append(path)
+            used_sources.append(source)
+
+    return paths
+
+
+def _trace_river(
+    elevation: list[list[float]],
+    source: tuple[int, int],
+    rng: random.Random,
+) -> list[tuple[int, int]]:
+    height = len(elevation)
+    width = len(elevation[0])
+    max_length = width + height
+    current = source
+    path = [current]
+    visited = {current}
+
+    for _ in range(max_length):
+        x, y = current
+        if len(path) >= RIVER_MIN_LENGTH:
+            if _is_edge(x, y, width, height) or elevation[y][x] < 0.30:
+                break
+
+        candidates = [
+            (nx, ny)
+            for nx, ny in _neighbor_positions(x, y, width, height)
+            if (nx, ny) not in visited
+        ]
+        if not candidates:
+            break
+
+        current_elevation = elevation[y][x]
+        downhill = [
+            pos
+            for pos in candidates
+            if elevation[pos[1]][pos[0]] <= current_elevation + 0.01
+        ]
+        if not downhill:
+            break
+
+        lowest = min(elevation[pos[1]][pos[0]] for pos in downhill)
+        best = [pos for pos in downhill if elevation[pos[1]][pos[0]] <= lowest + 0.02]
+        current = rng.choice(best)
+        path.append(current)
+        visited.add(current)
+
+    return path
+
+
+def _river_tile_set(
+    paths: list[list[tuple[int, int]]],
+    elevation: list[list[float]],
+    rng: random.Random,
+) -> set[tuple[int, int]]:
+    height = len(elevation)
+    width = len(elevation[0])
+    river_tiles: set[tuple[int, int]] = set()
+
+    for path in paths:
+        for x, y in path:
+            river_tiles.add((x, y))
+
+            if rng.random() >= RIVER_WIDEN_CHANCE:
+                continue
+
+            candidates = _neighbor_positions(x, y, width, height)
+            if candidates:
+                river_tiles.add(min(candidates, key=lambda pos: elevation[pos[1]][pos[0]]))
+
+    return river_tiles
+
+
+def _add_river_moisture(moisture: list[list[float]], river_tiles: set[tuple[int, int]]):
+    height = len(moisture)
+    width = len(moisture[0])
+
+    for x, y in river_tiles:
+        for ny in range(max(0, y - 1), min(height, y + 2)):
+            for nx in range(max(0, x - 1), min(width, x + 2)):
+                distance = abs(nx - x) + abs(ny - y)
+                boost = 0.20 if distance == 0 else 0.10
+                moisture[ny][nx] = _clamp(moisture[ny][nx] + boost)
+
+
+def _neighbor_positions(x: int, y: int, width: int, height: int) -> list[tuple[int, int]]:
+    candidates: list[tuple[int, int]] = []
+
+    for dx, dy in ((0, 1), (1, 0), (0, -1), (-1, 0)):
+        nx = x + dx
+        ny = y + dy
+        if 0 <= nx < width and 0 <= ny < height:
+            candidates.append((nx, ny))
+
+    return candidates
+
+
+def _drops_downhill(elevation: list[list[float]], path: list[tuple[int, int]]) -> bool:
+    start_x, start_y = path[0]
+    end_x, end_y = path[-1]
+    return elevation[end_y][end_x] < elevation[start_y][start_x]
+
+
+def _is_edge(x: int, y: int, width: int, height: int) -> bool:
+    return x == 0 or y == 0 or x == width - 1 or y == height - 1
+
+
+def _distance(first: tuple[int, int], second: tuple[int, int]) -> int:
+    return abs(first[0] - second[0]) + abs(first[1] - second[1])
 
 
 def _place_resources(tile: Tile, moisture: float, temperature: float, rng: random.Random):

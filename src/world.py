@@ -22,6 +22,7 @@ class World:
     elevation_map: list[list[float]] = field(default_factory=list, repr=False)
     moisture_map: list[list[float]] = field(default_factory=list, repr=False)
     temperature_map: list[list[float]] = field(default_factory=list, repr=False)
+    river_paths: list[list[tuple[int, int]]] = field(default_factory=list, repr=False)
 
     day: int = 1
     tick: int = 0
@@ -35,6 +36,7 @@ class World:
             self.elevation_map,
             self.moisture_map,
             self.temperature_map,
+            self.river_paths,
         ) = generate_world(self.width, self.height, self.seed)
 
     def spawn_agents(self, amount):

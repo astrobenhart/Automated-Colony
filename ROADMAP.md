@@ -65,7 +65,7 @@ Features:
 - [x] Replace purely random terrain with rule-based world generation
 - [x] Generate elevation, moisture, and temperature maps
 - [x] Add larger generated maps with camera panning
-- [ ] Create rivers that flow from high elevation to low elevation
+- [x] Create rivers that flow from high elevation to low elevation
 - [x] Place forests based on moisture and temperature
 - [ ] Place mountains, hills, plains, wetlands, and dry areas naturally
 - [ ] Add seasonal changes that affect food growth and water availability
@@ -77,7 +77,7 @@ Features:
 
 Acceptance Criteria:
 - [x] Worlds no longer look uniformly random.
-- [ ] Rivers connect logically from high ground toward lower ground.
+- [x] Rivers connect logically from high ground toward lower ground.
 - [x] Forests appear more often in wet moderate regions.
 - [x] Food and wood availability depend on terrain conditions.
 - [x] Larger worlds can be inspected without covering the right-side panel.
@@ -88,8 +88,9 @@ Notes:
 - Phase 1 world generation is implemented in `src/worldgen.py`.
 - Worlds now generate deterministic elevation, moisture, and temperature maps when given a seed.
 - Default worlds are larger than the on-screen viewport and can be inspected with WASD camera panning.
+- Phase 2 river generation traces simple downhill paths and converts them to existing unwalkable water tiles.
 - Existing tile kinds remain compatible: `water`, `mountain`, `forest`, and `grass`.
-- Rivers, seasons, environmental events, wildlife, and history tracking are still future v0.4 work.
+- Seasons, environmental events, wildlife, and history tracking are still future v0.4 work.
 
 ## v0.5 - Colony Roles and Production
 
