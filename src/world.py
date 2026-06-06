@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from src.building_priorities import highest_priority, needed_shelters
 from src.colony_memory import ColonyMemory
 from src.colony_storage import ColonyStorage
-from src.tile import Tile
+from src.worldgen import generate_world
 from src.agent import Agent
 
 
@@ -18,42 +18,24 @@ class World:
     events: list = field(default_factory=list)
     colony_memory: ColonyMemory = field(default_factory=ColonyMemory)
     colony_storage: ColonyStorage = field(default_factory=ColonyStorage)
+    seed: int | None = None
+    elevation_map: list[list[float]] = field(default_factory=list, repr=False)
+    moisture_map: list[list[float]] = field(default_factory=list, repr=False)
+    temperature_map: list[list[float]] = field(default_factory=list, repr=False)
 
     day: int = 1
     tick: int = 0
 
-    def generate(self):
-        self.tiles = []
+    def generate(self, seed: int | None = None):
+        if seed is not None:
+            self.seed = seed
 
-        for y in range(self.height):
-            row = []
-
-            for x in range(self.width):
-                roll = random.random()
-
-                if roll < 0.07:
-                    kind = "water"
-                elif roll < 0.14:
-                    kind = "mountain"
-                elif roll < 0.35:
-                    kind = "forest"
-                else:
-                    kind = "grass"
-
-                tile = Tile(kind)
-
-                if kind == "grass" and random.random() < 0.08:
-                    tile.food = random.randint(1, 3)
-
-                if kind == "forest":
-                    tile.wood = random.randint(1, 4)
-
-                    if random.random() < 0.18:
-                        tile.food = random.randint(1, 2)
-
-                row.append(tile)
-
-            self.tiles.append(row)
+        (
+            self.tiles,
+            self.elevation_map,
+            self.moisture_map,
+            self.temperature_map,
+        ) = generate_world(self.width, self.height, self.seed)
 
     def spawn_agents(self, amount):
         names = [
@@ -177,9 +159,19 @@ class World:
             self.events = self.events[-100:]
 
 
-def create_world():
-    from src.config import WIDTH, HEIGHT, STARTING_AGENTS
-    world = World(WIDTH, HEIGHT)
+def create_world(
+    width: int | None = None,
+    height: int | None = None,
+    agent_count: int | None = None,
+    seed: int | None = None,
+):
+    from src.config import WIDTH, HEIGHT, STARTING_AGENTS, WORLD_SEED
+
+    world = World(
+        width if width is not None else WIDTH,
+        height if height is not None else HEIGHT,
+        seed=seed if seed is not None else WORLD_SEED,
+    )
     world.generate()
-    world.spawn_agents(STARTING_AGENTS)
+    world.spawn_agents(agent_count if agent_count is not None else STARTING_AGENTS)
     return world

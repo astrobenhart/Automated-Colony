@@ -5,7 +5,7 @@ os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 import pygame
 
 from src.agent import Agent
-from src.config import TILE_SIZE
+from src.config import TILE_SIZE, VIEWPORT_HEIGHT, VIEWPORT_WIDTH
 from src.renderer import PygameRenderer
 from src.tile import Tile
 from src.world import World
@@ -114,3 +114,52 @@ def test_draw_text_line_stops_before_panel_bottom():
     end_y = renderer.draw_text_line("Too low", 0, start_y, 120, bottom_y)
 
     assert end_y == start_y
+
+
+def test_camera_coordinate_conversion_accounts_for_offset():
+    world = make_world(width=80, height=45)
+    renderer = make_renderer(world)
+    renderer.camera_x = 10
+    renderer.camera_y = 5
+
+    tile = renderer.screen_to_world_tile(2 * TILE_SIZE + 1, 3 * TILE_SIZE + 1)
+
+    assert tile == (12, 8)
+
+
+def test_clicking_panel_clears_selection_instead_of_selecting_hidden_tile():
+    world = make_world(width=80, height=45)
+    renderer = make_renderer(world)
+    renderer.select_tile(1, 1)
+
+    renderer.select_tile_at_pixel(VIEWPORT_WIDTH * TILE_SIZE + 10, 10)
+
+    assert renderer.selected_agent is None
+    assert renderer.selected_tile is None
+
+
+def test_mouse_selection_accounts_for_camera_offset():
+    world = make_world(width=80, height=45)
+    agent = Agent("Ari", 12, 8)
+    world.agents.append(agent)
+    renderer = make_renderer(world)
+    renderer.camera_x = 10
+    renderer.camera_y = 5
+
+    renderer.select_tile_at_pixel(2 * TILE_SIZE + 2, 3 * TILE_SIZE + 2)
+
+    assert renderer.selected_agent is agent
+    assert renderer.selected_tile is None
+
+
+def test_visible_tile_bounds_stay_inside_world():
+    world = make_world(width=80, height=45)
+    renderer = make_renderer(world)
+
+    renderer.pan_camera(999, 999)
+    start_x, start_y, end_x, end_y = renderer.visible_tile_bounds()
+
+    assert 0 <= start_x < end_x <= world.width
+    assert 0 <= start_y < end_y <= world.height
+    assert end_x - start_x <= VIEWPORT_WIDTH
+    assert end_y - start_y <= VIEWPORT_HEIGHT

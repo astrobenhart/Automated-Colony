@@ -62,10 +62,11 @@ Notes:
 Goal: Make the world feel more believable by generating terrain from simple natural rules and allowing the environment to evolve over time.
 
 Features:
-- [ ] Replace purely random terrain with rule-based world generation
-- [ ] Generate elevation, moisture, and temperature maps
+- [x] Replace purely random terrain with rule-based world generation
+- [x] Generate elevation, moisture, and temperature maps
+- [x] Add larger generated maps with camera panning
 - [ ] Create rivers that flow from high elevation to low elevation
-- [ ] Place forests based on moisture, temperature, and nearby water
+- [x] Place forests based on moisture and temperature
 - [ ] Place mountains, hills, plains, wetlands, and dry areas naturally
 - [ ] Add seasonal changes that affect food growth and water availability
 - [ ] Add basic plant/resource regrowth based on biome conditions
@@ -75,12 +76,20 @@ Features:
 - [ ] Expose world-generation settings such as seed, size, water level, forest density, and climate harshness
 
 Acceptance Criteria:
-- Worlds no longer look uniformly random.
-- Rivers connect logically from high ground toward lower ground.
-- Forests appear more often near water or in wet regions.
-- Food and wood availability depend on biome.
-- Seasonal changes visibly affect resource growth.
-- Agents must adapt to world conditions rather than only random resource placement.
+- [x] Worlds no longer look uniformly random.
+- [ ] Rivers connect logically from high ground toward lower ground.
+- [x] Forests appear more often in wet moderate regions.
+- [x] Food and wood availability depend on terrain conditions.
+- [x] Larger worlds can be inspected without covering the right-side panel.
+- [ ] Seasonal changes visibly affect resource growth.
+- [ ] Agents must adapt to world conditions rather than only random resource placement.
+
+Notes:
+- Phase 1 world generation is implemented in `src/worldgen.py`.
+- Worlds now generate deterministic elevation, moisture, and temperature maps when given a seed.
+- Default worlds are larger than the on-screen viewport and can be inspected with WASD camera panning.
+- Existing tile kinds remain compatible: `water`, `mountain`, `forest`, and `grass`.
+- Rivers, seasons, environmental events, wildlife, and history tracking are still future v0.4 work.
 
 ## v0.5 - Colony Roles and Production
 

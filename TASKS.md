@@ -8,31 +8,6 @@ No active task.
 
 ## Backlog
 
-### TASK-13
-Title: Add Rule-Based World Generation
-
-Owner: Architect Agent
-
-Status: Backlog
-
-Description:
-Replace purely random terrain with simple rule-based world generation using natural terrain patterns.
-
-Expected Output:
-World generation that produces more believable terrain and resource placement while preserving simulation performance.
-
-Acceptance Criteria:
-- Terrain is less uniformly random.
-- Water, forests, mountains, and food placement follow readable rules.
-- Tests cover deterministic generation with fixed seeds.
-
-Dependencies:
-- TASK-3
-- TASK-5
-- TASK-9
-
----
-
 ### TASK-12
 Title: Design Staged Population Growth
 
@@ -64,6 +39,63 @@ Notes:
 ---
 
 ## Completed
+
+### TASK-15
+Title: Add Larger Map Support
+
+Owner: Renderer Agent
+
+Status: Completed
+
+Description:
+Increase the default generated world size and add camera panning so the map can be explored without hiding the right-side panel.
+
+Expected Output:
+A larger default world with viewport-based rendering, keyboard camera controls, and camera-aware mouse selection.
+
+Acceptance Criteria:
+- Default world is noticeably larger.
+- Camera panning works with WASD.
+- Mouse selection accounts for camera offset.
+- The right panel remains visible.
+- Tests cover larger world dimensions, spawn walkability, camera conversion, and visible bounds.
+
+Dependencies:
+- TASK-13
+
+---
+
+### TASK-13
+Title: Add Rule-Based World Generation
+
+Owner: Architect Agent
+
+Status: Completed
+
+Description:
+Replace purely random terrain with simple rule-based world generation using natural terrain patterns.
+
+Expected Output:
+World generation that produces more believable terrain and resource placement while preserving simulation performance.
+
+Acceptance Criteria:
+- Terrain is less uniformly random.
+- Elevation, moisture, and temperature maps are generated.
+- Water, forests, mountains, and food placement follow readable rules.
+- Same seed creates the same terrain/resource layout.
+- Different seeds usually create different layouts.
+- Tests cover deterministic generation with fixed seeds.
+
+Dependencies:
+- TASK-3
+- TASK-5
+- TASK-9
+
+Notes:
+- Implemented in `src/worldgen.py`.
+- This is v0.4 Phase 1 only; rivers, seasons, events, wildlife, and world history remain future work.
+
+---
 
 ### TASK-14
 Title: Prepare v0.3.0 Milestone

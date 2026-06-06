@@ -1,6 +1,6 @@
 import pygame
 
-from src.config import SIM_TICKS_PER_SECOND
+from src.config import CAMERA_STEP, SIM_TICKS_PER_SECOND
 from src.world import create_world
 from src.renderer import PygameRenderer
 
@@ -33,6 +33,18 @@ def main():
                 elif event.key == pygame.K_SPACE:
                     paused = not paused
 
+                elif event.key == pygame.K_w:
+                    renderer.pan_camera(0, -CAMERA_STEP)
+
+                elif event.key == pygame.K_s:
+                    renderer.pan_camera(0, CAMERA_STEP)
+
+                elif event.key == pygame.K_a:
+                    renderer.pan_camera(-CAMERA_STEP, 0)
+
+                elif event.key == pygame.K_d:
+                    renderer.pan_camera(CAMERA_STEP, 0)
+
                 elif event.key == pygame.K_UP:
                     sim_speed = min(60, sim_speed + 1)
 
@@ -41,8 +53,7 @@ def main():
 
                 elif event.key == pygame.K_r:
                     world = create_world()
-                    renderer.world = world
-                    renderer.clear_selection()
+                    renderer.set_world(world)
                     accumulator = 0
 
         if not paused and len(world.living_agents()) > 0:

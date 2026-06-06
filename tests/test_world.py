@@ -1,6 +1,7 @@
 from src.agent import Agent
+from src.config import HEIGHT, STARTING_AGENTS, WIDTH
 from src.tile import Tile
-from src.world import World
+from src.world import World, create_world
 
 
 def make_world(kinds):
@@ -33,3 +34,10 @@ def test_living_agents_excludes_dead_agents():
     world.agents.extend([alive, dead])
 
     assert world.living_agents() == [alive]
+
+
+def test_generated_agents_spawn_on_walkable_tiles():
+    world = create_world(width=WIDTH, height=HEIGHT, agent_count=STARTING_AGENTS, seed=21)
+
+    assert len(world.agents) == STARTING_AGENTS
+    assert all(world.tile_at(agent.x, agent.y).walkable for agent in world.agents)

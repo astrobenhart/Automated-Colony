@@ -20,13 +20,20 @@ Need
 
 ## Current Focus
 
-v0.2 Intelligent Survival
+v0.4 Smarter World
 
 Agents should:
 - remember resources
 - pathfind
 - choose goals
 - survive longer
+
+World generation should:
+- create deterministic worlds when given a seed
+- generate elevation, moisture, and temperature maps
+- assign terrain from simple natural rules
+- place food and wood based on terrain conditions
+- preserve existing simulation systems while preparing for rivers, seasons, biomes, and environmental events
 
 ## Design Priorities
 

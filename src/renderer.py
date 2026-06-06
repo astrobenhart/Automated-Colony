@@ -4,7 +4,10 @@ from src.config import (
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
     PANEL_WIDTH,
+    VIEWPORT_WIDTH,
+    VIEWPORT_HEIGHT,
     TILE_SIZE,
+    CAMERA_STEP,
     COLORS,
     FPS,
 )
@@ -28,11 +31,55 @@ class PygameRenderer:
         self.selected_tile: tuple[int, int] | None = None
         self.panel_padding = 14
         self.panel_gap = 8
+        self.camera_x = 0
+        self.camera_y = 0
+
+    def set_world(self, world: World):
+        self.world = world
+        self.clear_selection()
+        self.clamp_camera()
 
     def select_tile_at_pixel(self, mouse_x: int, mouse_y: int):
-        tile_x = mouse_x // TILE_SIZE
-        tile_y = mouse_y // TILE_SIZE
+        tile = self.screen_to_world_tile(mouse_x, mouse_y)
+        if tile is None:
+            self.clear_selection()
+            return
+
+        tile_x, tile_y = tile
         self.select_tile(tile_x, tile_y)
+
+    def screen_to_world_tile(self, mouse_x: int, mouse_y: int) -> tuple[int, int] | None:
+        map_width = VIEWPORT_WIDTH * TILE_SIZE
+        map_height = VIEWPORT_HEIGHT * TILE_SIZE
+        if not (0 <= mouse_x < map_width and 0 <= mouse_y < map_height):
+            return None
+
+        return (
+            self.camera_x + mouse_x // TILE_SIZE,
+            self.camera_y + mouse_y // TILE_SIZE,
+        )
+
+    def camera_step(self) -> int:
+        return CAMERA_STEP
+
+    def pan_camera(self, dx: int, dy: int):
+        self.camera_x += dx
+        self.camera_y += dy
+        self.clamp_camera()
+
+    def clamp_camera(self):
+        max_x = max(0, self.world.width - VIEWPORT_WIDTH)
+        max_y = max(0, self.world.height - VIEWPORT_HEIGHT)
+        self.camera_x = max(0, min(self.camera_x, max_x))
+        self.camera_y = max(0, min(self.camera_y, max_y))
+
+    def visible_tile_bounds(self) -> tuple[int, int, int, int]:
+        self.clamp_camera()
+        start_x = self.camera_x
+        start_y = self.camera_y
+        end_x = min(self.world.width, start_x + VIEWPORT_WIDTH)
+        end_y = min(self.world.height, start_y + VIEWPORT_HEIGHT)
+        return start_x, start_y, end_x, end_y
 
     def select_tile(self, tile_x: int, tile_y: int):
         if not (0 <= tile_x < self.world.width and 0 <= tile_y < self.world.height):
@@ -63,6 +110,7 @@ class PygameRenderer:
 
     def draw(self, paused: bool, sim_speed: int):
         self.validate_selection()
+        self.clamp_camera()
         self.screen.fill((0, 0, 0))
 
         self.draw_world()
@@ -71,13 +119,17 @@ class PygameRenderer:
         pygame.display.flip()
 
     def draw_world(self):
-        for y in range(self.world.height):
-            for x in range(self.world.width):
+        start_x, start_y, end_x, end_y = self.visible_tile_bounds()
+
+        for y in range(start_y, end_y):
+            for x in range(start_x, end_x):
                 tile = self.world.tile_at(x, y)
+                screen_x = x - start_x
+                screen_y = y - start_y
 
                 rect = pygame.Rect(
-                    x * TILE_SIZE,
-                    y * TILE_SIZE,
+                    screen_x * TILE_SIZE,
+                    screen_y * TILE_SIZE,
                     TILE_SIZE,
                     TILE_SIZE,
                 )
@@ -86,14 +138,14 @@ class PygameRenderer:
                 pygame.draw.rect(self.screen, COLORS["grid"], rect, 1)
 
                 if tile.food > 0:
-                    self.draw_centered_symbol("f", x, y, COLORS["food"])
+                    self.draw_centered_symbol("f", screen_x, screen_y, COLORS["food"])
 
                 if tile.wood > 0:
-                    self.draw_centered_symbol("w", x, y, COLORS["wood"])
+                    self.draw_centered_symbol("w", screen_x, screen_y, COLORS["wood"])
 
                 agent = self.world.agent_at(x, y)
                 if agent:
-                    self.draw_centered_symbol("@", x, y, COLORS["agent"])
+                    self.draw_centered_symbol("@", screen_x, screen_y, COLORS["agent"])
 
         self.draw_selection_highlight()
 
@@ -108,9 +160,16 @@ class PygameRenderer:
         else:
             return
 
+        start_x, start_y, end_x, end_y = self.visible_tile_bounds()
+        if not (start_x <= x < end_x and start_y <= y < end_y):
+            return
+
+        screen_x = x - start_x
+        screen_y = y - start_y
+
         rect = pygame.Rect(
-            x * TILE_SIZE,
-            y * TILE_SIZE,
+            screen_x * TILE_SIZE,
+            screen_y * TILE_SIZE,
             TILE_SIZE,
             TILE_SIZE,
         )
@@ -127,7 +186,7 @@ class PygameRenderer:
         self.screen.blit(surface, rect)
 
     def draw_panel(self, paused: bool, sim_speed: int):
-        panel_x = self.world.width * TILE_SIZE
+        panel_x = VIEWPORT_WIDTH * TILE_SIZE
         content_x = panel_x + self.panel_padding
         content_width = PANEL_WIDTH - self.panel_padding * 2
         bottom_y = SCREEN_HEIGHT - self.panel_padding
@@ -156,10 +215,11 @@ class PygameRenderer:
         y = self.draw_stat_row("Day", self.world.day, content_x, y, content_width, bottom_y)
         y = self.draw_stat_row("Tick", self.world.tick, content_x, y, content_width, bottom_y)
         y = self.draw_stat_row("Speed", f"{sim_speed}/s", content_x, y, content_width, bottom_y)
+        y = self.draw_stat_row("Camera", f"({self.camera_x}, {self.camera_y})", content_x, y, content_width, bottom_y)
 
         y += self.panel_gap
         y = self.draw_section_header("Controls", content_x, y, content_width, bottom_y)
-        controls = "Space pause | Up/Down speed | R restart | Esc quit"
+        controls = "WASD pan | Space pause | Up/Down speed | R restart | Esc quit"
         y = self.draw_wrapped_text(controls, content_x, y, content_width, bottom_y, COLORS["muted"])
 
         y += self.panel_gap

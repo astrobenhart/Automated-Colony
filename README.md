@@ -7,7 +7,8 @@ The project is designed as an emergent colony screensaver and as a playground fo
 ## Current Features
 
 - Modular Python package under `src/`
-- Random terrain generation with grass, forest, water, mountain, and shelter tiles
+- Rule-based terrain generation with grass, forest, water, mountain, and shelter tiles
+- Larger explorable world with a camera-controlled map viewport
 - Autonomous villagers with hunger, thirst, fatigue, carried food, and carried wood
 - Goal-based behavior for drinking, eating, sleeping, gathering, building, depositing, and exploring
 - BFS pathfinding with occupied-tile avoidance
@@ -23,6 +24,7 @@ The project is designed as an emergent colony screensaver and as a playground fo
 ## Controls
 
 - `SPACE` - Pause or unpause
+- `W`, `A`, `S`, `D` - Pan the camera
 - `UP` - Increase simulation speed
 - `DOWN` - Decrease simulation speed
 - `R` - Restart the world
@@ -73,6 +75,6 @@ The original single-file prototype is still present as `automated_colony_v0_1.py
 
 ## Current Milestone
 
-v0.3.0 completes the colony foundation: villagers can use personal and shared knowledge, recover from blocked movement, coordinate around shelter needs, and use simple shared storage.
+v0.4 is focused on a smarter world: deterministic rule-based terrain generation, larger explorable maps, and future environmental systems.
 
-Next work is expected to focus on v0.4 world generation and longer-term colony systems.
+v0.3.0 completed the colony foundation: villagers can use personal and shared knowledge, recover from blocked movement, coordinate around shelter needs, and use simple shared storage.
