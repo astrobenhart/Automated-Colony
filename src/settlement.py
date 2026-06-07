@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import hashlib
-from dataclasses import dataclass
+import random
+from dataclasses import dataclass, field
 
 from src.config import SETTLEMENT_RADIUS
+from src.roles import BUILDER, FORAGER, GENERALIST, SCOUT
 
 
 @dataclass
@@ -15,6 +17,14 @@ class Settlement:
     founded_season: str
     radius: int = SETTLEMENT_RADIUS
     population: int = 0
+    activity_heatmap: dict[tuple[int, int], int] = field(default_factory=dict)
+
+    def record_activity(self, x: int, y: int):
+        pos = (x, y)
+        self.activity_heatmap[pos] = self.activity_heatmap.get(pos, 0) + 1
+
+    def activity_at(self, x: int, y: int) -> int:
+        return self.activity_heatmap.get((x, y), 0)
 
 
 def found_settlement(world) -> Settlement:
@@ -53,6 +63,78 @@ def nearest_walkable_tile(world, center_x: int, center_y: int) -> tuple[int, int
     return start_x, start_y
 
 
+def distance_to_settlement(world, x: int, y: int) -> int | None:
+    settlement = world.settlement
+    if settlement is None:
+        return None
+    return max(abs(x - settlement.x), abs(y - settlement.y))
+
+
+def is_near_settlement(world, x: int, y: int, radius: int | None = None) -> bool:
+    settlement = world.settlement
+    if settlement is None:
+        return False
+    active_radius = settlement.radius if radius is None else radius
+    return distance_to_settlement(world, x, y) <= active_radius
+
+
+def exploration_radius_for_role(role: str, settlement_radius: int) -> int:
+    if role == SCOUT:
+        return settlement_radius * 2
+    if role == FORAGER:
+        return max(3, round(settlement_radius * 0.85))
+    if role == BUILDER:
+        return max(3, round(settlement_radius * 0.75))
+    if role == GENERALIST:
+        return settlement_radius
+    return settlement_radius
+
+
+def random_tile_near_settlement(world, rng=None, role: str | None = None) -> tuple[int, int] | None:
+    settlement = world.settlement
+    if settlement is None:
+        return None
+    if rng is None:
+        rng = random
+
+    radius = exploration_radius_for_role(role or GENERALIST, settlement.radius)
+    candidates = _walkable_tiles_in_radius(world, settlement.x, settlement.y, radius)
+    candidates = [
+        pos for pos in candidates
+        if pos != (settlement.x, settlement.y) and world.agent_at(pos[0], pos[1]) is None
+    ]
+
+    if not candidates:
+        return None
+
+    return rng.choice(candidates)
+
+
+def valid_build_tile_near_settlement(world, agent=None) -> tuple[int, int] | None:
+    settlement = world.settlement
+    if settlement is None:
+        return None
+
+    candidates = []
+    for x, y in _walkable_tiles_in_radius(world, settlement.x, settlement.y, settlement.radius):
+        if agent is not None and (x, y) == (agent.x, agent.y):
+            occupied = False
+        else:
+            occupied = world.agent_at(x, y) is not None
+
+        if occupied:
+            continue
+
+        tile = world.tile_at(x, y)
+        if tile.kind == "grass" and (x, y) != (settlement.x, settlement.y):
+            candidates.append((x, y))
+
+    if not candidates:
+        return None
+
+    return min(candidates, key=lambda pos: (abs(pos[0] - settlement.x) + abs(pos[1] - settlement.y), pos[1], pos[0]))
+
+
 def settlement_name(world) -> str:
     identity = world.identity
     title = identity.title if identity is not None else "Colony"
@@ -62,6 +144,17 @@ def settlement_name(world) -> str:
     suffixes = _suffixes_for_tags(tags)
     suffix = suffixes[_deterministic_index(world.seed, title, tags, len(suffixes))]
     return f"{root}{suffix}"
+
+
+def _walkable_tiles_in_radius(world, center_x: int, center_y: int, radius: int) -> list[tuple[int, int]]:
+    tiles = []
+    for y in range(max(0, center_y - radius), min(world.height, center_y + radius + 1)):
+        for x in range(max(0, center_x - radius), min(world.width, center_x + radius + 1)):
+            if max(abs(x - center_x), abs(y - center_y)) > radius:
+                continue
+            if world.tile_at(x, y).walkable:
+                tiles.append((x, y))
+    return tiles
 
 
 def _agent_centroid(agents) -> tuple[int, int]:

@@ -1,6 +1,18 @@
+import random
+
+from src.actions import BuildShelterAction, SeekBuildSiteAction, WanderAction
 from src.agent import Agent
 from src.config import COLORS, SETTLEMENT_RADIUS, SYMBOL_LABELS
-from src.settlement import nearest_walkable_tile
+from src.roles import BUILDER, GENERALIST, SCOUT
+from src.settlement import (
+    Settlement,
+    distance_to_settlement,
+    exploration_radius_for_role,
+    is_near_settlement,
+    nearest_walkable_tile,
+    random_tile_near_settlement,
+    valid_build_tile_near_settlement,
+)
 from src.tile import Tile
 from src.world import World, create_world
 
@@ -74,3 +86,87 @@ def test_nearest_walkable_tile_skips_water_and_mountain():
 def test_settlement_marker_is_supported_by_config():
     assert "settlement" in COLORS
     assert SYMBOL_LABELS["+"] == "Settlement"
+
+
+def test_settlement_distance_and_near_helpers_work():
+    world = make_world(width=12, height=12)
+    world.settlement = Settlement("Willowhold", 5, 5, 1, "Spring", radius=4)
+
+    assert distance_to_settlement(world, 7, 8) == 3
+    assert is_near_settlement(world, 7, 8)
+    assert not is_near_settlement(world, 10, 10)
+
+
+def test_random_tile_near_settlement_avoids_center_and_stays_in_radius():
+    world = make_world(width=12, height=12)
+    world.settlement = Settlement("Willowhold", 5, 5, 1, "Spring", radius=4)
+
+    x, y = random_tile_near_settlement(world, random.Random(1), GENERALIST)
+
+    assert (x, y) != (5, 5)
+    assert is_near_settlement(world, x, y)
+
+
+def test_scouts_have_larger_exploration_radius_than_generalists():
+    assert exploration_radius_for_role(SCOUT, 10) > exploration_radius_for_role(GENERALIST, 10)
+
+
+def test_wander_action_biases_calm_agent_toward_settlement_area():
+    world = make_world(width=20, height=20)
+    world.settlement = Settlement("Willowhold", 10, 10, 1, "Spring", radius=5)
+    agent = Agent("Ari", 1, 1, role=BUILDER)
+    world.agents.append(agent)
+
+    WanderAction().execute(agent, world)
+
+    assert agent.current_target is not None
+    assert is_near_settlement(
+        world,
+        agent.current_target[0],
+        agent.current_target[1],
+        radius=exploration_radius_for_role(BUILDER, world.settlement.radius),
+    )
+
+
+def test_shelter_building_seeks_settlement_build_site_before_building_far_away():
+    world = make_world(width=12, height=12)
+    world.settlement = Settlement("Willowhold", 6, 6, 1, "Spring", radius=3)
+    agent = Agent("Builder", 0, 0, wood=3, role=BUILDER)
+    world.agents.append(agent)
+
+    assert valid_build_tile_near_settlement(world, agent) is not None
+    assert not BuildShelterAction().can_do(agent, world)
+    assert SeekBuildSiteAction().can_do(agent, world)
+
+
+def test_shelter_building_is_allowed_near_settlement():
+    world = make_world(width=12, height=12)
+    world.settlement = Settlement("Willowhold", 6, 6, 1, "Spring", radius=3)
+    agent = Agent("Builder", 7, 6, wood=3, role=BUILDER)
+    world.agents.append(agent)
+
+    assert BuildShelterAction().can_do(agent, world)
+
+
+def test_survival_goal_overrides_settlement_bias():
+    world = make_world(width=12, height=12)
+    world.settlement = Settlement("Willowhold", 6, 6, 1, "Spring", radius=3)
+    world.tile_at(11, 6).kind = "water"
+    agent = Agent("Scout", 6, 6, thirst=80, role=SCOUT)
+    agent.remembered_water.add((11, 6))
+    world.agents.append(agent)
+
+    action = agent.choose_action(world)
+
+    assert agent.current_goal == "Drink"
+    assert action.name == "Seeking water"
+
+
+def test_settlement_activity_tracking_updates():
+    world = make_world(width=8, height=8)
+    world.settlement = Settlement("Willowhold", 4, 4, 1, "Spring")
+    world.agents.append(Agent("Ari", 2, 3))
+
+    world.record_settlement_activity()
+
+    assert world.settlement.activity_at(2, 3) == 1

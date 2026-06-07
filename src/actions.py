@@ -2,6 +2,8 @@ from __future__ import annotations
 import random
 from typing import TYPE_CHECKING
 
+from src.settlement import is_near_settlement, random_tile_near_settlement, valid_build_tile_near_settlement
+
 if TYPE_CHECKING:
     from src.agent import Agent
     from src.world import World
@@ -153,7 +155,14 @@ class BuildShelterAction(Action):
 
     def can_do(self, agent: Agent, world: World) -> bool:
         tile = world.tile_at(agent.x, agent.y)
-        return tile.kind == "grass" and world.should_build_shelter(agent)
+        if tile.kind != "grass" or not world.should_build_shelter(agent):
+            return False
+
+        preferred_site = valid_build_tile_near_settlement(world, agent)
+        if preferred_site is not None and not is_near_settlement(world, agent.x, agent.y):
+            return False
+
+        return True
 
     def score(self, agent: Agent, world: World) -> int:
         if world.should_build_shelter(agent):
@@ -167,6 +176,29 @@ class BuildShelterAction(Action):
         tile.kind = "shelter"
         agent.wood -= 3
         world.log(f"{agent.name} builds a shelter.")
+
+
+class SeekBuildSiteAction(Action):
+    name = "Seeking build site"
+
+    def can_do(self, agent: Agent, world: World) -> bool:
+        if not world.should_build_shelter(agent):
+            return False
+        target = valid_build_tile_near_settlement(world, agent)
+        if target is None:
+            return False
+        return not (world.tile_at(agent.x, agent.y).kind == "grass" and is_near_settlement(world, agent.x, agent.y))
+
+    def score(self, agent: Agent, world: World) -> int:
+        return 78
+
+    def execute(self, agent: Agent, world: World):
+        super().execute(agent, world)
+        target = valid_build_tile_near_settlement(world, agent)
+        if target is None:
+            agent.record_no_progress()
+            return
+        _step_along_path(agent, world, target)
 
 
 class SleepAction(Action):
@@ -194,6 +226,12 @@ class WanderAction(Action):
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)
 
+        if _can_use_settlement_bias(agent):
+            target = random_tile_near_settlement(world, random, agent.role)
+            if target is not None and target != (agent.x, agent.y):
+                if _step_along_path(agent, world, target):
+                    return
+
         directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
         random.shuffle(directions)
 
@@ -206,6 +244,10 @@ class WanderAction(Action):
                 agent.y = ny
                 agent.reset_stuck()
                 return
+
+
+def _can_use_settlement_bias(agent: Agent) -> bool:
+    return agent.hunger < 40 and agent.thirst < 40 and agent.fatigue < 50
 
 
 # ---------------------------------------------------------------------------

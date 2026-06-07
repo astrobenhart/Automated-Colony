@@ -117,6 +117,24 @@ Non-goals for v1:
 
 Future systems can use the center as the origin for local work radius, clustered building placement, physical storage, village identity, expansion, and settlement history.
 
+## Village Hub Behavior v1
+
+The settlement center influences routine behavior but does not command villagers.
+
+Implemented behavior:
+- calm wandering prefers random walkable tiles near the settlement instead of pure local drift
+- role preferences affect local range: builders and foragers stay closer, generalists use the settlement radius, scouts can range farther
+- shelter construction prefers valid grass build sites inside the settlement radius before falling back
+- settlement activity records where villagers spend time in a lightweight heatmap
+
+Survival remains dominant:
+- thirst still drives drinking and water seeking
+- hunger still drives eating and food seeking
+- fatigue still drives shelter and sleep behavior
+- there is no mandatory return-to-settlement goal
+
+Future systems can use activity heat to suggest roads, stockpile locations, workshops, districts, and village expansion pressure.
+
 ## Settlement Arc
 
 The long-term simulation arc is:

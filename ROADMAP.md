@@ -120,7 +120,7 @@ Goal: Give the colony more structure and long-term survival tools, turning shelt
 Features:
 - [x] Lightweight villager roles as preference modifiers
 - [x] Settlement center
-- [ ] Village hub behavior around the settlement center
+- [x] Village hub behavior around the settlement center
 - [ ] Physical storage or stockpile locations
 - [ ] Clustered building placement near the village hub
 - [ ] Hauling or task claiming for shared resources
@@ -134,6 +134,7 @@ Notes:
 - Current playtests show believable shelter clustering after early survival pressure.
 - Roles v1 is implemented in `src/roles.py` with Generalist, Forager, Builder, and Scout. Roles are soft goal-score preferences, not job assignments; urgent survival needs still dominate.
 - Settlement Center v1 is implemented in `src/settlement.py` as a single conceptual village anchor. It is automatically named and placed near the initial villager centroid, tracks living population and radius, and is visible in the right panel and map marker.
+- Village Hub Behavior v1 lets the settlement center bias calm exploration and shelter build-site choice without adding a mandatory return-home goal. Scouts can range farther, builders and foragers remain more local, and settlement activity is tracked in a lightweight heatmap for future roads, stockpiles, workshops, and districts.
 - Next v0.5 steps should build on the settlement center with local work radius, physical storage, and clustered building placement.
 - Physical stockpiles and building clusters are prerequisites for richer settlement identity and expansion.
 - Physical stockpiles, multiple settlements, migration, expansion, and settlement-driven task claiming remain future work.

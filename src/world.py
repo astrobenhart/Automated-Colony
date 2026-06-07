@@ -129,6 +129,12 @@ class World:
         if self.settlement is not None:
             self.settlement.population = len(self.living_agents())
 
+    def record_settlement_activity(self):
+        if self.settlement is None:
+            return
+        for agent in self.living_agents():
+            self.settlement.record_activity(agent.x, agent.y)
+
     def update(self):
         self.tick += 1
 
@@ -147,6 +153,7 @@ class World:
                 agent.update_progress_tracking(self, progress_before)
 
         self.update_settlement_population()
+        self.record_settlement_activity()
         update_wildlife(self, random)
 
     def advance_day(self):

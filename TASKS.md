@@ -120,6 +120,37 @@ Notes:
 
 ## Completed
 
+### TASK-38
+Title: Add Village Hub Behavior
+
+Owner: Gameplay Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #26 by letting the settlement center bias routine villager behavior without creating a mandatory return-home task.
+
+Expected Output:
+Calm villagers tend to operate near the settlement, scouts can range farther, shelter construction prefers valid local build sites, and settlement activity is tracked for future village systems.
+
+Acceptance Criteria:
+- Settlement helper functions exist for distance, near checks, random local tiles, and valid local build sites.
+- Routine exploration is biased around settlement radius.
+- Scouts can use a larger exploration radius than generalists.
+- Builders and foragers remain more local when possible.
+- Shelter placement prefers settlement-area build sites.
+- Food, water, and sleep survival needs override settlement preferences.
+- Settlement activity tracking records where villagers spend time.
+- Existing tests pass.
+
+Dependencies:
+- TASK-37
+
+Notes:
+- No stockpiles, hauling, roads, workshops, farming, multiple settlements, migration, social systems, or player micromanagement were added.
+
+---
+
 ### TASK-37
 Title: Add Settlement Center
 

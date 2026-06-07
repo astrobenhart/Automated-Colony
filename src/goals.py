@@ -11,6 +11,7 @@ from src.actions import (
     GatherFoodAction,
     GatherWoodAction,
     BuildShelterAction,
+    SeekBuildSiteAction,
     SleepAction,
     WanderAction,
     SeekWaterAction,
@@ -123,6 +124,7 @@ class BuildShelterGoal(Goal):
     name = "Build shelter"
     action_types = (
         BuildShelterAction,
+        SeekBuildSiteAction,
     )
 
     def can_do(self, agent: Agent, world: World) -> bool:
