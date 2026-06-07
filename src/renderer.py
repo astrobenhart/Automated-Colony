@@ -297,12 +297,14 @@ class PygameRenderer:
             target = agent.current_target if agent.current_target is not None else "None"
             details = [
                 ("Agent", agent.name),
+                ("Role", agent.role),
                 ("Pos", f"({agent.x}, {agent.y})"),
                 ("Needs", f"H{agent.hunger} T{agent.thirst} F{agent.fatigue}"),
                 ("Carry", f"Food {agent.food}, Wood {agent.wood}"),
                 ("Action", agent.current_action),
                 ("Goal", agent.current_goal),
                 ("Target", target),
+                ("Idle", agent.no_progress_ticks),
             ]
             color = COLORS["text"] if agent.alive else COLORS["dead"]
 

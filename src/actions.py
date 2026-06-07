@@ -224,6 +224,82 @@ def _shared_memory(agent_memory: set[tuple[int, int]], colony_memory: set[tuple[
     return colony_memory
 
 
+def _known_food(agent: Agent, world: World) -> set[tuple[int, int]]:
+    _forget_invalid_food(agent, world)
+    return set(_shared_memory(agent.remembered_food, world.colony_memory.known_food))
+
+
+def _known_wood(agent: Agent, world: World) -> set[tuple[int, int]]:
+    _forget_invalid_wood(agent, world)
+    return set(_shared_memory(agent.remembered_wood, world.colony_memory.known_wood))
+
+
+def _known_water(agent: Agent, world: World) -> set[tuple[int, int]]:
+    _forget_invalid_water(agent, world)
+    return set(_shared_memory(agent.remembered_water, world.colony_memory.known_water))
+
+
+def _has_food(world: World, pos: tuple[int, int]) -> bool:
+    x, y = pos
+    return 0 <= x < world.width and 0 <= y < world.height and world.tile_at(x, y).food > 0
+
+
+def _has_wood(world: World, pos: tuple[int, int]) -> bool:
+    x, y = pos
+    return (
+        0 <= x < world.width
+        and 0 <= y < world.height
+        and world.tile_at(x, y).wood > 0
+    )
+
+
+def _has_water(world: World, pos: tuple[int, int]) -> bool:
+    x, y = pos
+    return 0 <= x < world.width and 0 <= y < world.height and world.tile_at(x, y).kind == "water"
+
+
+def _forget_invalid_food(agent: Agent, world: World):
+    for pos in set(agent.remembered_food) | set(world.colony_memory.known_food):
+        if not _has_food(world, pos):
+            _forget_food_target(agent, world, pos)
+
+
+def _forget_invalid_wood(agent: Agent, world: World):
+    for pos in set(agent.remembered_wood) | set(world.colony_memory.known_wood):
+        if not _has_wood(world, pos):
+            _forget_wood_target(agent, world, pos)
+
+
+def _forget_invalid_water(agent: Agent, world: World):
+    for pos in set(agent.remembered_water) | set(world.colony_memory.known_water):
+        if not _has_water(world, pos):
+            _forget_water_target(agent, world, pos)
+
+
+def _forget_food_target(agent: Agent, world: World, pos: tuple[int, int]):
+    agent.remembered_food.discard(pos)
+    world.colony_memory.forget_food(pos)
+    if agent.current_target == pos:
+        agent.current_target = None
+        agent.current_path = []
+
+
+def _forget_wood_target(agent: Agent, world: World, pos: tuple[int, int]):
+    agent.remembered_wood.discard(pos)
+    world.colony_memory.forget_wood(pos)
+    if agent.current_target == pos:
+        agent.current_target = None
+        agent.current_path = []
+
+
+def _forget_water_target(agent: Agent, world: World, pos: tuple[int, int]):
+    agent.remembered_water.discard(pos)
+    world.colony_memory.forget_water(pos)
+    if agent.current_target == pos:
+        agent.current_target = None
+        agent.current_path = []
+
+
 def _step_along_path(agent: Agent, world: World, target: tuple[int, int]) -> bool:
     """
     Move the agent one step along a BFS path toward target.
@@ -267,7 +343,7 @@ class SeekWaterAction(Action):
         # Only seek if thirsty, knows water, and isn't already adjacent.
         if agent.thirst <= 15:
             return False
-        memory = _shared_memory(agent.remembered_water, world.colony_memory.known_water)
+        memory = _known_water(agent, world)
         if not memory:
             return False
         return not world.nearby_tile_kind(agent.x, agent.y, "water")
@@ -277,7 +353,12 @@ class SeekWaterAction(Action):
 
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)
-        memory = _shared_memory(agent.remembered_water, world.colony_memory.known_water)
+        memory = _known_water(agent, world)
+        if not memory:
+            agent.current_target = None
+            agent.current_path = []
+            agent.record_no_progress()
+            return
         target = _nearest(agent.x, agent.y, memory)
         _step_along_path(agent, world, target)
 
@@ -289,7 +370,7 @@ class SeekFoodAction(Action):
     def can_do(self, agent: Agent, world: World) -> bool:
         if agent.hunger <= 20:
             return False
-        memory = _shared_memory(agent.remembered_food, world.colony_memory.known_food)
+        memory = _known_food(agent, world)
         if not memory:
             return False
         return world.tile_at(agent.x, agent.y).food == 0
@@ -299,7 +380,12 @@ class SeekFoodAction(Action):
 
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)
-        memory = _shared_memory(agent.remembered_food, world.colony_memory.known_food)
+        memory = _known_food(agent, world)
+        if not memory:
+            agent.current_target = None
+            agent.current_path = []
+            agent.record_no_progress()
+            return
         target = _nearest(agent.x, agent.y, memory)
         _step_along_path(agent, world, target)
 
@@ -311,7 +397,7 @@ class SeekWoodAction(Action):
     def can_do(self, agent: Agent, world: World) -> bool:
         if not world.should_gather_wood_for_construction(agent):
             return False
-        memory = _shared_memory(agent.remembered_wood, world.colony_memory.known_wood)
+        memory = _known_wood(agent, world)
         if not memory:
             return False
         return world.tile_at(agent.x, agent.y).wood == 0
@@ -321,7 +407,12 @@ class SeekWoodAction(Action):
 
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)
-        memory = _shared_memory(agent.remembered_wood, world.colony_memory.known_wood)
+        memory = _known_wood(agent, world)
+        if not memory:
+            agent.current_target = None
+            agent.current_path = []
+            agent.record_no_progress()
+            return
         target = _nearest(agent.x, agent.y, memory)
         _step_along_path(agent, world, target)
 

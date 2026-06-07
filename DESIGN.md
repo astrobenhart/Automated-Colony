@@ -70,7 +70,7 @@ UI should:
 ## Next Focus
 
 v0.5 Settlement Simulation should focus on:
-- roles
+- roles as soft villager preferences
 - settlement centers
 - physical stockpiles
 - clustered building placement
@@ -78,6 +78,22 @@ v0.5 Settlement Simulation should focus on:
 - stronger long-term settlement behavior
 
 Do not begin v0.5 by adding reproduction, migration, politics, warfare, or large-scale economy. The next step is making stable shelter clusters become recognizable early villages.
+
+## Roles
+
+Villagers are survivors with preferences, not workers with fixed assignments.
+
+Implemented roles:
+- Generalist: no specialty modifier
+- Forager: modest preference for food gathering and food storage
+- Builder: modest preference for wood gathering and shelter building
+- Scout: modest preference for exploration
+
+Role rules:
+- roles modify goal utility only when immediate needs are reasonably satisfied
+- thirst, hunger, and fatigue remain dominant
+- no role is mandatory for colony function
+- there is no player role assignment, job board, task claiming, or micromanagement
 
 ## Settlement Arc
 

@@ -18,6 +18,7 @@ The project is designed as an emergent colony screensaver and as a playground fo
 - Persistent world history for major environmental events
 - Ambient wildlife with biome-suitable rabbits, deer, boar, and waterfowl
 - Autonomous villagers with hunger, thirst, fatigue, carried food, and carried wood
+- Lightweight villager roles: Generalist, Forager, Builder, and Scout
 - Goal-based behavior for drinking, eating, sleeping, gathering, building, depositing, and exploring
 - BFS pathfinding with occupied-tile avoidance
 - Stuck recovery when paths collide or become blocked
@@ -109,6 +110,7 @@ No setup screen, sliders, dropdowns, or player-facing configuration UI is curren
 - `src/worldgen_settings.py` - Validated world-generation settings and presets
 - `src/world_identity.py` - Generated world titles, subtitles, survival outlooks, and tags
 - `src/agent.py` - Agent state, needs, memory scanning, goal selection
+- `src/roles.py` - Lightweight role definitions and goal preference modifiers
 - `src/actions.py` - Low-level executable actions
 - `src/goals.py` - High-level goal selection layer
 - `src/pathfinding.py` - BFS pathfinding
@@ -130,6 +132,6 @@ No setup screen, sliders, dropdowns, or player-facing configuration UI is curren
 
 v0.4.0 completed the smarter world milestone: deterministic rule-based terrain generation, larger explorable maps, rivers, terrain variety, seasons, ecology, environmental events, wildlife, world history, world identity, and world-generation presets.
 
-The next milestone is v0.5 settlement simulation: roles, settlement centers, physical storage, building clusters, and stronger village behavior.
+The current milestone is v0.5 settlement simulation. Lightweight roles are implemented as preference modifiers; future v0.5 work will focus on settlement centers, physical storage, building clusters, and stronger village behavior.
 
 v0.3.0 completed the colony foundation: villagers can use personal and shared knowledge, recover from blocked movement, coordinate around shelter needs, and use simple shared storage.

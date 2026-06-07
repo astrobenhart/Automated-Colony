@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Lightweight villager roles: Generalist, Forager, Builder, and Scout.
+- Automatic deterministic role assignment during villager spawning.
+- Role preference modifiers for routine foraging, building, and exploration.
+- Selected-agent panel now shows each villager's role.
+
+### Changed
+- Goal scoring now includes subtle role bonuses only outside urgent survival states.
+
 ## v0.4.0 - Smarter World
 
 ### Added

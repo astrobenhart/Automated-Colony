@@ -13,6 +13,7 @@ from src.seasons import (
     transition_progress,
 )
 from src.resource_ecology import apply_resource_ecology
+from src.roles import role_for_index
 from src.wildlife import spawn_wildlife, update_wildlife
 from src.world_history import WorldHistory
 from src.world_identity import WorldIdentity, generate_world_identity
@@ -111,7 +112,7 @@ class World:
                 y = random.randint(0, self.height - 1)
 
                 if self.can_move_to(x, y):
-                    self.agents.append(Agent(names[i % len(names)], x, y))
+                    self.agents.append(Agent(names[i % len(names)], x, y, role=role_for_index(i)))
                     break
 
         self.log(f"{amount} villagers enter the world.")
@@ -126,9 +127,12 @@ class World:
         for agent in self.living_agents():
             agent.update_needs()
             agent.scan_surroundings(self)
+            progress_before = agent.progress_snapshot(self)
             action = agent.choose_action(self)
             action.execute(agent, self)
             agent.die_if_needed(self)
+            if agent.alive:
+                agent.update_progress_tracking(self, progress_before)
 
         update_wildlife(self, random)
 

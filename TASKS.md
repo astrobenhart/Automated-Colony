@@ -120,6 +120,66 @@ Notes:
 
 ## Completed
 
+### TASK-36
+Title: Fix No-Progress Survival Recovery
+
+Owner: Gameplay Agent
+
+Status: Completed
+
+Description:
+Resolve GitHub Issue #24 by preventing villagers from passively standing still until hunger or thirst death.
+
+Expected Output:
+Agents clean stale resource memories, let urgent survival needs override role preferences, explore when no survival resource plan exists, and clear stale targets/paths after repeated no-progress ticks.
+
+Acceptance Criteria:
+- Urgent thirst and hunger override role preferences.
+- Hungry agents can eat carried or stored food.
+- Hungry agents can seek known food.
+- Depleted remembered food is cleared or ignored.
+- Agents with no known survival resources explore instead of idling indefinitely.
+- Stale targets and paths are cleared after repeated no-progress ticks.
+- Selected-agent UI exposes the no-progress counter for verification.
+- Existing tests pass.
+
+Dependencies:
+- TASK-35
+
+Notes:
+- This is a blocker reliability fix only; no settlement centers, task claiming, farming, migration, reproduction, worldgen changes, or hunger/thirst balance tuning were added.
+
+---
+
+### TASK-35
+Title: Add Lightweight Villager Roles
+
+Owner: Gameplay Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #23 by adding Generalist, Forager, Builder, and Scout roles as soft behavior preferences.
+
+Expected Output:
+Villagers receive automatic roles that bias routine goal choice without creating job locks or overriding urgent survival needs.
+
+Acceptance Criteria:
+- Villagers have visible roles.
+- Roles are assigned automatically.
+- Role modifiers affect routine goal choice.
+- Urgent thirst, hunger, and fatigue override role preferences.
+- No player assignment, job board, task claiming, farming, settlement center, relationships, reproduction, or migration is added.
+- Existing tests pass.
+
+Dependencies:
+- TASK-34
+
+Notes:
+- Roles are preferences, not worker classes. A starving Builder still seeks food, a thirsty Scout still seeks water, and a tired Forager still seeks shelter.
+
+---
+
 ### TASK-34
 Title: Prepare v0.4.0 Release
 
