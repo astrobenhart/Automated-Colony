@@ -180,6 +180,12 @@ def test_tiles_are_smaller_and_grid_is_disabled_by_default():
     assert not DEBUG_DRAW_GRID
 
 
+def test_viewport_is_larger_without_changing_tile_size():
+    assert TILE_SIZE == 16
+    assert VIEWPORT_WIDTH == 76
+    assert VIEWPORT_HEIGHT == 45
+
+
 def test_adjacent_tiles_draw_without_grid_gap():
     world = make_world(width=2, height=1)
     renderer = make_renderer(world)
@@ -191,7 +197,7 @@ def test_adjacent_tiles_draw_without_grid_gap():
 
 
 def test_selection_highlight_aligns_with_camera_offset():
-    world = make_world(width=80, height=45)
+    world = make_world(width=100, height=60)
     renderer = make_renderer(world)
     renderer.camera_x = 10
     renderer.camera_y = 5
