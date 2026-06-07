@@ -18,9 +18,9 @@ Need
 → World Change
 → Event
 
-## Current Focus
+## Current Architecture
 
-v0.4 Smarter World
+v0.4 Smarter World is complete.
 
 Agents should:
 - remember resources
@@ -66,6 +66,18 @@ UI should:
 - keep current simulation and colony status visible at a glance
 - prefer compact grouped sections as more systems are added
 - preserve selection, active events, history, legend, controls, and recent event visibility without changing simulation behavior
+
+## Next Focus
+
+v0.5 Settlement Simulation should focus on:
+- roles
+- settlement centers
+- physical stockpiles
+- clustered building placement
+- local resource use around village hubs
+- stronger long-term settlement behavior
+
+Do not begin v0.5 by adding reproduction, migration, politics, warfare, or large-scale economy. The next step is making stable shelter clusters become recognizable early villages.
 
 ## Settlement Arc
 

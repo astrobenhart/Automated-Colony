@@ -1,5 +1,43 @@
 # Changelog
 
+## v0.4.0 - Smarter World
+
+### Added
+- Rule-based world generation using elevation, moisture, and temperature maps.
+- Larger explorable maps with camera panning and a larger default viewport.
+- Rivers that trace downhill and integrate with existing water/pathfinding behavior.
+- Natural terrain variety including hills, plains, wetlands, dry areas, forests, mountains, grass, water, and shelters.
+- Seasonal cycle with Spring, Summer, Autumn, and Winter.
+- Smooth seasonal terrain color transitions and season-aware terrain legend colors.
+- Terrain and season based resource ecology with growth caps and gradual die-off.
+- Environmental Event v1 with drought and heavy rain.
+- Persistent world history for major environmental events.
+- Ambient biome-based wildlife: rabbits, deer, boar, and waterfowl.
+- Centralized world-generation settings and presets for normal, wet, dry, forest, and harsh worlds.
+- Generated world identity with title, subtitle, survival outlook, and hidden future-facing tags.
+- Terrain and wildlife symbol legend in the right panel.
+- Compact side-by-side Simulation and Colony panel layout.
+- Automated tests covering worldgen, seasons, ecology, events, wildlife, history, settings, identity, renderer behavior, and v0.4 adaptation evidence.
+
+### Changed
+- The player-facing worldgen experience is now discovery through generated world identity rather than menus or setup controls.
+- Resource availability now depends on terrain, season, ecology, environmental events, and world-generation settings.
+- The right-side panel shows world identity, active events, history, legend, controls, and recent events more compactly.
+- Default viewport increased while keeping tile size unchanged.
+- Agents now operate in worlds whose terrain/resources vary meaningfully by preset and seed.
+
+### Fixed
+- Terrain legend colors now match season-aware map colors.
+- Seasonal visual changes blend before season boundaries instead of snapping abruptly.
+- Resource growth no longer accumulates without terrain-based caps.
+- Environmental events remain temporary, visible, and non-destructive to permanent water.
+- v0.4 verification confirms agents respond to world conditions through goals, memory, shared memory, pathfinding, storage, shelter construction, and resource seeking.
+
+### Known Follow-Ups
+- Tune survival outlook labels so generated identities better predict actual short-run colony outcomes.
+- Tune wet-world balance; one verification seed showed a favorable wet identity but a harsh survival result.
+- Wildfire, flood, broader world history, settlement history, and village systems remain future work.
+
 ## v0.3.0 - Colony Foundation
 
 ### Added

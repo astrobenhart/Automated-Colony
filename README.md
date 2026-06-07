@@ -128,6 +128,8 @@ No setup screen, sliders, dropdowns, or player-facing configuration UI is curren
 
 ## Current Milestone
 
-v0.4 is focused on a smarter world: deterministic rule-based terrain generation, larger explorable maps, rivers, terrain variety, and seasonal resource pressure.
+v0.4.0 completed the smarter world milestone: deterministic rule-based terrain generation, larger explorable maps, rivers, terrain variety, seasons, ecology, environmental events, wildlife, world history, world identity, and world-generation presets.
+
+The next milestone is v0.5 settlement simulation: roles, settlement centers, physical storage, building clusters, and stronger village behavior.
 
 v0.3.0 completed the colony foundation: villagers can use personal and shared knowledge, recover from blocked movement, coordinate around shelter needs, and use simple shared storage.

@@ -8,6 +8,59 @@ No active task.
 
 ## Backlog
 
+### TASK-33
+Title: Tune Survival Outlook Labels
+
+Owner: Balance Agent
+
+Status: Backlog
+
+Description:
+Tune generated world identity survival outlook labels so they better match observed short-run colony outcomes.
+
+Expected Output:
+Small calibration changes to outlook scoring or wording, without changing world generation or agent systems.
+
+Acceptance Criteria:
+- Outlook labels better match manual/preset verification.
+- No gameplay systems are added.
+- Existing tests pass.
+
+Dependencies:
+- TASK-30
+- TASK-31
+
+Notes:
+- This is calibration only and is not a v0.4 release blocker.
+
+---
+
+### TASK-32
+Title: Tune Wet-World Balance
+
+Owner: Balance Agent
+
+Status: Backlog
+
+Description:
+Review wet-world survival pacing after verification showed one favorable wet identity still collapsing by day 20.
+
+Expected Output:
+Balance recommendations or small tuning changes if needed.
+
+Acceptance Criteria:
+- Wet worlds remain distinct and resource-rich without producing misleadingly harsh outcomes.
+- No new gameplay systems are added.
+- Existing tests pass.
+
+Dependencies:
+- TASK-31
+
+Notes:
+- This is calibration only and is not a v0.4 release blocker.
+
+---
+
 ### TASK-24
 Title: Roadmap Settlement Formation
 
@@ -66,6 +119,35 @@ Notes:
 ---
 
 ## Completed
+
+### TASK-34
+Title: Prepare v0.4.0 Release
+
+Owner: Release Agent
+
+Status: Completed
+
+Description:
+Close out v0.4 Smarter World and prepare release documentation for v0.4.0.
+
+Expected Output:
+Updated roadmap, tasks, changelog, README, DESIGN notes, verification results, and release recommendation.
+
+Acceptance Criteria:
+- All v0.4 roadmap items and acceptance criteria are complete.
+- Changelog includes a v0.4.0 entry.
+- Backlog contains only follow-up tuning items and future planning tasks.
+- `python -m pytest` passes.
+- `python -m src.main` launches.
+- v0.4.0 is ready for tagging.
+
+Dependencies:
+- TASK-31
+
+Notes:
+- No v0.5 work, gameplay features, balance passes, settlement work, role systems, reproduction, or migration were added.
+
+---
 
 ### TASK-31
 Title: Verify v0.4 World Adaptation

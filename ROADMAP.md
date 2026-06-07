@@ -61,6 +61,8 @@ Notes:
 
 Goal: Make the world feel more believable by generating terrain from simple natural rules and allowing the environment to evolve over time.
 
+Status: Complete for v0.4.0.
+
 Features:
 - [x] Replace purely random terrain with rule-based world generation
 - [x] Generate elevation, moisture, and temperature maps
