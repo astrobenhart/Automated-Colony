@@ -285,3 +285,33 @@ def test_history_summary_draws_without_crashing():
     end_y = renderer.draw_history_summary(10, 10, 220, 200)
 
     assert end_y > 10
+
+
+def test_panel_column_layout_uses_non_overlapping_equal_columns():
+    world = make_world(width=3, height=3)
+    renderer = make_renderer(world)
+
+    left_x, left_width, right_x, right_width = renderer.panel_column_layout(20, 300)
+
+    assert left_x == 20
+    assert left_width == right_width
+    assert left_x + left_width < right_x
+    assert right_x + right_width == 320
+
+
+def test_two_column_status_section_draws_both_columns_compactly():
+    world = make_world(width=3, height=3)
+    renderer = make_renderer(world)
+
+    end_y = renderer.draw_two_column_section(
+        "Simulation",
+        [("Day", 4), ("Season", "Spring")],
+        "Colony",
+        [("Living", 2), ("Food", 5)],
+        10,
+        10,
+        300,
+        220,
+    )
+
+    assert end_y > 10

@@ -48,6 +48,11 @@ World history should:
 - start with environmental history
 - leave wildlife, settlement, migration, lineage, ruins, and myth history for later milestones
 
+UI should:
+- keep current simulation and colony status visible at a glance
+- prefer compact grouped sections as more systems are added
+- preserve selection, active events, history, legend, controls, and recent event visibility without changing simulation behavior
+
 ## Settlement Arc
 
 The long-term simulation arc is:

@@ -67,6 +67,36 @@ Notes:
 
 ## Completed
 
+### TASK-28
+Title: Arrange Panel Status Columns
+
+Owner: Renderer Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #18 by placing Simulation and Colony status data side by side in the right panel.
+
+Expected Output:
+A denser right-panel top section that preserves important simulation, colony, active-event, selection, history, legend, control, and recent-event information.
+
+Acceptance Criteria:
+- Simulation and Colony status appear side by side.
+- Active Events remain visible below the top status grid.
+- History remains visible in its compact form.
+- Selection, legend, controls, and recent events still render.
+- Renderer layout helper tests pass.
+- Existing tests pass.
+
+Dependencies:
+- TASK-18
+- TASK-27
+
+Notes:
+- This is UI layout only; no gameplay, world generation, season, wildlife, history model, or balance behavior changed.
+
+---
+
 ### TASK-27
 Title: Add Environmental World History
 

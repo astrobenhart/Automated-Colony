@@ -220,39 +220,60 @@ class PygameRenderer:
         )
         y += self.panel_gap
 
-        y = self.draw_section_header("Simulation", content_x, y, content_width, bottom_y)
         status = "PAUSED" if paused else "RUNNING"
-        y = self.draw_stat_row("State", status, content_x, y, content_width, bottom_y)
-        y = self.draw_stat_row("Day", self.world.day, content_x, y, content_width, bottom_y)
-        y = self.draw_stat_row("Season", self.world.season_label, content_x, y, content_width, bottom_y)
-        y = self.draw_stat_row("S Day", self.world.day_of_season, content_x, y, content_width, bottom_y)
-        y = self.draw_stat_row("Tick", self.world.tick, content_x, y, content_width, bottom_y)
-        y = self.draw_stat_row("Speed", f"{sim_speed}/s", content_x, y, content_width, bottom_y)
-        y = self.draw_stat_row("Camera", f"({self.camera_x}, {self.camera_y})", content_x, y, content_width, bottom_y)
-        y = self.draw_stat_row("Events", active_event_names(self.world.active_environment_events), content_x, y, content_width, bottom_y)
+        simulation_stats = [
+            ("State", status),
+            ("Day", self.world.day),
+            ("Year", self.world.year),
+            ("Season", self.world.season_label),
+            ("S Day", self.world.day_of_season),
+            ("Speed", f"{sim_speed}x"),
+            ("Cam", f"{self.camera_x},{self.camera_y}"),
+        ]
+        colony_stats = [
+            ("Living", len(self.world.living_agents())),
+            ("Shelters", self.world.count_tiles("shelter")),
+            ("Food", self.world.total_food_on_map()),
+            ("Wood", self.world.total_wood_on_map()),
+            ("Store F", self.world.colony_storage.food),
+            ("Store W", self.world.colony_storage.wood),
+            ("Wild", len([animal for animal in self.world.animals if animal.alive])),
+        ]
+        y = self.draw_two_column_section(
+            "Simulation",
+            simulation_stats,
+            "Colony",
+            colony_stats,
+            content_x,
+            y,
+            content_width,
+            bottom_y,
+        )
 
         y += self.panel_gap
-        y = self.draw_section_header("Controls", content_x, y, content_width, bottom_y)
-        controls = "WASD pan | Space pause | Up/Down speed | R restart | Esc quit"
-        y = self.draw_wrapped_text(controls, content_x, y, content_width, bottom_y, COLORS["muted"])
-
-        y += self.panel_gap
-        y = self.draw_section_header("Colony", content_x, y, content_width, bottom_y)
-        y = self.draw_stat_row("Living", len(self.world.living_agents()), content_x, y, content_width, bottom_y)
-        y = self.draw_stat_row("Shelters", self.world.count_tiles("shelter"), content_x, y, content_width, bottom_y)
-        y = self.draw_stat_row("Food", self.world.total_food_on_map(), content_x, y, content_width, bottom_y)
-        y = self.draw_stat_row("Wood", self.world.total_wood_on_map(), content_x, y, content_width, bottom_y)
-        y = self.draw_stat_row("Stored F", self.world.colony_storage.food, content_x, y, content_width, bottom_y)
-        y = self.draw_stat_row("Stored W", self.world.colony_storage.wood, content_x, y, content_width, bottom_y)
-
-        y += self.panel_gap
-        y = self.draw_history_summary(content_x, y, content_width, bottom_y)
+        y = self.draw_section_header("Active Events", content_x, y, content_width, bottom_y)
+        y = self.draw_text_line(
+            active_event_names(self.world.active_environment_events),
+            content_x,
+            y,
+            content_width,
+            bottom_y,
+            color=COLORS["muted"],
+        )
 
         y += self.panel_gap
         y = self.draw_selection_details(content_x, y, content_width, bottom_y)
 
         y += self.panel_gap
+        y = self.draw_history_summary(content_x, y, content_width, bottom_y)
+
+        y += self.panel_gap
         y = self.draw_legend(content_x, y, content_width, bottom_y)
+
+        y += self.panel_gap
+        y = self.draw_section_header("Controls", content_x, y, content_width, bottom_y)
+        controls = "WASD pan | Space pause | Up/Down speed | R restart | Esc quit"
+        y = self.draw_wrapped_text(controls, content_x, y, content_width, bottom_y, COLORS["muted"])
 
         y += self.panel_gap
         y = self.draw_section_header("Recent Events", content_x, y, content_width, bottom_y)
@@ -299,6 +320,39 @@ class PygameRenderer:
             y = self.draw_stat_row(label, value, x, y, width, bottom_y, color=color)
 
         return y
+
+    def draw_two_column_section(
+        self,
+        left_title: str,
+        left_rows: list[tuple[str, object]],
+        right_title: str,
+        right_rows: list[tuple[str, object]],
+        x: int,
+        y: int,
+        width: int,
+        bottom_y: int,
+    ):
+        left_x, column_width, right_x, right_width = self.panel_column_layout(x, width)
+
+        left_y = self.draw_section_header(left_title, left_x, y, column_width, bottom_y)
+        right_y = self.draw_section_header(right_title, right_x, y, right_width, bottom_y)
+        header_bottom = max(left_y, right_y)
+
+        left_y = header_bottom
+        right_y = header_bottom
+        for label, value in left_rows:
+            left_y = self.draw_compact_stat_row(label, value, left_x, left_y, column_width, bottom_y)
+        for label, value in right_rows:
+            right_y = self.draw_compact_stat_row(label, value, right_x, right_y, right_width, bottom_y)
+
+        return max(left_y, right_y)
+
+    def panel_column_layout(self, x: int, width: int):
+        gap = self.panel_gap * 2
+        column_width = (width - gap) // 2
+        right_x = x + column_width + gap
+        right_width = width - column_width - gap
+        return x, column_width, right_x, right_width
 
     def draw_history_summary(self, x: int, y: int, width: int, bottom_y: int):
         y = self.draw_section_header("History", x, y, width, bottom_y)
@@ -389,6 +443,19 @@ class PygameRenderer:
         label_text = f"{label}:"
         value_text = str(value)
         line = f"{label_text:<10} {value_text}"
+        return self.draw_text_line(line, x, y, width, bottom_y, color=color)
+
+    def draw_compact_stat_row(
+        self,
+        label: str,
+        value,
+        x: int,
+        y: int,
+        width: int,
+        bottom_y: int,
+        color=None,
+    ):
+        line = f"{label}: {value}"
         return self.draw_text_line(line, x, y, width, bottom_y, color=color)
 
     def draw_wrapped_text(self, text: str, x: int, y: int, width: int, bottom_y: int, color=None):

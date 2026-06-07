@@ -24,7 +24,7 @@ The project is designed as an emergent colony screensaver and as a playground fo
 - Shelter capacity and building-priority logic
 - Abstract colony storage for shared food and wood
 - Selected-agent and selected-tile inspection UI
-- Readable right-side status panel with simulation, controls, colony, selection, and event sections
+- Readable right-side status panel with side-by-side simulation/colony data, active events, selection, history, legend, controls, and recent events
 - Automated tests for pathfinding, memory, goals, building priorities, storage, movement recovery, world logic, and renderer selection helpers
 
 ## Controls
