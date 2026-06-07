@@ -14,6 +14,8 @@ from src.actions import (
     GatherWoodAction,
     BuildShelterAction,
     SeekBuildSiteAction,
+    UseWorkshopAction,
+    SeekWorkshopAction,
     SleepAction,
     WanderAction,
     SeekWaterAction,
@@ -145,6 +147,17 @@ class DepositWoodGoal(Goal):
         DepositWoodAction,
         SeekWoodStockpileAction,
     )
+
+
+class WorkshopGoal(Goal):
+    name = "Workshop"
+    action_types = (
+        UseWorkshopAction,
+        SeekWorkshopAction,
+    )
+
+    def score(self, agent: Agent, world: World) -> int:
+        return super().score(agent, world)
 
 
 class ExploreGoal(Goal):

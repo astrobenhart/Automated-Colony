@@ -163,6 +163,10 @@ class PygameRenderer:
                     color = COLORS["stockpile_food"] if stockpile.stockpile_type == "food" else COLORS["stockpile_wood"]
                     self.draw_centered_symbol(symbol, screen_x, screen_y, color)
 
+                workshop = self.world.workshop_at(x, y)
+                if workshop:
+                    self.draw_centered_symbol("T", screen_x, screen_y, COLORS["workshop"])
+
                 agent = self.world.agent_at(x, y)
                 if agent:
                     self.draw_centered_symbol("@", screen_x, screen_y, COLORS["agent"])
@@ -241,6 +245,7 @@ class PygameRenderer:
             ("Wood", self.world.total_wood_on_map()),
             ("Store F", self.world.colony_storage.food),
             ("Store W", self.world.colony_storage.wood),
+            ("Mats", self.world.colony_storage.building_materials),
             ("Wild", len([animal for animal in self.world.animals if animal.alive])),
         ]
         if self.world.settlement is not None:
@@ -312,16 +317,22 @@ class PygameRenderer:
         if self.selected_agent is not None:
             agent = self.selected_agent
             target = agent.current_target if agent.current_target is not None else "None"
+            known_water = len(agent.remembered_water | self.world.colony_memory.known_water)
+            known_food = len(agent.remembered_food | self.world.colony_memory.known_food)
             details = [
                 ("Agent", agent.name),
                 ("Role", agent.role),
                 ("Pos", f"({agent.x}, {agent.y})"),
                 ("Needs", f"H{agent.hunger} T{agent.thirst} F{agent.fatigue}"),
                 ("Carry", f"Food {agent.food}, Wood {agent.wood}"),
-                ("Action", agent.current_action),
                 ("Goal", agent.current_goal),
+                ("Action", agent.current_action),
                 ("Target", target),
+                ("Path", len(agent.current_path)),
                 ("Idle", agent.no_progress_ticks),
+                ("Recover", agent.current_action == "Recovering"),
+                ("Known W", known_water),
+                ("Known F", known_food),
             ]
             color = COLORS["text"] if agent.alive else COLORS["dead"]
 
@@ -350,6 +361,14 @@ class PygameRenderer:
                     ("Stockpile", label),
                     ("Stored", stockpile.stored_amount),
                     ("Capacity", stockpile.capacity),
+                ])
+            workshop = self.world.workshop_at(tile_x, tile_y)
+            if workshop is not None:
+                details.extend([
+                    ("Workshop", workshop.kind),
+                    ("Makes", workshop.production),
+                    ("Progress", workshop.progress),
+                    ("Produced", workshop.total_items_produced),
                 ])
             color = COLORS["text"]
 

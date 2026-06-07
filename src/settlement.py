@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 
 from src.config import SETTLEMENT_RADIUS, STOCKPILE_CAPACITY
 from src.roles import BUILDER, FORAGER, GENERALIST, SCOUT
+from src.workshop import Workshop, create_workshops, is_workshop_tile
 
 FOOD = "food"
 WOOD = "wood"
@@ -24,6 +25,11 @@ class Stockpile:
         self.stored_amount += accepted
         return accepted
 
+    def withdraw(self, amount: int) -> int:
+        withdrawn = min(max(0, amount), self.stored_amount)
+        self.stored_amount -= withdrawn
+        return withdrawn
+
 
 @dataclass
 class Settlement:
@@ -35,6 +41,7 @@ class Settlement:
     radius: int = SETTLEMENT_RADIUS
     population: int = 0
     stockpiles: list[Stockpile] = field(default_factory=list)
+    workshops: list[Workshop] = field(default_factory=list)
     activity_heatmap: dict[tuple[int, int], int] = field(default_factory=dict)
 
     def record_activity(self, x: int, y: int):
@@ -63,6 +70,7 @@ def found_settlement(world) -> Settlement:
         population=len(world.living_agents()),
     )
     settlement.stockpiles = create_stockpiles(world, settlement)
+    settlement.workshops = create_workshops(world, settlement)
     return settlement
 
 
@@ -164,6 +172,7 @@ def random_tile_near_settlement(world, rng=None, role: str | None = None) -> tup
         if (
             pos != (settlement.x, settlement.y)
             and not is_stockpile_tile(world, pos[0], pos[1])
+            and not is_workshop_tile(world, pos[0], pos[1])
             and world.agent_at(pos[0], pos[1]) is None
         )
     ]
@@ -190,7 +199,12 @@ def valid_build_tile_near_settlement(world, agent=None) -> tuple[int, int] | Non
             continue
 
         tile = world.tile_at(x, y)
-        if tile.kind == "grass" and (x, y) != (settlement.x, settlement.y) and not is_stockpile_tile(world, x, y):
+        if (
+            tile.kind == "grass"
+            and (x, y) != (settlement.x, settlement.y)
+            and not is_stockpile_tile(world, x, y)
+            and not is_workshop_tile(world, x, y)
+        ):
             candidates.append((x, y))
 
     if not candidates:
@@ -250,6 +264,13 @@ def deposit_to_stockpile(world, stockpile_type: str, amount: int) -> int:
     if stockpile is None:
         return 0
     return stockpile.deposit(amount)
+
+
+def withdraw_from_stockpile(world, stockpile_type: str, amount: int) -> int:
+    stockpile = stockpile_for(world, stockpile_type)
+    if stockpile is None:
+        return 0
+    return stockpile.withdraw(amount)
 
 
 def settlement_name(world) -> str:

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from math import ceil
 from typing import TYPE_CHECKING
 
-from src.config import SHELTER_CAPACITY
+from src.config import BUILDING_MATERIAL_SHELTER_WOOD_DISCOUNT, SHELTER_CAPACITY
 
 if TYPE_CHECKING:
     from src.agent import Agent
@@ -61,11 +61,17 @@ def should_gather_wood_for_construction(agent: Agent, world: World) -> bool:
     priority = highest_priority(world)
     if priority is None:
         return False
-    return priority.building_type == SHELTER and agent.wood < priority.wood_cost
+    return priority.building_type == SHELTER and agent.wood < shelter_wood_cost_for_agent(agent, world)
 
 
 def should_build_shelter(agent: Agent, world: World) -> bool:
     priority = highest_priority(world)
     if priority is None or priority.building_type != SHELTER:
         return False
-    return agent.wood >= priority.wood_cost
+    return agent.wood >= shelter_wood_cost_for_agent(agent, world)
+
+
+def shelter_wood_cost_for_agent(agent: Agent, world: World) -> int:
+    if world.colony_storage.building_materials <= 0:
+        return SHELTER_WOOD_COST
+    return max(1, SHELTER_WOOD_COST - BUILDING_MATERIAL_SHELTER_WOOD_DISCOUNT)

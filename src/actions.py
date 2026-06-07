@@ -12,7 +12,9 @@ from src.settlement import (
     stockpile_access_tile,
     stockpile_for,
     valid_build_tile_near_settlement,
+    withdraw_from_stockpile,
 )
+from src.workshop import is_adjacent_to_workshop, workshop_access_tile, workshop_for
 
 if TYPE_CHECKING:
     from src.agent import Agent
@@ -239,9 +241,14 @@ class BuildShelterAction(Action):
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)
         agent.reset_stuck()
+        from src.building_priorities import shelter_wood_cost_for_agent
+
+        wood_cost = shelter_wood_cost_for_agent(agent, world)
         tile = world.tile_at(agent.x, agent.y)
         tile.kind = "shelter"
-        agent.wood -= 3
+        agent.wood -= wood_cost
+        if world.colony_storage.building_materials > 0:
+            world.colony_storage.withdraw_building_materials(1)
         world.log(f"{agent.name} builds a shelter.")
 
 
@@ -284,6 +291,63 @@ class SleepAction(Action):
         world.log(f"{agent.name} sleeps in a shelter.")
 
 
+class UseWorkshopAction(Action):
+    name = "Working workshop"
+
+    def can_do(self, agent: Agent, world: World) -> bool:
+        return (
+            _can_use_workshop(agent)
+            and world.colony_storage.wood > 0
+            and workshop_for(world) is not None
+            and is_adjacent_to_workshop(world, agent.x, agent.y)
+        )
+
+    def score(self, agent: Agent, world: World) -> int:
+        return 6
+
+    def execute(self, agent: Agent, world: World):
+        super().execute(agent, world)
+        workshop = workshop_for(world)
+        if workshop is None or world.colony_storage.wood <= 0:
+            agent.record_no_progress()
+            return
+
+        agent.reset_stuck()
+        if workshop.work():
+            withdrawn = world.colony_storage.withdraw_wood(1)
+            withdraw_from_stockpile(world, WOOD, withdrawn)
+            if withdrawn > 0:
+                world.colony_storage.deposit_building_materials(1)
+                workshop.complete_item()
+                world.log(f"{agent.name} makes building materials.")
+            else:
+                workshop.progress = max(0, workshop.progress - 1)
+
+
+class SeekWorkshopAction(Action):
+    name = "Seeking workshop"
+
+    def can_do(self, agent: Agent, world: World) -> bool:
+        return (
+            _can_use_workshop(agent)
+            and world.colony_storage.wood > 0
+            and workshop_for(world) is not None
+            and not is_adjacent_to_workshop(world, agent.x, agent.y)
+            and workshop_access_tile(world, agent) is not None
+        )
+
+    def score(self, agent: Agent, world: World) -> int:
+        return 5
+
+    def execute(self, agent: Agent, world: World):
+        super().execute(agent, world)
+        target = workshop_access_tile(world, agent)
+        if target is None:
+            agent.record_no_progress()
+            return
+        _step_along_path(agent, world, target)
+
+
 class WanderAction(Action):
     name = "Wandering"
 
@@ -314,6 +378,10 @@ class WanderAction(Action):
 
 
 def _can_use_settlement_bias(agent: Agent) -> bool:
+    return agent.hunger < 40 and agent.thirst < 40 and agent.fatigue < 50
+
+
+def _can_use_workshop(agent: Agent) -> bool:
     return agent.hunger < 40 and agent.thirst < 40 and agent.fatigue < 50
 
 

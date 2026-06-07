@@ -8,36 +8,6 @@ No active task.
 
 ## Backlog
 
-### TASK-40
-Title: Add Simple Workshop
-
-Owner: Gameplay Agent / Architect Agent
-
-Status: Backlog
-
-Description:
-Create a simple workshop near the settlement hub that gives Builders productive local behavior and consumes stored wood or settlement resources to support future production systems.
-
-Expected Output:
-A lightweight workshop concept that makes stockpiled resources useful before full hauling, reservations, or task claiming are introduced.
-
-Acceptance Criteria:
-- A simple workshop can exist near the settlement hub.
-- Builders gain meaningful village-local work connected to stored resources.
-- Workshop behavior remains autonomous and hands-off.
-- Full hauling/task claiming is not required.
-- Existing survival behavior remains stable.
-- Existing tests pass when implemented.
-
-Dependencies:
-- TASK-39
-
-Notes:
-- This task should come before full hauling/task claiming because the simulation needs meaningful resource destinations before a logistics layer is worth adding.
-- Do not add workshops, hauling, task claiming, farming, roads, multiple settlements, migration, or player micromanagement as part of this planning update.
-
----
-
 ### TASK-33
 Title: Tune Survival Outlook Labels
 
@@ -149,6 +119,39 @@ Notes:
 ---
 
 ## Completed
+
+### TASK-40
+Title: Add Simple Workshop
+
+Owner: Gameplay Agent / Architect Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #28 by adding one simple workshop near the settlement hub.
+
+Expected Output:
+A lightweight workshop that gives Builders productive local behavior, consumes stored wood, produces building materials, and lets those materials support shelter construction.
+
+Acceptance Criteria:
+- A simple workshop exists near the settlement hub.
+- Workshop placement is deterministic and avoids settlement center, stockpiles, water, and mountain terrain.
+- Builders can use the workshop when needs are low.
+- Workshop work consumes stored wood and produces building materials.
+- Workshop tracks progress and total items produced.
+- Building materials reduce shelter wood cost when available.
+- Shelter construction still works without building materials.
+- Survival needs override workshop work.
+- No hauling, reservations, task claiming, production menus, farming, roads, migration, social systems, or player micromanagement are added.
+- Existing tests pass.
+
+Dependencies:
+- TASK-39
+
+Notes:
+- Workshop v1 turns visible stockpiled resources into useful construction support before a full logistics layer exists.
+
+---
 
 ### TASK-39
 Title: Add Physical Stockpiles

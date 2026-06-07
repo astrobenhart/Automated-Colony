@@ -36,6 +36,7 @@ ROLE_GOAL_BONUSES = {
     BUILDER: {
         "Gather wood": 20,
         "Build shelter": 12,
+        "Workshop": 18,
         "Deposit wood": 4,
     },
     SCOUT: {

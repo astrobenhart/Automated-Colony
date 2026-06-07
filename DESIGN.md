@@ -166,6 +166,26 @@ Reasoning:
 
 This keeps the simulation hands-off while gradually making the village economy more legible and useful.
 
+## Workshop v1
+
+Workshop v1 makes stockpiled resources useful without adding a logistics layer.
+
+Implemented behavior:
+- each settlement creates one basic workshop near the village hub
+- the workshop is a visible map marker, not a terrain type
+- calm Builders can seek and work adjacent to the workshop
+- workshop progress converts stored wood into building materials
+- building materials reduce shelter wood cost when available
+- shelter construction still works normally without building materials
+
+Design boundaries:
+- workshop work is autonomous and optional
+- survival needs remain dominant
+- the workshop consumes from shared storage directly
+- no hauling, reservations, production menus, crafting queues, farming, roads, or player placement are introduced
+
+Future systems can use workshops as destinations for hauling, production chains, building upgrades, and specialist roles once the simulation has enough resource flow to justify task claiming.
+
 ## Settlement Arc
 
 The long-term simulation arc is:

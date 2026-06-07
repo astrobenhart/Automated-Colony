@@ -18,6 +18,8 @@ THIRST_DEATH_THRESHOLD = 100
 SHELTER_CAPACITY = 3
 SETTLEMENT_RADIUS = 10
 STOCKPILE_CAPACITY = 99
+WORKSHOP_PROGRESS_REQUIRED = 3
+BUILDING_MATERIAL_SHELTER_WOOD_DISCOUNT = 1
 STUCK_TICK_LIMIT = 3
 NO_PROGRESS_TICK_LIMIT = 5
 RIVER_COUNT = 3
@@ -75,6 +77,7 @@ COLORS = {
     "settlement": (255, 220, 120),
     "stockpile_food": (240, 120, 100),
     "stockpile_wood": (170, 110, 55),
+    "workshop": (200, 165, 95),
     "agent": (245, 245, 245),
     "dead": (90, 90, 90),
     "grid": (20, 20, 20),
@@ -156,4 +159,5 @@ SYMBOL_LABELS = {
     "+": "Settlement",
     "F": "Food Pile",
     "W": "Wood Pile",
+    "T": "Workshop",
 }

@@ -122,7 +122,7 @@ Features:
 - [x] Settlement center
 - [x] Village hub behavior around the settlement center
 - [x] Physical storage or stockpile locations
-- [ ] Simple workshop near the village hub
+- [x] Simple workshop near the village hub
 - [ ] Clustered building placement near the village hub
 - [ ] Local resource use radius
 - [ ] Expanded building priorities
@@ -137,6 +137,7 @@ Notes:
 - Settlement Center v1 is implemented in `src/settlement.py` as a single conceptual village anchor. It is automatically named and placed near the initial villager centroid, tracks living population and radius, and is visible in the right panel and map marker.
 - Village Hub Behavior v1 lets the settlement center bias calm exploration and shelter build-site choice without adding a mandatory return-home goal. Scouts can range farther, builders and foragers remain more local, and settlement activity is tracked in a lightweight heatmap for future roads, stockpiles, workshops, and districts.
 - Physical Stockpiles v1 adds visible food and wood stockpiles near the settlement. Depositing villagers return resources to adjacent stockpile access tiles, while `ColonyStorage` remains the storage source of truth.
+- Workshop v1 adds one basic workshop near the settlement hub. Calm Builders can work there to convert stored wood into building materials, and those materials reduce shelter wood cost when available.
 - Workshops should come before full hauling/task claiming. Stockpiles make resources visible; workshops give stored resources a productive use; hauling/task claiming should come later when there are enough resource destinations to justify a logistics layer.
 - Next v0.5 steps should build on the settlement center with simple workshops, local work radius, and clustered building placement.
 - Physical stockpiles and building clusters are prerequisites for richer settlement identity and expansion.

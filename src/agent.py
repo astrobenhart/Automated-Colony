@@ -24,6 +24,7 @@ from src.goals import (
     GatherWoodGoal,
     BuildShelterGoal,
     DepositWoodGoal,
+    WorkshopGoal,
     ExploreGoal,
     Goal,
 )
@@ -121,6 +122,7 @@ class Agent:
             GatherWoodGoal(),
             BuildShelterGoal(),
             DepositWoodGoal(),
+            WorkshopGoal(),
             ExploreGoal(),
         ]
         valid_goals = [goal for goal in goals if goal.can_do(self, world)]
