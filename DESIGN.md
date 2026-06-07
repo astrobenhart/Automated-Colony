@@ -95,6 +95,28 @@ Role rules:
 - no role is mandatory for colony function
 - there is no player role assignment, job board, task claiming, or micromanagement
 
+## Settlement Center v1
+
+The settlement center is a conceptual village anchor, not a full building system.
+
+Implemented behavior:
+- each world has one settlement
+- the settlement is automatically placed near the initial villager spawn centroid
+- the center is placed on walkable terrain
+- the settlement has a deterministic short name connected to the generated world identity
+- it tracks founding day, founding season, living population, and radius
+- the right panel and map marker make the settlement visible
+
+Non-goals for v1:
+- no player placement
+- no physical stockpile tile
+- no hauling jobs
+- no task claiming
+- no migration or multiple settlements
+- no forced villager destination behavior
+
+Future systems can use the center as the origin for local work radius, clustered building placement, physical storage, village identity, expansion, and settlement history.
+
 ## Settlement Arc
 
 The long-term simulation arc is:

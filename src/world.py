@@ -14,6 +14,7 @@ from src.seasons import (
 )
 from src.resource_ecology import apply_resource_ecology
 from src.roles import role_for_index
+from src.settlement import Settlement, found_settlement
 from src.wildlife import spawn_wildlife, update_wildlife
 from src.world_history import WorldHistory
 from src.world_identity import WorldIdentity, generate_world_identity
@@ -42,6 +43,7 @@ class World:
     animals: list = field(default_factory=list)
     history: WorldHistory = field(default_factory=WorldHistory)
     identity: WorldIdentity | None = None
+    settlement: Settlement | None = None
 
     day: int = 1
     tick: int = 0
@@ -106,16 +108,26 @@ class World:
             "Fenn", "Gala", "Hale", "Ira", "Juno",
         ]
 
+        rng = random.Random(self.seed) if self.seed is not None else random
+
         for i in range(amount):
             while True:
-                x = random.randint(0, self.width - 1)
-                y = random.randint(0, self.height - 1)
+                x = rng.randint(0, self.width - 1)
+                y = rng.randint(0, self.height - 1)
 
                 if self.can_move_to(x, y):
                     self.agents.append(Agent(names[i % len(names)], x, y, role=role_for_index(i)))
                     break
 
+        self.establish_settlement()
         self.log(f"{amount} villagers enter the world.")
+
+    def establish_settlement(self):
+        self.settlement = found_settlement(self)
+
+    def update_settlement_population(self):
+        if self.settlement is not None:
+            self.settlement.population = len(self.living_agents())
 
     def update(self):
         self.tick += 1
@@ -134,6 +146,7 @@ class World:
             if agent.alive:
                 agent.update_progress_tracking(self, progress_before)
 
+        self.update_settlement_population()
         update_wildlife(self, random)
 
     def advance_day(self):

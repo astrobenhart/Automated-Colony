@@ -120,6 +120,40 @@ Notes:
 
 ## Completed
 
+### TASK-37
+Title: Add Settlement Center
+
+Owner: Gameplay Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #25 by adding a lightweight settlement center as the first v0.5 village-structure anchor.
+
+Expected Output:
+Worlds have one automatically placed settlement with a deterministic name, center coordinates, founding date, radius, and living population.
+
+Acceptance Criteria:
+- World has one settlement center after creation.
+- Settlement center is placed on walkable terrain, not water or mountain.
+- Settlement center is deterministic for fixed seed/settings.
+- Settlement center is near the initial villager centroid.
+- Settlement has a short non-empty name.
+- Settlement tracks living population and radius.
+- Settlement info appears in the right panel.
+- A subtle settlement marker appears on the map and in the legend.
+- Existing villager behavior remains autonomous and stable.
+- Existing tests pass.
+
+Dependencies:
+- TASK-35
+- TASK-36
+
+Notes:
+- Settlement Center v1 is conceptual. It does not add physical stockpiles, hauling, task claiming, migration, multiple settlements, reproduction, farming, or player placement.
+
+---
+
 ### TASK-36
 Title: Fix No-Progress Survival Recovery
 

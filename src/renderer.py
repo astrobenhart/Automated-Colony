@@ -154,6 +154,9 @@ class PygameRenderer:
                 if animal:
                     self.draw_centered_symbol(animal.symbol, screen_x, screen_y, COLORS["wildlife"])
 
+                if self.is_settlement_center(x, y):
+                    self.draw_centered_symbol("+", screen_x, screen_y, COLORS["settlement"])
+
                 agent = self.world.agent_at(x, y)
                 if agent:
                     self.draw_centered_symbol("@", screen_x, screen_y, COLORS["agent"])
@@ -234,6 +237,14 @@ class PygameRenderer:
             ("Store W", self.world.colony_storage.wood),
             ("Wild", len([animal for animal in self.world.animals if animal.alive])),
         ]
+        if self.world.settlement is not None:
+            settlement = self.world.settlement
+            colony_stats.extend([
+                ("Settle", settlement.name),
+                ("Pop", settlement.population),
+                ("Center", f"{settlement.x},{settlement.y}"),
+                ("Rad", settlement.radius),
+            ])
         y = self.draw_two_column_section(
             "Simulation",
             simulation_stats,
@@ -318,6 +329,14 @@ class PygameRenderer:
                 ("Wood", tile.wood),
                 ("Walkable", tile.walkable),
             ]
+            if self.is_settlement_center(tile_x, tile_y) and self.world.settlement is not None:
+                settlement = self.world.settlement
+                details.extend([
+                    ("Settlement", settlement.name),
+                    ("Pop", settlement.population),
+                    ("Radius", settlement.radius),
+                    ("Founded", f"D{settlement.founded_day} {settlement.founded_season}"),
+                ])
             color = COLORS["text"]
 
         else:
@@ -420,6 +439,10 @@ class PygameRenderer:
             self.world.transition_progress,
         )
         return environmental_tile_color(season_color, kind, self.world.active_environment_events)
+
+    def is_settlement_center(self, x: int, y: int) -> bool:
+        settlement = self.world.settlement
+        return settlement is not None and settlement.x == x and settlement.y == y
 
     def resource_color(self, resource: str, amount: int, cap: int):
         base = COLORS[resource]

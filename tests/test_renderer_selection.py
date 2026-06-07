@@ -17,6 +17,7 @@ from src.config import (
 )
 from src.renderer import PygameRenderer
 from src.seasons import seasonal_tile_color
+from src.settlement import Settlement
 from src.tile import Tile
 from src.world import World
 
@@ -321,3 +322,12 @@ def test_two_column_status_section_draws_both_columns_compactly():
     )
 
     assert end_y > 10
+
+
+def test_renderer_recognizes_settlement_center():
+    world = make_world(width=5, height=5)
+    world.settlement = Settlement("Willowhold", 2, 3, founded_day=1, founded_season="Spring")
+    renderer = make_renderer(world)
+
+    assert renderer.is_settlement_center(2, 3)
+    assert not renderer.is_settlement_center(3, 2)
