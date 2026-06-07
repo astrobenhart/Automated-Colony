@@ -67,6 +67,37 @@ Notes:
 
 ## Completed
 
+### TASK-27
+Title: Add Environmental World History
+
+Owner: Gameplay/Worldgen Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #17 by adding persistent structured world history for major environmental events.
+
+Expected Output:
+A long-term history store separate from the short-term event log, with environmental entries for drought and heavy rain beginnings/endings and future-ready categories for seasons, wildlife, and settlements.
+
+Acceptance Criteria:
+- World owns persistent history.
+- History entries store day, year, season, category, title, and description.
+- History supports recent entries, category filtering, and count.
+- Drought and heavy rain start/end events are recorded in history and the existing event log.
+- The right panel shows compact history information.
+- Existing tests pass.
+
+Dependencies:
+- TASK-19
+- TASK-25
+- TASK-26
+
+Notes:
+- This is environmental history v1 only; no settlement history, migration history, ancestry, lineage, ruins, or myths were added.
+
+---
+
 ### TASK-26
 Title: Add Biome Wildlife
 

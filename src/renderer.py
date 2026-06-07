@@ -246,6 +246,9 @@ class PygameRenderer:
         y = self.draw_stat_row("Stored W", self.world.colony_storage.wood, content_x, y, content_width, bottom_y)
 
         y += self.panel_gap
+        y = self.draw_history_summary(content_x, y, content_width, bottom_y)
+
+        y += self.panel_gap
         y = self.draw_selection_details(content_x, y, content_width, bottom_y)
 
         y += self.panel_gap
@@ -295,6 +298,22 @@ class PygameRenderer:
         for label, value in details:
             y = self.draw_stat_row(label, value, x, y, width, bottom_y, color=color)
 
+        return y
+
+    def draw_history_summary(self, x: int, y: int, width: int, bottom_y: int):
+        y = self.draw_section_header("History", x, y, width, bottom_y)
+        y = self.draw_stat_row("Entries", self.world.history.count(), x, y, width, bottom_y)
+        recent = self.world.history.recent(1)
+        if recent:
+            entry = recent[0]
+            y = self.draw_text_line(
+                f"Last: D{entry.day} {entry.title}",
+                x,
+                y,
+                width,
+                bottom_y,
+                color=COLORS["muted"],
+            )
         return y
 
     def draw_legend(self, x: int, y: int, width: int, bottom_y: int):

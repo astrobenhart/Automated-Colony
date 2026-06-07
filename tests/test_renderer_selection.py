@@ -268,3 +268,20 @@ def test_resource_symbol_color_reflects_abundance():
 
     assert low_food != high_food
     assert sum(high_food) > sum(low_food)
+
+
+def test_history_summary_draws_without_crashing():
+    world = make_world(width=3, height=3)
+    world.history.record(
+        day=3,
+        year=1,
+        season="Spring",
+        category="ENVIRONMENT",
+        title="Heavy Rain Begins",
+        description="Heavy rain soaks the soil.",
+    )
+    renderer = make_renderer(world)
+
+    end_y = renderer.draw_history_summary(10, 10, 220, 200)
+
+    assert end_y > 10

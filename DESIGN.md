@@ -36,10 +36,17 @@ World generation should:
 - place food and wood based on terrain conditions
 - apply terrain and season based resource growth, caps, and gradual die-off
 - create rare visible environmental events such as drought and heavy rain
+- record major environmental events in persistent world history
 - spawn ambient wildlife from biome suitability without adding hunting or combat
 - cycle simple seasons that influence terrain-based resource regrowth
 - tint terrain by season in the renderer, blending during the final day, without changing gameplay tile kinds
 - preserve existing simulation systems while preparing for biomes and environmental events
+
+World history should:
+- remain separate from the short-term event log
+- store structured permanent entries for major events
+- start with environmental history
+- leave wildlife, settlement, migration, lineage, ruins, and myth history for later milestones
 
 ## Settlement Arc
 

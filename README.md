@@ -13,6 +13,7 @@ The project is designed as an emergent colony screensaver and as a playground fo
 - Seasonal terrain colors with final-day blending so the map visibly shifts across the year
 - Terrain-based resource ecology with growth caps and gradual seasonal die-off
 - Rare drought and heavy rain events that visibly tint terrain and mildly affect resource ecology
+- Persistent world history for major environmental events
 - Ambient wildlife with biome-suitable rabbits, deer, boar, and waterfowl
 - Autonomous villagers with hunger, thirst, fatigue, carried food, and carried wood
 - Goal-based behavior for drinking, eating, sleeping, gathering, building, depositing, and exploring
@@ -74,6 +75,7 @@ The original single-file prototype is still present as `automated_colony_v0_1.py
 - `src/building_priorities.py` - Construction priority rules
 - `src/resource_ecology.py` - Terrain and season based resource growth, caps, and die-off
 - `src/environment_events.py` - Temporary drought and heavy rain events
+- `src/world_history.py` - Persistent structured history entries for major events
 - `src/wildlife.py` - Ambient biome-based wildlife spawning and wandering
 - `src/seasons.py` - Season cycle and terrain-aware regrowth rules
 - `src/renderer.py` - Pygame rendering and inspection UI

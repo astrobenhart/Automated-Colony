@@ -14,6 +14,7 @@ from src.seasons import (
 )
 from src.resource_ecology import apply_resource_ecology
 from src.wildlife import spawn_wildlife, update_wildlife
+from src.world_history import WorldHistory
 from src.worldgen import generate_world
 from src.agent import Agent
 
@@ -35,6 +36,7 @@ class World:
     river_paths: list[list[tuple[int, int]]] = field(default_factory=list, repr=False)
     active_environment_events: list = field(default_factory=list)
     animals: list = field(default_factory=list)
+    history: WorldHistory = field(default_factory=WorldHistory)
 
     day: int = 1
     tick: int = 0
@@ -67,6 +69,12 @@ class World:
         if self.transition_progress > 0.0:
             return f"{self.season} -> {self.next_season}"
         return self.season
+
+    @property
+    def year(self) -> int:
+        from src.config import DAYS_PER_SEASON, SEASONS
+        days_per_year = DAYS_PER_SEASON * len(SEASONS)
+        return ((self.day - 1) // days_per_year) + 1
 
     def generate(self, seed: int | None = None):
         if seed is not None:

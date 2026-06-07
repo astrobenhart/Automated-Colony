@@ -72,7 +72,7 @@ Features:
 - [x] Add basic plant/resource regrowth based on biome conditions
 - [x] Add environmental events such as drought, heavy rain, wildfire, or flood
 - [x] Add wildlife spawning based on biome suitability
-- [ ] Add world history tracking for major environmental events
+- [x] Add world history tracking for major environmental events
 - [ ] Expose world-generation settings such as seed, size, water level, forest density, and climate harshness
 
 Acceptance Criteria:
@@ -86,6 +86,7 @@ Acceptance Criteria:
 - [x] Terrain-based resource caps and gradual die-off create long-term ecological pressure.
 - [x] Drought and heavy rain events are logged, visible, temporary, and mildly affect resource ecology.
 - [x] Ambient wildlife appears based on biome suitability without disrupting villagers.
+- [x] Major environmental events are recorded in persistent structured world history.
 - [ ] Agents must adapt to world conditions rather than only random resource placement.
 
 Notes:
@@ -100,7 +101,8 @@ Notes:
 - Resource ecology now applies terrain and season based growth, caps, and gradual die-off in `src/resource_ecology.py`.
 - Environmental Event v1 adds rare drought and heavy rain events in `src/environment_events.py`.
 - Wildlife v1 adds ambient rabbits, deer, boar, and waterfowl in `src/wildlife.py`.
-- Wildfire, flood, and history tracking are still future v0.4 work.
+- World History v1 records drought and heavy rain beginnings/endings in `src/world_history.py`.
+- Wildfire, flood, and broader settlement/wildlife history remain future work.
 
 ## v0.5 - Colony Roles and Production
 

@@ -6,6 +6,7 @@ from src.config import (
     ENV_EVENT_MIN_DURATION_DAYS,
     MAX_ACTIVE_ENV_EVENTS,
 )
+from src.world_history import ENVIRONMENT
 
 
 @dataclass
@@ -70,6 +71,7 @@ def update_environment_events(world, rng) -> None:
     for event in ended_events:
         world.active_environment_events.remove(event)
         world.log(EVENT_DEFINITIONS[event.effect_type]["end"])
+        record_environment_history(world, event, "end")
 
     maybe_start_environment_event(world, rng)
 
@@ -95,7 +97,26 @@ def maybe_start_environment_event(world, rng) -> EnvironmentalEvent | None:
     event = create_environment_event(effect_type, duration)
     world.active_environment_events.append(event)
     world.log(EVENT_DEFINITIONS[effect_type]["start"])
+    record_environment_history(world, event, "start")
     return event
+
+
+def record_environment_history(world, event: EnvironmentalEvent, phase: str) -> None:
+    if phase == "start":
+        title = f"{event.name} Begins"
+        description = event.description
+    else:
+        title = f"{event.name} Ends"
+        description = f"{event.name} has passed after affecting the land."
+
+    world.history.record(
+        day=world.day,
+        year=world.year,
+        season=world.season,
+        category=ENVIRONMENT,
+        title=title,
+        description=description,
+    )
 
 
 def choose_event_type(season: str, candidates: list[str], rng) -> str:
