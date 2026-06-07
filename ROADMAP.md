@@ -71,7 +71,7 @@ Features:
 - [x] Add seasonal changes that affect food growth and water availability
 - [x] Add basic plant/resource regrowth based on biome conditions
 - [x] Add environmental events such as drought, heavy rain, wildfire, or flood
-- [ ] Add wildlife spawning based on biome suitability
+- [x] Add wildlife spawning based on biome suitability
 - [ ] Add world history tracking for major environmental events
 - [ ] Expose world-generation settings such as seed, size, water level, forest density, and climate harshness
 
@@ -85,6 +85,7 @@ Acceptance Criteria:
 - [x] Seasonal changes visibly affect resource growth.
 - [x] Terrain-based resource caps and gradual die-off create long-term ecological pressure.
 - [x] Drought and heavy rain events are logged, visible, temporary, and mildly affect resource ecology.
+- [x] Ambient wildlife appears based on biome suitability without disrupting villagers.
 - [ ] Agents must adapt to world conditions rather than only random resource placement.
 
 Notes:
@@ -98,7 +99,8 @@ Notes:
 - Seasonal terrain colors make Spring, Summer, Autumn, and Winter visually distinct without changing tile kinds, with final-day color blending into the next season.
 - Resource ecology now applies terrain and season based growth, caps, and gradual die-off in `src/resource_ecology.py`.
 - Environmental Event v1 adds rare drought and heavy rain events in `src/environment_events.py`.
-- Wildfire, flood, wildlife, and history tracking are still future v0.4 work.
+- Wildlife v1 adds ambient rabbits, deer, boar, and waterfowl in `src/wildlife.py`.
+- Wildfire, flood, and history tracking are still future v0.4 work.
 
 ## v0.5 - Colony Roles and Production
 

@@ -67,6 +67,38 @@ Notes:
 
 ## Completed
 
+### TASK-26
+Title: Add Biome Wildlife
+
+Owner: Gameplay/Worldgen Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #16 by adding simple ambient wildlife that spawns from biome suitability.
+
+Expected Output:
+Visible, deterministic rabbits, deer, boar, and waterfowl that make the world feel alive without affecting villager goals, movement, hunting, combat, or survival balance.
+
+Acceptance Criteria:
+- Exactly four species exist: rabbit, deer, boar, and waterfowl.
+- Wildlife spawns on suitable terrain and avoids water, mountains, and occupied villager tiles.
+- Wildlife count respects a configured cap.
+- Animals can idle and lightly wander without blocking villagers.
+- Wildlife symbols render on the map and are represented in the legend.
+- Existing tests pass.
+
+Dependencies:
+- TASK-17
+- TASK-19
+- TASK-23
+- TASK-25
+
+Notes:
+- This is ambient wildlife v1 only; no hunting, combat, reproduction, domestication, predator/prey simulation, animal needs, or animal-driven resource use was added.
+
+---
+
 ### TASK-25
 Title: Add Basic Environmental Events
 

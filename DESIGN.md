@@ -36,6 +36,7 @@ World generation should:
 - place food and wood based on terrain conditions
 - apply terrain and season based resource growth, caps, and gradual die-off
 - create rare visible environmental events such as drought and heavy rain
+- spawn ambient wildlife from biome suitability without adding hunting or combat
 - cycle simple seasons that influence terrain-based resource regrowth
 - tint terrain by season in the renderer, blending during the final day, without changing gameplay tile kinds
 - preserve existing simulation systems while preparing for biomes and environmental events

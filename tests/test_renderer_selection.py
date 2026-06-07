@@ -211,6 +211,7 @@ def test_legend_draws_terrain_swatch_and_symbol_labels():
 
     assert "water" in TERRAIN_LABELS
     assert "@" in SYMBOL_LABELS
+    assert "r" in SYMBOL_LABELS
 
 
 def test_legend_swatch_uses_current_seasonal_color():

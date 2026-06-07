@@ -13,6 +13,7 @@ from src.seasons import (
     transition_progress,
 )
 from src.resource_ecology import apply_resource_ecology
+from src.wildlife import spawn_wildlife, update_wildlife
 from src.worldgen import generate_world
 from src.agent import Agent
 
@@ -33,6 +34,7 @@ class World:
     temperature_map: list[list[float]] = field(default_factory=list, repr=False)
     river_paths: list[list[tuple[int, int]]] = field(default_factory=list, repr=False)
     active_environment_events: list = field(default_factory=list)
+    animals: list = field(default_factory=list)
 
     day: int = 1
     tick: int = 0
@@ -77,6 +79,7 @@ class World:
             self.temperature_map,
             self.river_paths,
         ) = generate_world(self.width, self.height, self.seed)
+        self.animals = spawn_wildlife(self, random.Random(self.seed))
 
     def spawn_agents(self, amount):
         names = [
@@ -108,6 +111,8 @@ class World:
             action = agent.choose_action(self)
             action.execute(agent, self)
             agent.die_if_needed(self)
+
+        update_wildlife(self, random)
 
     def advance_day(self):
         self.day += 1
@@ -146,6 +151,13 @@ class World:
         for agent in self.living_agents():
             if agent.x == x and agent.y == y:
                 return agent
+
+        return None
+
+    def animal_at(self, x, y):
+        for animal in self.animals:
+            if animal.alive and animal.x == x and animal.y == y:
+                return animal
 
         return None
 

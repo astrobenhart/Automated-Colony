@@ -27,6 +27,9 @@ ENV_EVENT_CHANCE_PER_DAY = 0.06
 ENV_EVENT_MIN_DURATION_DAYS = 3
 ENV_EVENT_MAX_DURATION_DAYS = 6
 MAX_ACTIVE_ENV_EVENTS = 2
+WILDLIFE_DENSITY = 0.010
+WILDLIFE_MAX_ANIMALS = 45
+WILDLIFE_WANDER_CHANCE = 0.02
 SEASONS = ["Spring", "Summer", "Autumn", "Winter"]
 SEASON_FOOD_GROWTH_MODIFIERS = {
     "Spring": 1.45,
@@ -65,6 +68,7 @@ COLORS = {
     "shelter": (145, 95, 45),
     "food": (230, 80, 80),
     "wood": (130, 80, 35),
+    "wildlife": (220, 205, 150),
     "agent": (245, 245, 245),
     "dead": (90, 90, 90),
     "grid": (20, 20, 20),
@@ -139,4 +143,8 @@ SYMBOL_LABELS = {
     "@": "Villager",
     "f": "Food",
     "w": "Wood",
+    "r": "Rabbit",
+    "d": "Deer",
+    "b": "Boar",
+    "v": "Waterfowl",
 }

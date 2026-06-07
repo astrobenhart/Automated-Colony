@@ -150,6 +150,10 @@ class PygameRenderer:
                 if tile.wood > 0:
                     self.draw_centered_symbol("w", screen_x, screen_y, self.resource_color("wood", tile.wood, max_wood(tile)))
 
+                animal = self.world.animal_at(x, y)
+                if animal:
+                    self.draw_centered_symbol(animal.symbol, screen_x, screen_y, COLORS["wildlife"])
+
                 agent = self.world.agent_at(x, y)
                 if agent:
                     self.draw_centered_symbol("@", screen_x, screen_y, COLORS["agent"])
@@ -310,7 +314,7 @@ class PygameRenderer:
             y += row_height
 
         symbol_text = "  ".join(f"{symbol} {label}" for symbol, label in SYMBOL_LABELS.items())
-        y = self.draw_text_line(symbol_text, x, y, width, bottom_y, color=COLORS["muted"])
+        y = self.draw_wrapped_text(symbol_text, x, y, width, bottom_y, COLORS["muted"])
         return y
 
     def draw_legend_item(self, kind: str, label: str, x: int, y: int, width: int):
