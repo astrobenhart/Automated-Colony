@@ -225,6 +225,8 @@ class PygameRenderer:
             ("State", status),
             ("Day", self.world.day),
             ("Year", self.world.year),
+            ("Seed", self.world.seed if self.world.seed is not None else "random"),
+            ("Size", f"{self.world.width}x{self.world.height}"),
             ("Season", self.world.season_label),
             ("S Day", self.world.day_of_season),
             ("Speed", f"{sim_speed}x"),

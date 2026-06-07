@@ -60,7 +60,8 @@ SEASON_WILDLIFE_MULTIPLIERS = {
 
 
 def wildlife_population_target(world) -> int:
-    base = int(world.width * world.height * WILDLIFE_DENSITY)
+    density = getattr(getattr(world, "settings", None), "wildlife_density", WILDLIFE_DENSITY)
+    base = int(world.width * world.height * density)
     multiplier = SEASON_WILDLIFE_MULTIPLIERS.get(world.season, 1.0)
     return min(WILDLIFE_MAX_ANIMALS, max(0, round(base * multiplier)))
 

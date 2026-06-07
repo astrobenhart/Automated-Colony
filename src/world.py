@@ -15,6 +15,7 @@ from src.seasons import (
 from src.resource_ecology import apply_resource_ecology
 from src.wildlife import spawn_wildlife, update_wildlife
 from src.world_history import WorldHistory
+from src.worldgen_settings import WorldGenSettings, default_worldgen_settings
 from src.worldgen import generate_world
 from src.agent import Agent
 
@@ -30,6 +31,7 @@ class World:
     colony_memory: ColonyMemory = field(default_factory=ColonyMemory)
     colony_storage: ColonyStorage = field(default_factory=ColonyStorage)
     seed: int | None = None
+    settings: WorldGenSettings = field(default_factory=default_worldgen_settings)
     elevation_map: list[list[float]] = field(default_factory=list, repr=False)
     moisture_map: list[list[float]] = field(default_factory=list, repr=False)
     temperature_map: list[list[float]] = field(default_factory=list, repr=False)
@@ -80,13 +82,18 @@ class World:
         if seed is not None:
             self.seed = seed
 
+        self.settings = self.settings.with_overrides(
+            width=self.width,
+            height=self.height,
+            seed=self.seed,
+        )
         (
             self.tiles,
             self.elevation_map,
             self.moisture_map,
             self.temperature_map,
             self.river_paths,
-        ) = generate_world(self.width, self.height, self.seed)
+        ) = generate_world(self.width, self.height, self.seed, self.settings)
         self.animals = spawn_wildlife(self, random.Random(self.seed))
 
     def spawn_agents(self, amount):
@@ -138,7 +145,7 @@ class World:
     def regrow_resources(self):
         for row in self.tiles:
             for tile in row:
-                apply_resource_ecology(tile, self.season, random, self.active_environment_events)
+                apply_resource_ecology(tile, self.season, random, self.active_environment_events, self.settings)
 
     def living_agents(self):
         return [agent for agent in self.agents if agent.alive]
@@ -229,13 +236,22 @@ def create_world(
     height: int | None = None,
     agent_count: int | None = None,
     seed: int | None = None,
+    settings: WorldGenSettings | None = None,
 ):
-    from src.config import WIDTH, HEIGHT, STARTING_AGENTS, WORLD_SEED
+    from src.config import STARTING_AGENTS, WORLD_SEED
+
+    base_settings = settings or default_worldgen_settings()
+    effective_settings = base_settings.with_overrides(
+        width=width if width is not None else base_settings.width,
+        height=height if height is not None else base_settings.height,
+        seed=seed if seed is not None else base_settings.seed if base_settings.seed is not None else WORLD_SEED,
+    )
 
     world = World(
-        width if width is not None else WIDTH,
-        height if height is not None else HEIGHT,
-        seed=seed if seed is not None else WORLD_SEED,
+        effective_settings.width,
+        effective_settings.height,
+        seed=effective_settings.seed,
+        settings=effective_settings,
     )
     world.generate()
     world.spawn_agents(agent_count if agent_count is not None else STARTING_AGENTS)

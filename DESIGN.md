@@ -29,6 +29,7 @@ Agents should:
 - survive longer
 
 World generation should:
+- use centralized settings for reproducible and tunable worlds
 - create deterministic worlds when given a seed
 - generate elevation, moisture, and temperature maps
 - trace simple downhill rivers from high elevation toward lower elevation
@@ -41,6 +42,13 @@ World generation should:
 - cycle simple seasons that influence terrain-based resource regrowth
 - tint terrain by season in the renderer, blending during the final day, without changing gameplay tile kinds
 - preserve existing simulation systems while preparing for biomes and environmental events
+
+World generation settings should:
+- keep defaults compatible with normal gameplay
+- validate or clamp unsafe values
+- expose seed, size, water level, forest density, and climate harshness
+- support presets such as normal, wet, dry, forest, and harsh
+- remain ready for a future setup screen without requiring one now
 
 World history should:
 - remain separate from the short-term event log

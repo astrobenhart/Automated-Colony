@@ -89,7 +89,8 @@ def maybe_start_environment_event(world, rng) -> EnvironmentalEvent | None:
     if not candidates:
         return None
 
-    if rng.random() >= ENV_EVENT_CHANCE_PER_DAY:
+    event_frequency = getattr(getattr(world, "settings", None), "event_frequency", ENV_EVENT_CHANCE_PER_DAY)
+    if rng.random() >= event_frequency:
         return None
 
     effect_type = choose_event_type(world.season, candidates, rng)

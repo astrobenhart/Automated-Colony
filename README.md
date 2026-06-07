@@ -8,6 +8,7 @@ The project is designed as an emergent colony screensaver and as a playground fo
 
 - Modular Python package under `src/`
 - Rule-based terrain generation with grass, forest, plain, hill, wetland, dry, water, mountain, and shelter tiles
+- Centralized world-generation settings and presets for reproducible/tunable worlds
 - Larger explorable world with a camera-controlled map viewport
 - 20-day Spring, Summer, Autumn, and Winter seasons that affect food and wood regrowth
 - Seasonal terrain colors with final-day blending so the map visibly shifts across the year
@@ -62,10 +63,45 @@ python -m pytest
 
 The original single-file prototype is still present as `automated_colony_v0_1.py` for historical reference.
 
+## World Generation Settings
+
+Worlds can be created with explicit settings:
+
+```python
+from src.world import create_world
+from src.worldgen_settings import WORLD_PRESETS, WorldGenSettings
+
+world = create_world(settings=WORLD_PRESETS["wet"].with_overrides(seed=42))
+
+custom_world = create_world(settings=WorldGenSettings(
+    seed=42,
+    width=100,
+    height=60,
+    water_level=0.34,
+    forest_density=0.70,
+    climate_harshness=0.25,
+))
+```
+
+Core setting ranges:
+- `seed`: integer or `None`
+- `width`, `height`: corrected to at least `1`
+- `water_level`: `0.0` to `1.0`
+- `forest_density`: `0.0` to `1.0`
+- `climate_harshness`: `0.0` to `1.0`
+
+Presets:
+- `normal`: current default behavior
+- `wet`: more water and wetter terrain
+- `dry`: less water and more dry terrain
+- `forest`: more forest coverage
+- `harsh`: fewer resources, less wildlife, and more ecological pressure
+
 ## Project Structure
 
 - `src/main.py` - Pygame application loop
 - `src/world.py` - World state, ticking, terrain, agents, shared systems
+- `src/worldgen_settings.py` - Validated world-generation settings and presets
 - `src/agent.py` - Agent state, needs, memory scanning, goal selection
 - `src/actions.py` - Low-level executable actions
 - `src/goals.py` - High-level goal selection layer

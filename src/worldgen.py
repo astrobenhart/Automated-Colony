@@ -2,20 +2,30 @@ from __future__ import annotations
 import random
 
 from src.config import (
-    RIVER_COUNT,
     RIVER_MIN_LENGTH,
     RIVER_SOURCE_ELEVATION,
     RIVER_WIDEN_CHANCE,
 )
 from src.tile import Tile
+from src.worldgen_settings import WorldGenSettings, default_worldgen_settings
 
 
-def generate_world(width: int, height: int, seed: int | None = None):
-    rng = random.Random(seed)
+def generate_world(
+    width: int,
+    height: int,
+    seed: int | None = None,
+    settings: WorldGenSettings | None = None,
+):
+    settings = (settings or default_worldgen_settings()).with_overrides(
+        width=width,
+        height=height,
+        seed=seed,
+    )
+    rng = random.Random(settings.seed)
     elevation = _normalize_map(_smooth_map(_random_map(width, height, rng), passes=3))
     moisture = _normalize_map(_smooth_map(_random_map(width, height, rng), passes=3))
     temperature = _temperature_map(width, height, rng)
-    river_paths = _generate_river_paths(elevation, rng)
+    river_paths = _generate_river_paths(elevation, rng, settings.river_count)
     river_tiles = _river_tile_set(river_paths, elevation, rng)
     _add_river_moisture(moisture, river_tiles)
 
@@ -28,9 +38,9 @@ def generate_world(width: int, height: int, seed: int | None = None):
             elev = elevation[y][x]
             moist = moisture[y][x]
             temp = temperature[y][x]
-            kind = "water" if (x, y) in river_tiles else _terrain_for(elev, moist, temp)
+            kind = "water" if (x, y) in river_tiles else _terrain_for(elev, moist, temp, settings)
             tile = Tile(kind)
-            _place_resources(tile, moist, temp, rng)
+            _place_resources(tile, moist, temp, rng, settings)
             row.append(tile)
 
         tiles.append(row)
@@ -110,26 +120,36 @@ def _temperature_map(width: int, height: int, rng: random.Random) -> list[list[f
     return result
 
 
-def _terrain_for(elevation: float, moisture: float, temperature: float) -> str:
-    if elevation < 0.28:
+def _terrain_for(
+    elevation: float,
+    moisture: float,
+    temperature: float,
+    settings: WorldGenSettings,
+) -> str:
+    effective_moisture = _clamp(moisture - settings.climate_harshness * 0.12)
+
+    if elevation < settings.water_level:
         return "water"
 
-    if elevation > 0.74:
+    if elevation > settings.mountain_level:
         return "mountain"
 
     if elevation > 0.64:
         return "hill"
 
-    if elevation < 0.38 and moisture > 0.62:
+    if elevation < 0.38 and effective_moisture > 0.62:
         return "wetland"
 
-    if moisture < 0.28 or (temperature > 0.82 and moisture < 0.42):
+    dry_threshold = 0.28 + settings.climate_harshness * 0.16
+    hot_dry_threshold = 0.42 + settings.climate_harshness * 0.12
+    if effective_moisture < dry_threshold or (temperature > 0.82 and effective_moisture < hot_dry_threshold):
         return "dry"
 
-    if 0.34 <= elevation <= 0.64 and moisture > 0.56 and temperature > 0.25:
+    forest_threshold = 0.66 - settings.forest_density * 0.20
+    if 0.34 <= elevation <= 0.64 and effective_moisture > forest_threshold and temperature > 0.25:
         return "forest"
 
-    if 0.30 <= elevation <= 0.62 and 0.28 <= moisture <= 0.62 and temperature > 0.22:
+    if 0.30 <= elevation <= 0.62 and dry_threshold <= effective_moisture <= 0.66 and temperature > 0.22:
         return "plain"
 
     return "grass"
@@ -138,6 +158,7 @@ def _terrain_for(elevation: float, moisture: float, temperature: float) -> str:
 def _generate_river_paths(
     elevation: list[list[float]],
     rng: random.Random,
+    river_count: int,
 ) -> list[list[tuple[int, int]]]:
     height = len(elevation)
     width = len(elevation[0])
@@ -154,7 +175,7 @@ def _generate_river_paths(
     used_sources: list[tuple[int, int]] = []
 
     for source in candidates:
-        if len(paths) >= RIVER_COUNT:
+        if len(paths) >= river_count:
             break
         if any(_distance(source, existing) < max(6, RIVER_MIN_LENGTH) for existing in used_sources):
             continue
@@ -272,34 +293,49 @@ def _distance(first: tuple[int, int], second: tuple[int, int]) -> int:
     return abs(first[0] - second[0]) + abs(first[1] - second[1])
 
 
-def _place_resources(tile: Tile, moisture: float, temperature: float, rng: random.Random):
-    if tile.kind == "forest":
-        tile.wood = rng.randint(2, 5)
+def _place_resources(
+    tile: Tile,
+    moisture: float,
+    temperature: float,
+    rng: random.Random,
+    settings: WorldGenSettings,
+):
+    abundance = settings.resource_abundance
+    harshness = settings.climate_harshness
 
-        if moisture > 0.55 and 0.25 < temperature < 0.9 and rng.random() < 0.28:
-            tile.food = rng.randint(1, 2)
+    if tile.kind == "forest":
+        tile.wood = _scaled_amount(rng.randint(2, 5), abundance)
+
+        if moisture > 0.55 and 0.25 < temperature < 0.9 and rng.random() < 0.28 * abundance:
+            tile.food = _scaled_amount(rng.randint(1, 2), abundance)
 
     elif tile.kind == "wetland":
-        if rng.random() < 0.24:
-            tile.food = rng.randint(1, 3)
+        if rng.random() < 0.24 * abundance:
+            tile.food = _scaled_amount(rng.randint(1, 3), abundance)
 
     elif tile.kind in ("plain", "grass"):
         fertile = moisture > 0.45 and 0.25 < temperature < 0.85
         food_chance = 0.10 if tile.kind == "plain" and fertile else 0.06 if fertile else 0.02
 
-        if rng.random() < food_chance:
-            tile.food = rng.randint(1, 3)
+        if rng.random() < food_chance * abundance * (1.0 - harshness * 0.25):
+            tile.food = _scaled_amount(rng.randint(1, 3), abundance)
 
     elif tile.kind == "hill":
-        if moisture > 0.48 and temperature > 0.25 and rng.random() < 0.05:
+        if moisture > 0.48 and temperature > 0.25 and rng.random() < 0.05 * abundance:
             tile.food = 1
 
-        if moisture > 0.58 and rng.random() < 0.12:
-            tile.wood = rng.randint(1, 2)
+        if moisture > 0.58 and rng.random() < 0.12 * abundance:
+            tile.wood = _scaled_amount(rng.randint(1, 2), abundance)
 
     elif tile.kind == "dry":
-        if rng.random() < 0.01:
+        if rng.random() < 0.01 * abundance * (1.0 - harshness * 0.35):
             tile.food = 1
+
+
+def _scaled_amount(amount: int, abundance: float) -> int:
+    if amount <= 0 or abundance <= 0:
+        return 0
+    return max(1, round(amount * abundance))
 
 
 def _clamp(value: float) -> float:

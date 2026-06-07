@@ -67,6 +67,42 @@ Notes:
 
 ## Completed
 
+### TASK-29
+Title: Expose World Generation Settings
+
+Owner: Worldgen Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #19 by centralizing world-generation settings and presets.
+
+Expected Output:
+A validated `WorldGenSettings` object and presets that make worlds reproducible, configurable, easier to test, and ready for a future setup screen.
+
+Acceptance Criteria:
+- Seed, width, height, water level, forest density, and climate harshness are configurable.
+- Optional river count, wildlife density, event frequency, resource abundance, and mountain level settings exist.
+- Normal, Wet, Dry, Forest, and Harsh presets exist.
+- Existing `create_world()` behavior remains backward compatible.
+- Same settings reproduce the same terrain/resources/wildlife.
+- Presets visibly influence generated worlds.
+- Existing tests pass.
+
+Dependencies:
+- TASK-13
+- TASK-16
+- TASK-17
+- TASK-23
+- TASK-25
+- TASK-26
+- TASK-27
+
+Notes:
+- This is a configuration architecture task only; no setup UI, save/load, world editor, gameplay redesign, or villager behavior changes were added.
+
+---
+
 ### TASK-28
 Title: Arrange Panel Status Columns
 

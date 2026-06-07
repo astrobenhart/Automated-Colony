@@ -73,7 +73,7 @@ Features:
 - [x] Add environmental events such as drought, heavy rain, wildfire, or flood
 - [x] Add wildlife spawning based on biome suitability
 - [x] Add world history tracking for major environmental events
-- [ ] Expose world-generation settings such as seed, size, water level, forest density, and climate harshness
+- [x] Expose world-generation settings such as seed, size, water level, forest density, and climate harshness
 
 Acceptance Criteria:
 - [x] Worlds no longer look uniformly random.
@@ -87,6 +87,7 @@ Acceptance Criteria:
 - [x] Drought and heavy rain events are logged, visible, temporary, and mildly affect resource ecology.
 - [x] Ambient wildlife appears based on biome suitability without disrupting villagers.
 - [x] Major environmental events are recorded in persistent structured world history.
+- [x] World generation can be reproduced and tuned through centralized settings and presets.
 - [ ] Agents must adapt to world conditions rather than only random resource placement.
 
 Notes:
@@ -102,6 +103,7 @@ Notes:
 - Environmental Event v1 adds rare drought and heavy rain events in `src/environment_events.py`.
 - Wildlife v1 adds ambient rabbits, deer, boar, and waterfowl in `src/wildlife.py`.
 - World History v1 records drought and heavy rain beginnings/endings in `src/world_history.py`.
+- World generation settings and presets are centralized in `src/worldgen_settings.py`.
 - Wildfire, flood, and broader settlement/wildlife history remain future work.
 
 ## v0.5 - Colony Roles and Production
