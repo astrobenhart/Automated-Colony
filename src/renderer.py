@@ -210,14 +210,7 @@ class PygameRenderer:
 
         y = self.panel_padding
 
-        y = self.draw_text_line(
-            "Automated Colony",
-            content_x,
-            y,
-            content_width,
-            bottom_y,
-            self.big_font,
-        )
+        y = self.draw_world_identity_header(content_x, y, content_width, bottom_y)
         y += self.panel_gap
 
         status = "PAUSED" if paused else "RUNNING"
@@ -284,6 +277,17 @@ class PygameRenderer:
         if max_events > 0:
             for event in self.world.events[-max_events:]:
                 y = self.draw_text_line(event, content_x, y, content_width, bottom_y, color=COLORS["muted"])
+
+    def draw_world_identity_header(self, x: int, y: int, width: int, bottom_y: int):
+        identity = self.world.identity
+        if identity is None:
+            y = self.draw_text_line("Automated Colony", x, y, width, bottom_y, self.big_font)
+            return y
+
+        y = self.draw_text_line(identity.title, x, y, width, bottom_y, self.big_font)
+        y = self.draw_text_line(identity.subtitle, x, y, width, bottom_y, color=COLORS["muted"])
+        y = self.draw_text_line(f"Survival: {identity.survival_outlook}", x, y, width, bottom_y, color=COLORS["warning"])
+        return y
 
     def draw_selection_details(self, x: int, y: int, width: int, bottom_y: int):
         y = self.draw_section_header("Selection", x, y, width, bottom_y)

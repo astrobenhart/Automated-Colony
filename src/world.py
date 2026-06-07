@@ -15,6 +15,7 @@ from src.seasons import (
 from src.resource_ecology import apply_resource_ecology
 from src.wildlife import spawn_wildlife, update_wildlife
 from src.world_history import WorldHistory
+from src.world_identity import WorldIdentity, generate_world_identity
 from src.worldgen_settings import WorldGenSettings, default_worldgen_settings
 from src.worldgen import generate_world
 from src.agent import Agent
@@ -39,6 +40,7 @@ class World:
     active_environment_events: list = field(default_factory=list)
     animals: list = field(default_factory=list)
     history: WorldHistory = field(default_factory=WorldHistory)
+    identity: WorldIdentity | None = None
 
     day: int = 1
     tick: int = 0
@@ -95,6 +97,7 @@ class World:
             self.river_paths,
         ) = generate_world(self.width, self.height, self.seed, self.settings)
         self.animals = spawn_wildlife(self, random.Random(self.seed))
+        self.identity = generate_world_identity(self)
 
     def spawn_agents(self, amount):
         names = [

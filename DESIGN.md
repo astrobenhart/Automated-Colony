@@ -48,7 +48,13 @@ World generation settings should:
 - validate or clamp unsafe values
 - expose seed, size, water level, forest density, and climate harshness
 - support presets such as normal, wet, dry, forest, and harsh
-- remain ready for a future setup screen without requiring one now
+- remain internal and preset-driven for now, without a player-facing setup screen
+
+World identity should:
+- be generated from actual terrain, resource, wildlife, and settings conditions
+- give each world an evocative title, compact subtitle, and estimated survival outlook
+- keep hidden tags for future history, settlement, and storytelling systems
+- make the player feel they are discovering a world rather than configuring one
 
 World history should:
 - remain separate from the short-term event log

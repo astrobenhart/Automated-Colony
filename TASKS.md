@@ -67,6 +67,36 @@ Notes:
 
 ## Completed
 
+### TASK-30
+Title: Add Generated World Identity
+
+Owner: Renderer Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #20 by replacing the generic panel title with an automatically generated world identity.
+
+Expected Output:
+A hands-off presentation layer that gives each generated world a short title, subtitle, survival outlook, and future-facing tags based on actual generated conditions.
+
+Acceptance Criteria:
+- World identity is generated after terrain, resources, and wildlife exist.
+- Identity includes title, subtitle, survival outlook, and tags.
+- Same seed/settings produce the same identity.
+- Harsh worlds receive harsher outlooks than gentle worlds.
+- Wet/marsh and forested maps receive suitable tags.
+- The right panel shows generated identity without adding menus, sliders, setup screens, or user input.
+- Existing tests pass.
+
+Dependencies:
+- TASK-29
+
+Notes:
+- This is presentation-focused; no gameplay, villager behavior, worldgen rewrite, setup UI, save/load, or world editor was added.
+
+---
+
 ### TASK-29
 Title: Expose World Generation Settings
 

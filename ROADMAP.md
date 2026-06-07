@@ -74,6 +74,7 @@ Features:
 - [x] Add wildlife spawning based on biome suitability
 - [x] Add world history tracking for major environmental events
 - [x] Expose world-generation settings such as seed, size, water level, forest density, and climate harshness
+- [x] Replace player-facing settings UX with generated world identity
 
 Acceptance Criteria:
 - [x] Worlds no longer look uniformly random.
@@ -88,6 +89,7 @@ Acceptance Criteria:
 - [x] Ambient wildlife appears based on biome suitability without disrupting villagers.
 - [x] Major environmental events are recorded in persistent structured world history.
 - [x] World generation can be reproduced and tuned through centralized settings and presets.
+- [x] The right panel presents a generated world title, subtitle, survival outlook, and hidden tags.
 - [ ] Agents must adapt to world conditions rather than only random resource placement.
 
 Notes:
@@ -104,6 +106,7 @@ Notes:
 - Wildlife v1 adds ambient rabbits, deer, boar, and waterfowl in `src/wildlife.py`.
 - World History v1 records drought and heavy rain beginnings/endings in `src/world_history.py`.
 - World generation settings and presets are centralized in `src/worldgen_settings.py`.
+- World identity is generated from actual map conditions in `src/world_identity.py`; no setup menu is planned.
 - Wildfire, flood, and broader settlement/wildlife history remain future work.
 
 ## v0.5 - Colony Roles and Production
