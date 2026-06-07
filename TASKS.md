@@ -67,6 +67,36 @@ Notes:
 
 ## Completed
 
+### TASK-31
+Title: Verify v0.4 World Adaptation
+
+Owner: Tester Agent
+
+Status: Completed
+
+Description:
+Verify the final v0.4 acceptance criterion that agents adapt to world conditions rather than only random resource placement.
+
+Expected Output:
+Preset comparison evidence, lightweight adaptation tests, and roadmap closeout recommendation.
+
+Acceptance Criteria:
+- Normal, wet, dry, forest, and harsh worlds are compared.
+- Tests prove terrain presets affect resources and agents respond with relevant seeking behavior.
+- Seasonal ecology pressure is covered.
+- ROADMAP.md marks the final v0.4 acceptance criterion complete if supported.
+- Existing tests pass.
+
+Dependencies:
+- TASK-29
+- TASK-30
+
+Notes:
+- Verification showed agents responding through water seeking, food seeking, wood seeking, storage, and shelter construction.
+- Balance and world identity outlook calibration can still be tuned later, but no missing v0.4 system was found.
+
+---
+
 ### TASK-30
 Title: Add Generated World Identity
 

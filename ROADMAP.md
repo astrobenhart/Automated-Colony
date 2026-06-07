@@ -90,7 +90,7 @@ Acceptance Criteria:
 - [x] Major environmental events are recorded in persistent structured world history.
 - [x] World generation can be reproduced and tuned through centralized settings and presets.
 - [x] The right panel presents a generated world title, subtitle, survival outlook, and hidden tags.
-- [ ] Agents must adapt to world conditions rather than only random resource placement.
+- [x] Agents must adapt to world conditions rather than only random resource placement.
 
 Notes:
 - Phase 1 world generation is implemented in `src/worldgen.py`.
@@ -107,6 +107,8 @@ Notes:
 - World History v1 records drought and heavy rain beginnings/endings in `src/world_history.py`.
 - World generation settings and presets are centralized in `src/worldgen_settings.py`.
 - World identity is generated from actual map conditions in `src/world_identity.py`; no setup menu is planned.
+- Final v0.4 verification compared normal, wet, dry, forest, and harsh worlds through day 20. Presets changed water, food, wood, and survival pressure, while agents responded through water seeking, food seeking, wood seeking, storage, and shelter construction.
+- Survival outlook labels are useful but approximate; future balance passes can tune identity/outlook calibration without blocking v0.4.
 - Wildfire, flood, and broader settlement/wildlife history remain future work.
 
 ## v0.5 - Colony Roles and Production
