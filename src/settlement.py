@@ -4,8 +4,25 @@ import hashlib
 import random
 from dataclasses import dataclass, field
 
-from src.config import SETTLEMENT_RADIUS
+from src.config import SETTLEMENT_RADIUS, STOCKPILE_CAPACITY
 from src.roles import BUILDER, FORAGER, GENERALIST, SCOUT
+
+FOOD = "food"
+WOOD = "wood"
+
+
+@dataclass
+class Stockpile:
+    x: int
+    y: int
+    stockpile_type: str
+    stored_amount: int = 0
+    capacity: int = STOCKPILE_CAPACITY
+
+    def deposit(self, amount: int) -> int:
+        accepted = min(max(0, amount), max(0, self.capacity - self.stored_amount))
+        self.stored_amount += accepted
+        return accepted
 
 
 @dataclass
@@ -17,6 +34,7 @@ class Settlement:
     founded_season: str
     radius: int = SETTLEMENT_RADIUS
     population: int = 0
+    stockpiles: list[Stockpile] = field(default_factory=list)
     activity_heatmap: dict[tuple[int, int], int] = field(default_factory=dict)
 
     def record_activity(self, x: int, y: int):
@@ -26,11 +44,17 @@ class Settlement:
     def activity_at(self, x: int, y: int) -> int:
         return self.activity_heatmap.get((x, y), 0)
 
+    def stockpile_for(self, stockpile_type: str) -> Stockpile | None:
+        for stockpile in self.stockpiles:
+            if stockpile.stockpile_type == stockpile_type:
+                return stockpile
+        return None
+
 
 def found_settlement(world) -> Settlement:
     center_x, center_y = _agent_centroid(world.agents)
     x, y = nearest_walkable_tile(world, center_x, center_y)
-    return Settlement(
+    settlement = Settlement(
         name=settlement_name(world),
         x=x,
         y=y,
@@ -38,6 +62,42 @@ def found_settlement(world) -> Settlement:
         founded_season=world.season,
         population=len(world.living_agents()),
     )
+    settlement.stockpiles = create_stockpiles(world, settlement)
+    return settlement
+
+
+def create_stockpiles(world, settlement: Settlement) -> list[Stockpile]:
+    used = {(settlement.x, settlement.y)}
+    stockpiles = []
+    for stockpile_type in (FOOD, WOOD):
+        pos = _nearest_stockpile_tile(world, settlement, used)
+        if pos is None:
+            continue
+        used.add(pos)
+        stockpiles.append(Stockpile(pos[0], pos[1], stockpile_type))
+    return stockpiles
+
+
+def _nearest_stockpile_tile(world, settlement: Settlement, used: set[tuple[int, int]]) -> tuple[int, int] | None:
+    for radius in range(1, settlement.radius + 1):
+        candidates = []
+        for y in range(max(0, settlement.y - radius), min(world.height, settlement.y + radius + 1)):
+            for x in range(max(0, settlement.x - radius), min(world.width, settlement.x + radius + 1)):
+                if max(abs(x - settlement.x), abs(y - settlement.y)) != radius:
+                    continue
+                pos = (x, y)
+                if pos in used:
+                    continue
+                if not world.tile_at(x, y).walkable:
+                    continue
+                if world.agent_at(x, y) is not None:
+                    continue
+                candidates.append(pos)
+
+        if candidates:
+            return min(candidates, key=lambda pos: (abs(pos[0] - settlement.x) + abs(pos[1] - settlement.y), pos[1], pos[0]))
+
+    return None
 
 
 def nearest_walkable_tile(world, center_x: int, center_y: int) -> tuple[int, int]:
@@ -101,7 +161,11 @@ def random_tile_near_settlement(world, rng=None, role: str | None = None) -> tup
     candidates = _walkable_tiles_in_radius(world, settlement.x, settlement.y, radius)
     candidates = [
         pos for pos in candidates
-        if pos != (settlement.x, settlement.y) and world.agent_at(pos[0], pos[1]) is None
+        if (
+            pos != (settlement.x, settlement.y)
+            and not is_stockpile_tile(world, pos[0], pos[1])
+            and world.agent_at(pos[0], pos[1]) is None
+        )
     ]
 
     if not candidates:
@@ -126,13 +190,66 @@ def valid_build_tile_near_settlement(world, agent=None) -> tuple[int, int] | Non
             continue
 
         tile = world.tile_at(x, y)
-        if tile.kind == "grass" and (x, y) != (settlement.x, settlement.y):
+        if tile.kind == "grass" and (x, y) != (settlement.x, settlement.y) and not is_stockpile_tile(world, x, y):
             candidates.append((x, y))
 
     if not candidates:
         return None
 
     return min(candidates, key=lambda pos: (abs(pos[0] - settlement.x) + abs(pos[1] - settlement.y), pos[1], pos[0]))
+
+
+def stockpile_for(world, stockpile_type: str) -> Stockpile | None:
+    settlement = world.settlement
+    if settlement is None:
+        return None
+    return settlement.stockpile_for(stockpile_type)
+
+
+def is_stockpile_tile(world, x: int, y: int) -> bool:
+    settlement = world.settlement
+    if settlement is None:
+        return False
+    return any(stockpile.x == x and stockpile.y == y for stockpile in settlement.stockpiles)
+
+
+def is_adjacent_to_stockpile(world, x: int, y: int, stockpile_type: str) -> bool:
+    stockpile = stockpile_for(world, stockpile_type)
+    if stockpile is None:
+        return False
+    return max(abs(x - stockpile.x), abs(y - stockpile.y)) <= 1
+
+
+def stockpile_access_tile(world, stockpile_type: str, agent=None) -> tuple[int, int] | None:
+    stockpile = stockpile_for(world, stockpile_type)
+    if stockpile is None:
+        return None
+
+    candidates = []
+    for y in range(max(0, stockpile.y - 1), min(world.height, stockpile.y + 2)):
+        for x in range(max(0, stockpile.x - 1), min(world.width, stockpile.x + 2)):
+            if (x, y) == (stockpile.x, stockpile.y):
+                continue
+            if not world.tile_at(x, y).walkable:
+                continue
+            if agent is not None and (x, y) == (agent.x, agent.y):
+                occupied = False
+            else:
+                occupied = world.agent_at(x, y) is not None
+            if not occupied:
+                candidates.append((x, y))
+
+    if not candidates:
+        return None
+
+    return min(candidates, key=lambda pos: (abs(pos[0] - stockpile.x) + abs(pos[1] - stockpile.y), pos[1], pos[0]))
+
+
+def deposit_to_stockpile(world, stockpile_type: str, amount: int) -> int:
+    stockpile = stockpile_for(world, stockpile_type)
+    if stockpile is None:
+        return 0
+    return stockpile.deposit(amount)
 
 
 def settlement_name(world) -> str:

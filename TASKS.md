@@ -8,6 +8,36 @@ No active task.
 
 ## Backlog
 
+### TASK-40
+Title: Add Simple Workshop
+
+Owner: Gameplay Agent / Architect Agent
+
+Status: Backlog
+
+Description:
+Create a simple workshop near the settlement hub that gives Builders productive local behavior and consumes stored wood or settlement resources to support future production systems.
+
+Expected Output:
+A lightweight workshop concept that makes stockpiled resources useful before full hauling, reservations, or task claiming are introduced.
+
+Acceptance Criteria:
+- A simple workshop can exist near the settlement hub.
+- Builders gain meaningful village-local work connected to stored resources.
+- Workshop behavior remains autonomous and hands-off.
+- Full hauling/task claiming is not required.
+- Existing survival behavior remains stable.
+- Existing tests pass when implemented.
+
+Dependencies:
+- TASK-39
+
+Notes:
+- This task should come before full hauling/task claiming because the simulation needs meaningful resource destinations before a logistics layer is worth adding.
+- Do not add workshops, hauling, task claiming, farming, roads, multiple settlements, migration, or player micromanagement as part of this planning update.
+
+---
+
 ### TASK-33
 Title: Tune Survival Outlook Labels
 
@@ -119,6 +149,38 @@ Notes:
 ---
 
 ## Completed
+
+### TASK-39
+Title: Add Physical Stockpiles
+
+Owner: Gameplay Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #27 by adding visible food and wood stockpile locations near the settlement center.
+
+Expected Output:
+Settlements create physical stockpile markers, villagers return carried resources to adjacent stockpile access tiles, and deposits update both `ColonyStorage` and the matching visible stockpile amount.
+
+Acceptance Criteria:
+- Food and wood stockpiles spawn automatically near the settlement.
+- Stockpiles are walkable, deterministic, and visually distinct.
+- Deposits update `ColonyStorage`.
+- Deposits update physical stockpile amounts.
+- Agents can deposit from adjacent stockpile access tiles.
+- Agents carrying depositable resources seek stockpiles before depositing.
+- Existing abstract storage withdrawal behavior remains stable.
+- Existing tests pass.
+
+Dependencies:
+- TASK-37
+- TASK-38
+
+Notes:
+- This is Physical Stockpiles v1. It does not add hauling, reservations, task claiming, workshops, farming, roads, multiple settlements, migration, or full withdrawal logistics.
+
+---
 
 ### TASK-38
 Title: Add Village Hub Behavior

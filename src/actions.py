@@ -2,7 +2,17 @@ from __future__ import annotations
 import random
 from typing import TYPE_CHECKING
 
-from src.settlement import is_near_settlement, random_tile_near_settlement, valid_build_tile_near_settlement
+from src.settlement import (
+    FOOD,
+    WOOD,
+    deposit_to_stockpile,
+    is_adjacent_to_stockpile,
+    is_near_settlement,
+    random_tile_near_settlement,
+    stockpile_access_tile,
+    stockpile_for,
+    valid_build_tile_near_settlement,
+)
 
 if TYPE_CHECKING:
     from src.agent import Agent
@@ -96,7 +106,11 @@ class DepositFoodAction(Action):
     name = "Depositing food"
 
     def can_do(self, agent: Agent, world: World) -> bool:
-        return agent.food > 1
+        if agent.food <= 1:
+            return False
+        if stockpile_for(world, FOOD) is None:
+            return True
+        return is_adjacent_to_stockpile(world, agent.x, agent.y, FOOD)
 
     def score(self, agent: Agent, world: World) -> int:
         return 15
@@ -106,8 +120,32 @@ class DepositFoodAction(Action):
         agent.reset_stuck()
         amount = agent.food - 1
         deposited = world.colony_storage.deposit_food(amount)
+        deposit_to_stockpile(world, FOOD, deposited)
         agent.food -= deposited
         world.log(f"{agent.name} stores {deposited} food.")
+
+
+class SeekFoodStockpileAction(Action):
+    name = "Seeking food stockpile"
+
+    def can_do(self, agent: Agent, world: World) -> bool:
+        return (
+            agent.food > 1
+            and stockpile_for(world, FOOD) is not None
+            and not is_adjacent_to_stockpile(world, agent.x, agent.y, FOOD)
+            and stockpile_access_tile(world, FOOD, agent) is not None
+        )
+
+    def score(self, agent: Agent, world: World) -> int:
+        return 14
+
+    def execute(self, agent: Agent, world: World):
+        super().execute(agent, world)
+        target = stockpile_access_tile(world, FOOD, agent)
+        if target is None:
+            agent.record_no_progress()
+            return
+        _step_along_path(agent, world, target)
 
 
 class GatherWoodAction(Action):
@@ -137,7 +175,11 @@ class DepositWoodAction(Action):
     name = "Depositing wood"
 
     def can_do(self, agent: Agent, world: World) -> bool:
-        return agent.wood > 0 and not world.needs_more_shelters()
+        if agent.wood <= 0 or world.needs_more_shelters():
+            return False
+        if stockpile_for(world, WOOD) is None:
+            return True
+        return is_adjacent_to_stockpile(world, agent.x, agent.y, WOOD)
 
     def score(self, agent: Agent, world: World) -> int:
         return 12
@@ -146,8 +188,33 @@ class DepositWoodAction(Action):
         super().execute(agent, world)
         agent.reset_stuck()
         deposited = world.colony_storage.deposit_wood(agent.wood)
+        deposit_to_stockpile(world, WOOD, deposited)
         agent.wood -= deposited
         world.log(f"{agent.name} stores {deposited} wood.")
+
+
+class SeekWoodStockpileAction(Action):
+    name = "Seeking wood stockpile"
+
+    def can_do(self, agent: Agent, world: World) -> bool:
+        return (
+            agent.wood > 0
+            and not world.needs_more_shelters()
+            and stockpile_for(world, WOOD) is not None
+            and not is_adjacent_to_stockpile(world, agent.x, agent.y, WOOD)
+            and stockpile_access_tile(world, WOOD, agent) is not None
+        )
+
+    def score(self, agent: Agent, world: World) -> int:
+        return 11
+
+    def execute(self, agent: Agent, world: World):
+        super().execute(agent, world)
+        target = stockpile_access_tile(world, WOOD, agent)
+        if target is None:
+            agent.record_no_progress()
+            return
+        _step_along_path(agent, world, target)
 
 
 class BuildShelterAction(Action):

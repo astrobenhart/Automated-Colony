@@ -203,6 +203,14 @@ class World:
 
         return None
 
+    def stockpile_at(self, x, y):
+        if self.settlement is None:
+            return None
+        for stockpile in self.settlement.stockpiles:
+            if stockpile.x == x and stockpile.y == y:
+                return stockpile
+        return None
+
     def nearby_tile_kind(self, x, y, kind):
         for dx, dy in [(0, 0), (0, 1), (1, 0), (0, -1), (-1, 0)]:
             nx = x + dx

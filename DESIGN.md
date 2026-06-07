@@ -135,6 +135,37 @@ Survival remains dominant:
 
 Future systems can use activity heat to suggest roads, stockpile locations, workshops, districts, and village expansion pressure.
 
+## Physical Stockpiles v1
+
+Physical stockpiles make the village economy visible without replacing shared storage.
+
+Implemented behavior:
+- each settlement creates one food stockpile and one wood stockpile near the settlement center
+- stockpiles are walkable map markers, not terrain types
+- villagers carrying extra food or unused wood seek adjacent stockpile access tiles before depositing
+- deposits update both `ColonyStorage` and the visible stockpile amount
+- eating from storage still uses abstract `ColonyStorage`
+
+Design boundaries:
+- `ColonyStorage` remains the source of truth
+- stockpiles do not reserve resources
+- villagers do not withdraw from specific piles yet
+- no hauling jobs, workshops, farms, roads, or task claiming are introduced
+
+Future systems can turn stockpiles into foundations for hauling, workshops, farms, resource chains, local shortages, and settlement logistics.
+
+## v0.5 Production Sequence
+
+v0.5 production should progress from visible storage to simple workshops before full hauling logistics.
+
+Reasoning:
+- stockpiles make settlement resources physically visible
+- workshops give stored resources a productive use
+- builders need meaningful village-local work before a larger logistics system exists
+- hauling and task claiming should wait until there are enough resource destinations to justify the added complexity
+
+This keeps the simulation hands-off while gradually making the village economy more legible and useful.
+
 ## Settlement Arc
 
 The long-term simulation arc is:

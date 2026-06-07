@@ -4,7 +4,9 @@ from typing import TYPE_CHECKING
 from src.actions import (
     Action,
     DepositFoodAction,
+    SeekFoodStockpileAction,
     DepositWoodAction,
+    SeekWoodStockpileAction,
     DrinkAction,
     EatAction,
     EatFromStorageAction,
@@ -90,6 +92,7 @@ class DepositFoodGoal(Goal):
     name = "Deposit food"
     action_types = (
         DepositFoodAction,
+        SeekFoodStockpileAction,
     )
 
 
@@ -140,6 +143,7 @@ class DepositWoodGoal(Goal):
     name = "Deposit wood"
     action_types = (
         DepositWoodAction,
+        SeekWoodStockpileAction,
     )
 
 

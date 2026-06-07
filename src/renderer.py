@@ -157,6 +157,12 @@ class PygameRenderer:
                 if self.is_settlement_center(x, y):
                     self.draw_centered_symbol("+", screen_x, screen_y, COLORS["settlement"])
 
+                stockpile = self.world.stockpile_at(x, y)
+                if stockpile:
+                    symbol = "F" if stockpile.stockpile_type == "food" else "W"
+                    color = COLORS["stockpile_food"] if stockpile.stockpile_type == "food" else COLORS["stockpile_wood"]
+                    self.draw_centered_symbol(symbol, screen_x, screen_y, color)
+
                 agent = self.world.agent_at(x, y)
                 if agent:
                     self.draw_centered_symbol("@", screen_x, screen_y, COLORS["agent"])
@@ -336,6 +342,14 @@ class PygameRenderer:
                     ("Pop", settlement.population),
                     ("Radius", settlement.radius),
                     ("Founded", f"D{settlement.founded_day} {settlement.founded_season}"),
+                ])
+            stockpile = self.world.stockpile_at(tile_x, tile_y)
+            if stockpile is not None:
+                label = "Food" if stockpile.stockpile_type == "food" else "Wood"
+                details.extend([
+                    ("Stockpile", label),
+                    ("Stored", stockpile.stored_amount),
+                    ("Capacity", stockpile.capacity),
                 ])
             color = COLORS["text"]
 

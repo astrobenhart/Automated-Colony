@@ -17,6 +17,7 @@ HUNGER_DEATH_THRESHOLD = 100
 THIRST_DEATH_THRESHOLD = 100
 SHELTER_CAPACITY = 3
 SETTLEMENT_RADIUS = 10
+STOCKPILE_CAPACITY = 99
 STUCK_TICK_LIMIT = 3
 NO_PROGRESS_TICK_LIMIT = 5
 RIVER_COUNT = 3
@@ -72,6 +73,8 @@ COLORS = {
     "wood": (130, 80, 35),
     "wildlife": (220, 205, 150),
     "settlement": (255, 220, 120),
+    "stockpile_food": (240, 120, 100),
+    "stockpile_wood": (170, 110, 55),
     "agent": (245, 245, 245),
     "dead": (90, 90, 90),
     "grid": (20, 20, 20),
@@ -151,4 +154,6 @@ SYMBOL_LABELS = {
     "b": "Boar",
     "v": "Waterfowl",
     "+": "Settlement",
+    "F": "Food Pile",
+    "W": "Wood Pile",
 }

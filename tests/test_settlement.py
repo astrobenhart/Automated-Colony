@@ -1,16 +1,28 @@
 import random
 
-from src.actions import BuildShelterAction, SeekBuildSiteAction, WanderAction
+from src.actions import (
+    BuildShelterAction,
+    DepositFoodAction,
+    DepositWoodAction,
+    SeekBuildSiteAction,
+    SeekFoodStockpileAction,
+    WanderAction,
+)
 from src.agent import Agent
 from src.config import COLORS, SETTLEMENT_RADIUS, SYMBOL_LABELS
 from src.roles import BUILDER, GENERALIST, SCOUT
 from src.settlement import (
+    FOOD,
+    WOOD,
     Settlement,
+    Stockpile,
     distance_to_settlement,
     exploration_radius_for_role,
+    is_adjacent_to_stockpile,
     is_near_settlement,
     nearest_walkable_tile,
     random_tile_near_settlement,
+    stockpile_access_tile,
     valid_build_tile_near_settlement,
 )
 from src.tile import Tile
@@ -99,11 +111,20 @@ def test_settlement_distance_and_near_helpers_work():
 
 def test_random_tile_near_settlement_avoids_center_and_stays_in_radius():
     world = make_world(width=12, height=12)
-    world.settlement = Settlement("Willowhold", 5, 5, 1, "Spring", radius=4)
+    world.settlement = Settlement(
+        "Willowhold",
+        5,
+        5,
+        1,
+        "Spring",
+        radius=4,
+        stockpiles=[Stockpile(5, 6, FOOD), Stockpile(6, 5, WOOD)],
+    )
 
     x, y = random_tile_near_settlement(world, random.Random(1), GENERALIST)
 
     assert (x, y) != (5, 5)
+    assert (x, y) not in [(5, 6), (6, 5)]
     assert is_near_settlement(world, x, y)
 
 
@@ -170,3 +191,116 @@ def test_settlement_activity_tracking_updates():
     world.record_settlement_activity()
 
     assert world.settlement.activity_at(2, 3) == 1
+
+
+def test_stockpiles_spawn_near_settlement():
+    world = create_world(seed=29)
+    settlement = world.settlement
+
+    assert {stockpile.stockpile_type for stockpile in settlement.stockpiles} == {FOOD, WOOD}
+    assert len(set((stockpile.x, stockpile.y) for stockpile in settlement.stockpiles)) == 2
+    for stockpile in settlement.stockpiles:
+        assert world.tile_at(stockpile.x, stockpile.y).walkable
+        assert is_near_settlement(world, stockpile.x, stockpile.y)
+
+
+def test_stockpile_locations_are_deterministic_for_fixed_seed():
+    first = create_world(seed=30)
+    second = create_world(seed=30)
+
+    first_piles = [(pile.stockpile_type, pile.x, pile.y) for pile in first.settlement.stockpiles]
+    second_piles = [(pile.stockpile_type, pile.x, pile.y) for pile in second.settlement.stockpiles]
+
+    assert first_piles == second_piles
+
+
+def test_food_deposit_updates_storage_and_food_stockpile_from_adjacent_tile():
+    world = make_world(width=8, height=8)
+    world.settlement = Settlement(
+        "Willowhold",
+        4,
+        4,
+        1,
+        "Spring",
+        stockpiles=[Stockpile(4, 5, FOOD), Stockpile(5, 4, WOOD)],
+    )
+    agent = Agent("Ari", 3, 5, food=3)
+    world.agents.append(agent)
+
+    DepositFoodAction().execute(agent, world)
+
+    assert agent.food == 1
+    assert world.colony_storage.food == 2
+    assert world.settlement.stockpile_for(FOOD).stored_amount == 2
+
+
+def test_wood_deposit_updates_storage_and_wood_stockpile_from_adjacent_tile():
+    world = make_world(width=8, height=8)
+    world.settlement = Settlement(
+        "Willowhold",
+        4,
+        4,
+        1,
+        "Spring",
+        stockpiles=[Stockpile(4, 5, FOOD), Stockpile(5, 4, WOOD)],
+    )
+    agent = Agent("Bryn", 5, 5, wood=2)
+    world.agents.append(agent)
+
+    DepositWoodAction().execute(agent, world)
+
+    assert agent.wood == 0
+    assert world.colony_storage.wood == 2
+    assert world.settlement.stockpile_for(WOOD).stored_amount == 2
+
+
+def test_food_carrier_seeks_stockpile_when_not_adjacent():
+    world = make_world(width=12, height=12)
+    world.settlement = Settlement(
+        "Willowhold",
+        6,
+        6,
+        1,
+        "Spring",
+        stockpiles=[Stockpile(6, 7, FOOD), Stockpile(7, 6, WOOD)],
+    )
+    agent = Agent("Cato", 1, 1, food=3)
+    world.agents.append(agent)
+
+    action = agent.choose_action(world)
+
+    assert agent.current_goal == "Deposit food"
+    assert isinstance(action, SeekFoodStockpileAction)
+
+
+def test_existing_deposit_behavior_still_works_without_stockpile():
+    world = make_world(width=8, height=8)
+    world.settlement = None
+    agent = Agent("Dara", 3, 3, food=3)
+    world.agents.append(agent)
+
+    assert DepositFoodAction().can_do(agent, world)
+    DepositFoodAction().execute(agent, world)
+
+    assert agent.food == 1
+    assert world.colony_storage.food == 2
+
+
+def test_stockpile_access_tile_avoids_occupied_neighbors():
+    world = make_world(width=8, height=8)
+    world.settlement = Settlement(
+        "Willowhold",
+        4,
+        4,
+        1,
+        "Spring",
+        stockpiles=[Stockpile(4, 5, FOOD), Stockpile(5, 4, WOOD)],
+    )
+    blocked = Agent("Blocked", 3, 5)
+    carrier = Agent("Carrier", 1, 1, food=3)
+    world.agents.extend([blocked, carrier])
+
+    target = stockpile_access_tile(world, FOOD, carrier)
+
+    assert target != (blocked.x, blocked.y)
+    assert is_adjacent_to_stockpile(world, target[0], target[1], FOOD)
