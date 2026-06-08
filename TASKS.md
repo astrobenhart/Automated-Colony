@@ -120,6 +120,41 @@ Notes:
 
 ## Completed
 
+### TASK-45
+Title: Add Resource Reservation v1
+
+Owner: Architect Agent / Gameplay Agent / Balance Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #35 as lightweight reservations for shared targets instead of a generic task scheduler.
+
+Expected Output:
+Agents avoid duplicating the same food, wood, build-site, or workshop target when alternatives exist, while survival overrides remain safe.
+
+Acceptance Criteria:
+- World owns a small reservation manager.
+- Reservations can be created, released, expire, and clean up stale invalid targets.
+- Food and wood target selection prefers unreserved resource tiles.
+- Critical hunger can use reserved food if no alternative exists.
+- Shelter build-site placement avoids other builders' reserved sites.
+- Workshop use is limited by a workshop reservation.
+- Reservations release on completion, invalidation, death, no-progress recovery, or timeout.
+- Reservation checks use dict lookups and existing bounded candidate lists without pathfinding.
+- Existing tests pass.
+
+Dependencies:
+- TASK-41
+- TASK-42
+- TASK-43
+- TASK-44
+
+Notes:
+- This is Resource Reservation v1. It does not add hauling chains, a job board, task queues, item stacks, inventory reservations, roads, farming, migration, multiple settlements, or player work orders.
+
+---
+
 ### TASK-44
 Title: Add Expanded Settlement Building Priorities
 

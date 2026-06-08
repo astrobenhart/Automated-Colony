@@ -214,6 +214,30 @@ Design boundaries:
 
 Thresholds are intentionally conservative and tunable. This is the first step toward settlement-level decision making, not a logistics system.
 
+## Resource Reservation v1
+
+Reservations are soft coordination, not a job system.
+
+Implemented behavior:
+- the world owns a small reservation manager
+- agents can reserve food tiles, wood tiles, shelter build sites, and workshop use
+- target selection prefers unreserved food and wood when alternatives exist
+- clustered build placement skips build sites reserved by other builders
+- workshop reservations keep every Builder from crowding the same workshop at once
+- reservations expire after a short timeout
+- reservations release on completion, target invalidation/depletion, death, or no-progress recovery
+- critical hunger can override food reservations if no alternative food is available
+
+Design boundaries:
+- no job board
+- no task queue
+- no hauling chain
+- no item stacks on the ground
+- no inventory reservations
+- no player work orders
+
+Full hauling and task claiming should build on this later, after the simulation has more destinations and resource chains.
+
 ## Local Resource Radius v1
 
 The settlement has a soft resource territory, not an invisible wall.

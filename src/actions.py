@@ -18,6 +18,7 @@ from src.settlement import (
 from src.building_placement import find_build_site_near_settlement
 from src.building_priorities import SHELTER, should_produce_building_materials
 from src.profiler import profiler
+from src.reservations import BUILD_SITE, FOOD as FOOD_RESERVATION, WOOD as WOOD_RESERVATION, WORKSHOP
 from src.workshop import is_adjacent_to_workshop, workshop_access_tile, workshop_for
 
 if TYPE_CHECKING:
@@ -35,6 +36,7 @@ class Action:
         return 0
 
     def execute(self, agent: Agent, world: World):
+        world.reservations.release_agent(agent)
         agent.current_action = self.name
 
 
@@ -94,7 +96,11 @@ class GatherFoodAction(Action):
     name = "Gathering food"
 
     def can_do(self, agent: Agent, world: World) -> bool:
-        return world.tile_at(agent.x, agent.y).food > 0
+        pos = (agent.x, agent.y)
+        return (
+            world.tile_at(agent.x, agent.y).food > 0
+            and (agent.hunger >= 70 or not world.reservations.is_reserved(FOOD_RESERVATION, pos, by_other_than=agent))
+        )
 
     def score(self, agent: Agent, world: World) -> int:
         return 45 + agent.hunger
@@ -105,6 +111,7 @@ class GatherFoodAction(Action):
         tile = world.tile_at(agent.x, agent.y)
         tile.food -= 1
         agent.food += 1
+        world.reservations.release(FOOD_RESERVATION, (agent.x, agent.y), agent)
         world.log(f"{agent.name} gathers food.")
 
 
@@ -158,9 +165,11 @@ class GatherWoodAction(Action):
     name = "Gathering wood"
 
     def can_do(self, agent: Agent, world: World) -> bool:
+        pos = (agent.x, agent.y)
         return (
             world.should_gather_wood_for_construction(agent)
             and world.tile_at(agent.x, agent.y).wood > 0
+            and not world.reservations.is_reserved(WOOD_RESERVATION, pos, by_other_than=agent)
         )
 
     def score(self, agent: Agent, world: World) -> int:
@@ -174,6 +183,7 @@ class GatherWoodAction(Action):
         tile = world.tile_at(agent.x, agent.y)
         tile.wood -= 1
         agent.wood += 1
+        world.reservations.release(WOOD_RESERVATION, (agent.x, agent.y), agent)
         world.log(f"{agent.name} gathers wood.")
 
 
@@ -258,6 +268,7 @@ class BuildShelterAction(Action):
         agent.wood -= wood_cost
         if world.colony_storage.building_materials > 0:
             world.colony_storage.withdraw_building_materials(1)
+        world.reservations.release(BUILD_SITE, (agent.x, agent.y), agent)
         world.log(f"{agent.name} builds a shelter.")
 
 
@@ -279,6 +290,9 @@ class SeekBuildSiteAction(Action):
         super().execute(agent, world)
         target = find_build_site_near_settlement(world, SHELTER, agent)
         if target is None:
+            agent.record_no_progress()
+            return
+        if not world.reservations.reserve(BUILD_SITE, target, agent, world):
             agent.record_no_progress()
             return
         _step_along_path(agent, world, target)
@@ -310,6 +324,7 @@ class UseWorkshopAction(Action):
             and world.colony_storage.wood > 0
             and workshop_for(world) is not None
             and is_adjacent_to_workshop(world, agent.x, agent.y)
+            and not world.reservations.is_reserved(WORKSHOP, (workshop_for(world).x, workshop_for(world).y), by_other_than=agent)
         )
 
     def score(self, agent: Agent, world: World) -> int:
@@ -319,6 +334,9 @@ class UseWorkshopAction(Action):
         super().execute(agent, world)
         workshop = workshop_for(world)
         if workshop is None or world.colony_storage.wood <= 0:
+            agent.record_no_progress()
+            return
+        if not world.reservations.reserve(WORKSHOP, (workshop.x, workshop.y), agent, world):
             agent.record_no_progress()
             return
 
@@ -344,6 +362,7 @@ class SeekWorkshopAction(Action):
             and world.colony_storage.wood > 0
             and workshop_for(world) is not None
             and not is_adjacent_to_workshop(world, agent.x, agent.y)
+            and not world.reservations.is_reserved(WORKSHOP, (workshop_for(world).x, workshop_for(world).y), by_other_than=agent)
             and workshop_access_tile(world, agent) is not None
         )
 
@@ -354,6 +373,10 @@ class SeekWorkshopAction(Action):
         super().execute(agent, world)
         target = workshop_access_tile(world, agent)
         if target is None:
+            agent.record_no_progress()
+            return
+        workshop = workshop_for(world)
+        if workshop is None or not world.reservations.reserve(WORKSHOP, (workshop.x, workshop.y), agent, world):
             agent.record_no_progress()
             return
         _step_along_path(agent, world, target)
@@ -592,6 +615,9 @@ class SeekFoodAction(Action):
             agent.current_path = []
             agent.record_no_progress()
             return
+        if not world.reservations.reserve(FOOD_RESERVATION, target, agent, world) and agent.hunger < 70:
+            agent.record_no_progress()
+            return
         if not _step_along_path(agent, world, target):
             _forget_food_target(agent, world, target)
             fallback = world.choose_resource_target(agent, FOOD, _known_food(agent, world))
@@ -626,6 +652,9 @@ class SeekWoodAction(Action):
         if target is None:
             agent.current_target = None
             agent.current_path = []
+            agent.record_no_progress()
+            return
+        if not world.reservations.reserve(WOOD_RESERVATION, target, agent, world):
             agent.record_no_progress()
             return
         if not _step_along_path(agent, world, target):

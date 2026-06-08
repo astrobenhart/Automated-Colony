@@ -259,6 +259,7 @@ class PygameRenderer:
                 ("Center", f"{settlement.x},{settlement.y}"),
                 ("Rad", settlement.radius),
                 ("Need", top_need),
+                ("Claims", len(self.world.reservations.reservations)),
             ])
         y = self.draw_two_column_section(
             "Simulation",

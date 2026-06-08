@@ -62,6 +62,7 @@ class Agent:
     # Active path being followed (list of (x,y) steps, nearest first)
     current_path: list[tuple[int, int]] = field(default_factory=list, repr=False)
     current_target: tuple[int, int] | None = field(default=None, repr=False)
+    current_reservation_keys: set[tuple[str, tuple[int, int]]] = field(default_factory=set, repr=False)
     stuck_ticks: int = 0
     no_progress_ticks: int = 0
 
@@ -196,6 +197,8 @@ class Agent:
             return
 
         self.record_no_progress()
+        if self.current_action == "Recovering":
+            self.release_reservations(world)
 
     def record_no_progress(self):
         self.no_progress_ticks = min(self.no_progress_ticks + 1, NO_PROGRESS_TICK_LIMIT)
@@ -204,6 +207,9 @@ class Agent:
             self.current_path = []
             self.current_target = None
             self.current_action = "Recovering"
+
+    def release_reservations(self, world: World):
+        world.reservations.release_agent(self)
 
     def _made_progress(self, before, after) -> bool:
         before_hunger, before_thirst, before_fatigue = before["needs"]
@@ -223,8 +229,10 @@ class Agent:
         if self.hunger >= HUNGER_DEATH_THRESHOLD:
             self.alive = False
             self.current_action = "Dead"
+            self.release_reservations(world)
             world.log(f"{self.name} died of starvation.")
         elif self.thirst >= THIRST_DEATH_THRESHOLD:
             self.alive = False
             self.current_action = "Dead"
+            self.release_reservations(world)
             world.log(f"{self.name} died of thirst.")

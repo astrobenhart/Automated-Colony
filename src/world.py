@@ -31,6 +31,7 @@ from src.worldgen_settings import WorldGenSettings, default_worldgen_settings
 from src.worldgen import generate_world
 from src.agent import Agent
 from src.profiler import profiler
+from src.reservations import ReservationManager
 
 
 @dataclass
@@ -54,6 +55,7 @@ class World:
     history: WorldHistory = field(default_factory=WorldHistory)
     identity: WorldIdentity | None = None
     settlement: Settlement | None = None
+    reservations: ReservationManager = field(default_factory=ReservationManager)
 
     day: int = 1
     tick: int = 0
@@ -239,6 +241,7 @@ class World:
     def update(self):
         with profiler.time("world update"):
             self.tick += 1
+            self.reservations.cleanup(self)
 
             from src.config import TICKS_PER_DAY
             if self.tick % TICKS_PER_DAY == 0:
@@ -253,6 +256,8 @@ class World:
                 agent.die_if_needed(self)
                 if agent.alive:
                     agent.update_progress_tracking(self, progress_before)
+                    if agent.current_action == "Recovering":
+                        agent.release_reservations(self)
 
             self.update_settlement_population()
             self.update_settlement_needs(force=True)

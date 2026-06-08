@@ -4,6 +4,7 @@ from math import inf
 from typing import TYPE_CHECKING
 
 from src.building_priorities import SHELTER
+from src.reservations import BUILD_SITE
 
 if TYPE_CHECKING:
     from src.agent import Agent
@@ -99,6 +100,8 @@ def _candidate_buildable_for_agent(
 ) -> bool:
     occupant = world.agent_at(x, y)
     if occupant is not None and occupant is not agent:
+        return False
+    if world.reservations.is_reserved(BUILD_SITE, (x, y), by_other_than=agent):
         return False
     return _is_base_buildable_tile(world, x, y, building_type)
 

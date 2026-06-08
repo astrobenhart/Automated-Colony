@@ -127,6 +127,7 @@ Features:
 - [x] Clustered building placement near the village hub
 - [x] Local resource use radius
 - [x] Expanded building priorities
+- [x] Resource reservation v1 for shared targets
 - [ ] Hauling or task claiming for shared resources
 - [ ] Farming
 - [ ] Population cap or carrying capacity
@@ -143,6 +144,7 @@ Notes:
 - Local Resource Radius v1 gives the settlement a soft work territory. Agents prefer reachable local food, water, and wood under normal pressure, expand outward when local resources are scarce, and ignore radius penalties for urgent survival needs. Scouts have a weaker local penalty so they can range farther.
 - Clustered Building Placement v1 adds autonomous settlement-aware build-site scoring for shelters. It prefers loose clusters near the village hub, avoids stockpiles, workshops, and the settlement center, preserves simple access around important tiles, and uses bounded arithmetic scoring without pathfinding. Full zoning, roads, player placement, and city planning remain future work.
 - Expanded Building Priorities v2 reframes construction decisions as centralized settlement needs. The settlement tracks shelter, wood, and materials scores, updates them centrally from population, storage, shelter capacity, and workshop state, and Builders respond to the current need while survival goals still override.
+- Resource Reservation v1 adds soft claims for shared food, wood, shelter build sites, and workshop use. Reservations reduce duplicate effort and crowding, expire automatically, release on completion/recovery/death/invalid targets, and allow critical survival overrides. This is not a generic job board, hauling chain, construction queue, or player work-order system.
 - Workshops should come before full hauling/task claiming. Stockpiles make resources visible; workshops give stored resources a productive use; hauling/task claiming should come later when there are enough resource destinations to justify a logistics layer.
 - Next v0.5 steps should build on the settlement center with simple workshops, local work radius, and clustered building placement.
 - Physical stockpiles and building clusters are prerequisites for richer settlement identity and expansion.

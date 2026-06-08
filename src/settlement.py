@@ -7,6 +7,7 @@ from math import sqrt
 
 from src.config import SETTLEMENT_EXPANDED_RESOURCE_RADIUS, SETTLEMENT_RADIUS, SETTLEMENT_RESOURCE_RADIUS, STOCKPILE_CAPACITY
 from src.profiler import profiler
+from src.reservations import FOOD as FOOD_RESERVATION, WOOD as WOOD_RESERVATION
 from src.roles import BUILDER, FORAGER, GENERALIST, SCOUT
 from src.workshop import Workshop, create_workshops, is_workshop_tile
 
@@ -340,6 +341,12 @@ def choose_resource_target(world, agent, resource_type: str, candidates: set[tup
         if not candidates:
             return None
 
+        available_candidates = _unreserved_resource_candidates(world, agent, resource_type, candidates)
+        if available_candidates:
+            candidates = available_candidates
+        elif not _is_urgent_need(agent, resource_type):
+            return None
+
         settlement = world.settlement
         pressure = resource_pressure(world, resource_type, agent)
         if settlement is not None:
@@ -354,6 +361,22 @@ def choose_resource_target(world, agent, resource_type: str, candidates: set[tup
                 pos[0],
             ),
         )
+
+
+def _unreserved_resource_candidates(world, agent, resource_type: str, candidates: set[tuple[int, int]]) -> set[tuple[int, int]]:
+    reservation_type = None
+    if resource_type == FOOD:
+        reservation_type = FOOD_RESERVATION
+    elif resource_type == WOOD:
+        reservation_type = WOOD_RESERVATION
+    if reservation_type is None:
+        return candidates
+
+    return {
+        pos
+        for pos in candidates
+        if not world.reservations.is_reserved(reservation_type, pos, by_other_than=agent)
+    }
 
 
 def exploration_radius_for_role(role: str, settlement_radius: int) -> int:
