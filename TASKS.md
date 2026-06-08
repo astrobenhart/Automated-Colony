@@ -8,6 +8,33 @@ No active task.
 
 ## Backlog
 
+### TASK-46
+Title: Design Full Hauling and Job Assignment
+
+Owner: Planner Agent / Architect Agent
+
+Status: Backlog
+
+Description:
+Plan a future logistics system that goes beyond Resource Reservation v1.
+
+Expected Output:
+A scoped design for hauling chains, item stacks, job queues or autonomous job boards, inventory/resource reservations, and multi-step production logistics.
+
+Acceptance Criteria:
+- Resource Reservation v1 remains the completed v0.5 coordination layer.
+- Full hauling/job assignment is clearly deferred to a future milestone.
+- The design identifies prerequisites such as farming, richer production chains, or multiple resource destinations.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-45
+
+Notes:
+- This is future logistics work, not active v0.5 scope.
+
+---
+
 ### TASK-33
 Title: Tune Survival Outlook Labels
 

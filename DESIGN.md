@@ -238,6 +238,8 @@ Design boundaries:
 
 Full hauling and task claiming should build on this later, after the simulation has more destinations and resource chains.
 
+v0.5 uses Resource Reservation v1 as lightweight coordination. It prevents duplicate effort without adding a full job board or hauling system. Full hauling/logistics will be revisited once farming, production chains, or multiple resource destinations justify it.
+
 ## Local Resource Radius v1
 
 The settlement has a soft resource territory, not an invisible wall.

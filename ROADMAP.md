@@ -128,10 +128,8 @@ Features:
 - [x] Local resource use radius
 - [x] Expanded building priorities
 - [x] Resource reservation v1 for shared targets
-- [ ] Hauling or task claiming for shared resources
 - [ ] Farming
 - [ ] Population cap or carrying capacity
-- [ ] Job assignment or task claiming
 
 Notes:
 - Current playtests show believable shelter clustering after early survival pressure.
@@ -145,10 +143,28 @@ Notes:
 - Clustered Building Placement v1 adds autonomous settlement-aware build-site scoring for shelters. It prefers loose clusters near the village hub, avoids stockpiles, workshops, and the settlement center, preserves simple access around important tiles, and uses bounded arithmetic scoring without pathfinding. Full zoning, roads, player placement, and city planning remain future work.
 - Expanded Building Priorities v2 reframes construction decisions as centralized settlement needs. The settlement tracks shelter, wood, and materials scores, updates them centrally from population, storage, shelter capacity, and workshop state, and Builders respond to the current need while survival goals still override.
 - Resource Reservation v1 adds soft claims for shared food, wood, shelter build sites, and workshop use. Reservations reduce duplicate effort and crowding, expire automatically, release on completion/recovery/death/invalid targets, and allow critical survival overrides. This is not a generic job board, hauling chain, construction queue, or player work-order system.
-- Workshops should come before full hauling/task claiming. Stockpiles make resources visible; workshops give stored resources a productive use; hauling/task claiming should come later when there are enough resource destinations to justify a logistics layer.
+- Resource Reservation v1 satisfies the v0.5 coordination goal. Full hauling and job assignment are deferred because they are larger logistics systems involving item movement, queues, and multi-step production.
+- Workshops should come before full hauling/job assignment. Stockpiles make resources visible; workshops give stored resources a productive use; deeper logistics should come later when there are enough resource destinations to justify the added complexity.
 - Next v0.5 steps should build on the settlement center with simple workshops, local work radius, and clustered building placement.
 - Physical stockpiles and building clusters are prerequisites for richer settlement identity and expansion.
-- Full hauling, withdrawal logistics, reservations, multiple settlements, migration, expansion, and settlement-driven task claiming remain future work.
+- Full hauling, withdrawal logistics, job assignment, multiple settlements, migration, expansion, and deeper settlement-driven logistics remain future work.
+
+## Future Logistics / v0.6+
+
+Goal: Add deeper resource logistics only after the village has enough production chains and destinations to justify the complexity.
+
+Features:
+- [ ] Full hauling and job assignment system
+- [ ] Hauling chains between resource sources, stockpiles, workshops, farms, and future buildings
+- [ ] Item stacks or explicit carried-resource destinations
+- [ ] Job queues or autonomous job board
+- [ ] Inventory and resource reservations beyond simple target claims
+- [ ] Multi-step production logistics
+
+Notes:
+- Resource Reservation v1 remains the v0.5 coordination layer.
+- Full hauling/logistics should remain autonomous unless a later design explicitly introduces player-visible work orders.
+- Do not add this system until farming, richer production chains, or multiple resource destinations make it worthwhile.
 
 ## v0.6 - Social Simulation
 
