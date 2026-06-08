@@ -5,6 +5,7 @@ os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 import pygame
 
 from src.agent import Agent
+from src.carrying_capacity import CarryingCapacityReport
 from src.config import (
     COLORS,
     DEBUG_DRAW_GRID,
@@ -322,6 +323,95 @@ def test_two_column_status_section_draws_both_columns_compactly():
     )
 
     assert end_y > 10
+
+
+def test_time_grid_contains_day_year_season_and_speed():
+    world = make_world(width=3, height=3)
+    renderer = make_renderer(world)
+
+    rows = renderer.time_grid_rows(sim_speed=4)
+
+    assert rows == [
+        ("Day", world.day),
+        ("Year", world.year),
+        ("Season", world.season_label),
+        ("Speed", "4x"),
+    ]
+
+
+def test_colony_summary_uses_villagers_without_capacity_denominator():
+    world = make_world(width=8, height=8)
+    world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")
+    world.agents = [Agent(f"A{i}", i, 1) for i in range(9)]
+    world.settlement.carrying_capacity_report = CarryingCapacityReport(
+        population=9,
+        capacity=12,
+        status="Stable",
+        reason="Current shelter, food, and water can support the living population.",
+    )
+    renderer = make_renderer(world)
+
+    lines = renderer.colony_summary_lines()
+    summary = "\n".join(lines)
+
+    assert "9 Villagers" in lines
+    assert "9 / 12 Villagers" not in summary
+    assert "9/12" not in summary
+
+
+def test_colony_summary_excludes_debug_fields():
+    world = make_world(width=8, height=8)
+    world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")
+    world.agents = [Agent("Ari", 1, 1)]
+    world.settlement.carrying_capacity_report = CarryingCapacityReport(
+        population=1,
+        capacity=3,
+        status="Stable",
+        reason="Current shelter, food, and water can support the living population.",
+    )
+    renderer = make_renderer(world)
+
+    summary = "\n".join(renderer.colony_summary_lines())
+
+    assert "Center" not in summary
+    assert "Rad" not in summary
+    assert "Claims" not in summary
+    assert "Cap" not in summary
+    assert "Settle" not in summary
+
+
+def test_colony_reason_lines_are_capped_and_hidden_when_stable():
+    world = make_world(width=8, height=8)
+    world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")
+    world.agents = [Agent(f"A{i}", i, 1) for i in range(9)]
+    world.settlement.carrying_capacity_report = CarryingCapacityReport(
+        population=9,
+        capacity=6,
+        status="Food Strained",
+        reason="Food is the limiting factor.",
+    )
+    renderer = make_renderer(world)
+
+    assert len(renderer.colony_reason_lines(max_lines=2)) == 2
+
+    world.settlement.carrying_capacity_report = CarryingCapacityReport(
+        population=9,
+        capacity=12,
+        status="Stable",
+        reason="Current shelter, food, and water can support the living population.",
+    )
+
+    assert renderer.colony_reason_lines() == []
+
+
+def test_colony_summary_handles_missing_capacity_report():
+    world = make_world(width=8, height=8)
+    world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")
+    renderer = make_renderer(world)
+
+    lines = renderer.colony_summary_lines()
+
+    assert "Unknown" in lines
 
 
 def test_renderer_recognizes_settlement_center():

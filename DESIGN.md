@@ -66,6 +66,7 @@ UI should:
 - keep current simulation and colony status visible at a glance
 - prefer compact grouped sections as more systems are added
 - preserve selection, active events, history, legend, controls, and recent event visibility without changing simulation behavior
+- keep the default right panel player-facing, with debug-style internals reserved for selected-object details
 
 ## Next Focus
 
@@ -282,7 +283,8 @@ Implemented behavior:
 - shelter support comes from built shelter capacity
 - food support comes from stored food, local wild food, ready farm food, and active farm plots
 - water support comes from local known water access
-- the renderer shows population/capacity, status, and the why-lines under a compact Capacity section
+- the renderer uses the report for a short colony status and capped reason lines
+- the default panel shows population as plain villager count, such as `9 Villagers`, and does not display capacity as a max denominator
 
 Design boundaries:
 - no population growth
@@ -292,6 +294,154 @@ Design boundaries:
 - no new job system or logistics layer
 
 The goal is to make settlement problems legible at a glance. If the panel says `Food Strained`, it should also explain the food/storage/farm context that caused that status.
+
+## Right Panel Summary v1
+
+The right panel is a player-facing observation dashboard.
+
+Implemented behavior:
+- world identity remains the top anchor
+- Day, Year, Season, and Speed appear in a compact two-row grid below the identity
+- the separate debug-style Simulation section is removed from the default summary
+- Colony shows villager count, settlement status, stored food/wood, farm count, and building materials
+- strained colonies show at most three short reason lines
+- stable colonies keep the main summary compact and omit reason lines
+- detailed values such as settlement center, radius, claims, farm growth, farm food, workshop progress, and capacity estimate live in selected-object details
+
+Design boundaries:
+- no gameplay logic changes
+- no model data removal
+- no population current/max display
+- no menus or renderer overhaul
+
+The default panel should answer what world this is, what time it is, how the colony is doing, and what just happened.
+
+## Mysteries and Wanderers
+
+The project is evolving beyond a resource simulation.
+
+It is becoming a living world that the player watches.
+
+Because the project has a strong screensaver / ant-farm quality, the simulation should occasionally create moments where the observer thinks:
+
+`Wait... what is THAT?`
+
+Those moments should be rare, memorable, and partly unexplained.
+
+Core principle:
+- the player should not know every possible surprise
+- the world should occasionally produce strange, rare, mysterious, magical, or unexplained events without player control
+- these events exist to generate stories
+- they are not another management layer
+- they are not RPG mechanics
+- they do not replace colony survival, settlement, production, or ecology
+
+### Screensaver Principle
+
+The project is partly a simulation and partly a living screensaver.
+
+Rare events should occasionally create moments that make the observer stop and watch. The simulation should be capable of surprising the player even after many hours.
+
+The player does not summon these events. The player does not command them. The world produces them.
+
+### Rare Visitors
+
+Visitors are unusual autonomous entities, not normal villagers.
+
+Possible visitors:
+- Wandering Wizard
+- Strange Hermit
+- Lost Knight
+- Travelling Merchant
+- Dreaming Pilgrim
+- Golden Stag
+
+Visitor rules:
+- rare means rare
+- visitors arrive and leave
+- visitors should feel unusual
+- visitors should not become colony roles
+- visitors should not become player-controlled units
+- visitors should not create a job board, quest system, or new management layer
+- villagers may react autonomously, but survival needs should remain important
+
+### Strange Events
+
+Possible examples:
+- Meteor Strike
+- Falling Star
+- Aurora
+- Ghost Lights
+- Singing Forest
+- Sudden Mist
+- Animals gathering silently at night
+
+These are examples only. The final list should remain intentionally open so the observer cannot memorize every possible surprise.
+
+Events should be bounded. They should not happen constantly. They should not dominate survival systems. Some mystery should remain unexplained.
+
+### Mysteries and Landmarks
+
+Possible examples:
+- Ancient Standing Stone
+- Hidden Ruin
+- Crystal Spring
+- Sleeping Giant Tree
+- Marked Grove
+- Forgotten Shrine
+
+Mysteries and landmarks may appear through world generation, rare events, or visitor interactions. They should make the world feel older and stranger than the colony. Some may have small effects; some may simply be remembered places.
+
+### Wandering Wizard Example
+
+Day 217:
+
+A wizard appears at the edge of the map.
+
+Villagers begin gathering around him.
+
+Nobody knows why.
+
+Several days later the wizard leaves.
+
+Possible outcomes:
+- crop growth improves temporarily
+- a water source is revealed
+- one villager becomes a Dreamer
+- a standing stone appears
+- a blessing or curse affects a small area
+
+The exact effect should remain somewhat mysterious. The wizard is one possible visitor, not the entire system.
+
+### Future Architecture Notes
+
+Prefer generic systems rather than a hardcoded wizard.
+
+Possible future modules:
+- `visitors.py`
+- `mysteries.py`
+- `magical_events.py`
+
+Possible future concepts:
+- `Visitor`
+- `MysteryEvent`
+- `MagicalEffect`
+- rare spawn scheduler
+- bounded duration
+- history integration
+- villager reaction hooks
+- renderer markers
+
+Mysteries should integrate with world history so the world remembers that something happened, without always explaining why.
+
+Design boundaries:
+- do not add player summoning
+- do not add player commands for visitors
+- do not add a spell system
+- do not add RPG quests
+- do not make effects frequent or dominant
+- do not let mystery systems replace survival, ecology, production, or settlement simulation
+- keep some things unexplained
 
 ## Local Resource Radius v1
 

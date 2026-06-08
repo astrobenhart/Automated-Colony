@@ -187,7 +187,71 @@ Notes:
 - Social systems should build on stable settlement centers rather than scripted story events.
 - Leadership, families, and reputation should affect how villagers organize locally before broader politics exist.
 
-## v0.7 - History and Emergence
+## v0.7 - Mysteries and Wanderers
+
+Goal: Let the living world occasionally surprise the observer with rare visitors, strange events, and unexplained landmarks that create stories without becoming another management layer.
+
+Features:
+- [ ] Rare visitor framework
+- [ ] Wandering Wizard as one possible visitor
+- [ ] Strange hermits, lost knights, travelling merchants, dreaming pilgrims, golden stags, and other unusual passersby
+- [ ] Strange events such as meteor strikes, falling stars, auroras, ghost lights, singing forests, sudden mist, or animals gathering silently at night
+- [ ] Mystical landmarks such as ancient standing stones, hidden ruins, crystal springs, sleeping giant trees, marked groves, or forgotten shrines
+- [ ] Villager reactions to wonders, visitors, and omens
+- [ ] History entries for mysteries, arrivals, departures, and strange outcomes
+
+Design Goal:
+- The colony simulation should occasionally produce rare and memorable events that surprise the observer.
+- The player does not directly control these events.
+- They emerge from the world and create stories.
+- The goal is wonder, mystery, and unpredictability, not power progression.
+- These systems should deepen the screensaver / ant-farm quality of watching the world unfold.
+
+Rare Visitors:
+- Visitors are not normal villagers.
+- Visitors are autonomous.
+- Visitors arrive and leave.
+- Visitors should feel unusual.
+- Visitors should not become another colony role.
+- Example visitors include a Wandering Wizard, Strange Hermit, Lost Knight, Travelling Merchant, Dreaming Pilgrim, and Golden Stag.
+
+Strange Events:
+- Examples include Meteor Strike, Falling Star, Aurora, Ghost Lights, Singing Forest, Sudden Mist, and animals gathering silently at night.
+- These are examples only; the exact final list should remain open so the world can still surprise the player.
+- Events should be bounded, rare, and integrated with history.
+
+Mysteries and Landmarks:
+- Examples include Ancient Standing Stone, Hidden Ruin, Crystal Spring, Sleeping Giant Tree, Marked Grove, and Forgotten Shrine.
+- Landmarks may appear through world generation, rare events, or visitor interactions.
+- Some landmarks should remain partly unexplained.
+
+Example:
+- Day 217: A wizard appears at the edge of the map.
+- Villagers begin gathering around him.
+- Nobody knows why.
+- Several days later the wizard leaves.
+- Possible outcomes include temporary crop growth, a revealed water source, one villager becoming a Dreamer, a standing stone appearing, or a blessing/curse affecting a small area.
+- The exact effect should remain somewhat mysterious.
+
+Screensaver Principle:
+- The project is partly a simulation and partly a living screensaver.
+- Rare events should occasionally create moments that make the observer stop and watch.
+- The simulation should be capable of surprising the player even after many hours.
+
+Non-Goals:
+- Rare means rare; mysteries should not happen constantly.
+- The user should not summon visitors or command them.
+- Effects should not dominate survival systems.
+- This should not become a spell system, RPG quest system, or another colony management layer.
+- Some mystery should remain unexplained.
+
+Future Architecture Notes:
+- Prefer generic systems over a hardcoded wizard.
+- Possible future modules: `visitors.py`, `mysteries.py`, `magical_events.py`.
+- Possible concepts: `Visitor`, `MysteryEvent`, `MagicalEffect`, rare spawn scheduler, bounded duration, history integration, villager reaction hooks, and renderer markers.
+- The wizard should be one possible visitor, not the entire system.
+
+## v0.8 - History and Emergence
 
 Goal: Make the world generate stories over time through named places, movement, lineage, and ruins.
 
@@ -207,7 +271,7 @@ Notes:
 - Splinter settlements should emerge from resource pressure, population pressure, distance, or social conditions.
 - Ruins and lineage should connect past settlements to current play rather than appear as isolated flavor.
 
-## v0.8 - Village Formation and Historical Settlements
+## v0.9 - Village Formation and Historical Settlements
 
 Goal: Evolve survival colonies into recognizable villages and, eventually, multiple historical settlements with distinct identities.
 

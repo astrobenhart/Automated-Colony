@@ -123,7 +123,7 @@ def test_world_refreshes_settlement_carrying_capacity_report():
     assert world.settlement.carrying_capacity_report.population == 4
 
 
-def test_renderer_draws_capacity_details_without_crashing():
+def test_renderer_draws_colony_summary_without_crashing():
     world = make_world(population=9)
     add_shelters(world, 3)
     world.colony_storage.deposit_food(8)
@@ -132,6 +132,6 @@ def test_renderer_draws_capacity_details_without_crashing():
     world.update_carrying_capacity()
     renderer = PygameRenderer(world)
 
-    end_y = renderer.draw_carrying_capacity_details(10, 10, 260, 220)
+    end_y = renderer.draw_colony_summary(10, 10, 260, 220)
 
     assert end_y > 10

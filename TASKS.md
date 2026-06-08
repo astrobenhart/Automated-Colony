@@ -8,6 +8,176 @@ No active task.
 
 ## Backlog
 
+### TASK-55
+Title: History Integration for Mysteries
+
+Owner: Docs Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan how strange visitors, unexplained events, magical effects, landmarks, arrivals, departures, and outcomes should be recorded in world history.
+
+Expected Output:
+A future design for mystery-aware history entries that preserves ambiguity while still letting memorable events become part of the world's record.
+
+Acceptance Criteria:
+- Mystery history captures arrivals, departures, omens, landmarks, and bounded outcomes.
+- History records enough to support storytelling without explaining every cause.
+- The system does not turn mysteries into quests, objectives, or player-managed events.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-50
+- TASK-52
+- TASK-53
+
+Notes:
+- Some mystery should remain unexplained even when history records that something happened.
+
+---
+
+### TASK-54
+Title: Villager Reactions to Wonders
+
+Owner: Gameplay Vision Agent / Architect Agent
+
+Status: Backlog
+
+Description:
+Plan lightweight autonomous villager reactions to rare visitors, strange events, omens, and mystical landmarks.
+
+Expected Output:
+A scoped design for villagers noticing, gathering around, avoiding, remembering, or briefly responding to wonders without player commands.
+
+Acceptance Criteria:
+- Villagers react autonomously.
+- Reactions are bounded and do not override survival needs indefinitely.
+- Reactions do not become an RPG conversation, quest, or command system.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-50
+- TASK-52
+- TASK-53
+
+Notes:
+- The core experience should be: "Wait... why are they all gathering over there?"
+
+---
+
+### TASK-53
+Title: Mystical Landmarks
+
+Owner: Planner Agent / Architect Agent
+
+Status: Backlog
+
+Description:
+Plan rare unexplained landmarks such as ancient standing stones, hidden ruins, crystal springs, sleeping giant trees, marked groves, and forgotten shrines.
+
+Expected Output:
+A future design for landmarks that can appear through world generation, rare events, or visitor interactions.
+
+Acceptance Criteria:
+- Landmarks are rare and memorable.
+- Landmarks may have bounded effects or no clear effect.
+- Landmarks integrate with world history and renderer markers.
+- Landmarks do not become a player placement, zoning, or management system.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-50
+
+Notes:
+- Landmarks should make the world feel older and stranger than the colony.
+
+---
+
+### TASK-52
+Title: Strange Events
+
+Owner: Planner Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan rare strange events such as meteor strikes, falling stars, auroras, ghost lights, singing forests, sudden mist, and animals gathering silently at night.
+
+Expected Output:
+A future design for rare, bounded, history-aware events that can surprise the observer without dominating survival systems.
+
+Acceptance Criteria:
+- Events are rare and not player-summoned.
+- Effects are bounded in time and impact.
+- Events preserve some uncertainty or mystery.
+- Events do not become a spell system, disaster spam, or management layer.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-50
+
+Notes:
+- The final event list should remain open so the player cannot know every possible surprise.
+
+---
+
+### TASK-51
+Title: Wandering Wizard
+
+Owner: Gameplay Vision Agent / Architect Agent
+
+Status: Backlog
+
+Description:
+Plan the Wandering Wizard as one possible rare visitor, not as the entire mystery system.
+
+Expected Output:
+A scoped design example where a wizard can appear, draw autonomous villager attention, linger briefly, leave, and possibly create a bounded mysterious outcome.
+
+Acceptance Criteria:
+- The wizard arrives and leaves autonomously.
+- Villagers may react without player commands.
+- Possible effects remain bounded and somewhat mysterious.
+- The wizard does not become a controllable unit, spell system, quest giver, or colony role.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-50
+
+Notes:
+- Example outcomes may include temporary crop growth, a revealed water source, a Dreamer, a standing stone, or a small local blessing/curse.
+
+---
+
+### TASK-50
+Title: Rare Visitor Framework
+
+Owner: Planner Agent / Architect Agent
+
+Status: Backlog
+
+Description:
+Plan a generic framework for rare autonomous visitors such as wizards, hermits, lost knights, merchants, pilgrims, and golden stags.
+
+Expected Output:
+A future architecture plan for visitors that arrive, behave, affect the world in bounded ways, integrate with history, and leave without becoming normal villagers.
+
+Acceptance Criteria:
+- Visitors are autonomous and rare.
+- Visitors are not colony roles, migrants, or player-controlled units.
+- The framework supports arrivals, departures, bounded duration, renderer markers, history records, and villager reaction hooks.
+- The framework is generic; the wizard is one possible visitor, not the whole system.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-49
+
+Notes:
+- Possible future modules include `visitors.py`, `mysteries.py`, and `magical_events.py`.
+
+---
+
 ### TASK-46
 Title: Design Full Hauling and Job Assignment
 
@@ -146,6 +316,39 @@ Notes:
 ---
 
 ## Completed
+
+### TASK-49
+Title: Simplify Right Panel Colony and Simulation Summaries
+
+Owner: Renderer Agent / UX Agent / Tester Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #38 by making the right panel read like a player-facing colony dashboard instead of a debug summary.
+
+Expected Output:
+The panel keeps world identity, compact time/season info, a short colony health summary, active events, history, legend, controls, recent events, and selected-object details without implying carrying capacity is a hard population cap.
+
+Acceptance Criteria:
+- World identity remains at the top.
+- Day, Year, Season, and Speed are shown in a compact grid without a separate Simulation section title.
+- Colony summary shows villager count as plain text such as `9 Villagers`.
+- Colony summary does not show population as current/max.
+- Debug fields such as center coordinates, radius, claims, raw population, raw capacity, and farm-ready food are removed from the default summary.
+- Capacity status remains visible through a short status label and capped reason lines.
+- Stable colonies omit reason lines in the main summary.
+- Detailed internals remain available through selected-object details.
+- No gameplay, simulation, capacity, farming, reservation, or worldgen logic changes.
+- Existing tests pass.
+
+Dependencies:
+- TASK-48
+
+Notes:
+- Carrying capacity is a status/health estimate, not a hard population maximum. Main-panel copy should avoid max-style population wording.
+
+---
 
 ### TASK-48
 Title: Add Settlement Carrying Capacity and Pressure Status

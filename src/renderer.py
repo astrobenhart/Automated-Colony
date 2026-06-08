@@ -253,57 +253,10 @@ class PygameRenderer:
         y = self.draw_world_identity_header(content_x, y, content_width, bottom_y)
         y += self.panel_gap
 
-        status = "PAUSED" if paused else "RUNNING"
-        simulation_stats = [
-            ("State", status),
-            ("Day", self.world.day),
-            ("Year", self.world.year),
-            ("Seed", self.world.seed if self.world.seed is not None else "random"),
-            ("Size", f"{self.world.width}x{self.world.height}"),
-            ("Season", self.world.season_label),
-            ("S Day", self.world.day_of_season),
-            ("Speed", f"{sim_speed}x"),
-            ("Cam", f"{self.camera_x},{self.camera_y}"),
-        ]
-        colony_stats = [
-            ("Living", len(self.world.living_agents())),
-            ("Shelters", self.world.count_tiles("shelter")),
-            ("Food", self.world.total_food_on_map()),
-            ("Wood", self.world.total_wood_on_map()),
-            ("Store F", self.world.colony_storage.food),
-            ("Store W", self.world.colony_storage.wood),
-            ("Mats", self.world.colony_storage.building_materials),
-            ("Wild", len([animal for animal in self.world.animals if animal.alive])),
-        ]
-        if self.world.settlement is not None:
-            settlement = self.world.settlement
-            top_need = settlement.top_need.capitalize() if settlement.top_need is not None else "None"
-            colony_stats.extend([
-                ("Settle", settlement.name),
-                ("Pop", settlement.population),
-                ("Center", f"{settlement.x},{settlement.y}"),
-                ("Rad", settlement.radius),
-                ("Need", top_need),
-                ("Claims", len(self.world.reservations.reservations)),
-                ("Farms", len(settlement.farm_plots)),
-                ("Farm F", sum(farm.food for farm in settlement.farm_plots if farm.active)),
-            ])
-            report = settlement.carrying_capacity_report
-            if report is not None:
-                colony_stats.extend([
-                    ("Cap", report.capacity),
-                    ("Status", report.status),
-                ])
-        y = self.draw_two_column_section(
-            "Simulation",
-            simulation_stats,
-            "Colony",
-            colony_stats,
-            content_x,
-            y,
-            content_width,
-            bottom_y,
-        )
+        y = self.draw_time_grid(content_x, y, content_width, bottom_y, sim_speed)
+
+        y += self.panel_gap
+        y = self.draw_colony_summary(content_x, y, content_width, bottom_y)
 
         y += self.panel_gap
         y = self.draw_section_header("Active Events", content_x, y, content_width, bottom_y)
@@ -317,12 +270,6 @@ class PygameRenderer:
         )
 
         y += self.panel_gap
-        y = self.draw_carrying_capacity_details(content_x, y, content_width, bottom_y)
-
-        y += self.panel_gap
-        y = self.draw_selection_details(content_x, y, content_width, bottom_y)
-
-        y += self.panel_gap
         y = self.draw_history_summary(content_x, y, content_width, bottom_y)
 
         y += self.panel_gap
@@ -332,6 +279,9 @@ class PygameRenderer:
         y = self.draw_section_header("Controls", content_x, y, content_width, bottom_y)
         controls = "WASD pan | Space pause | Up/Down speed | R restart | Esc quit"
         y = self.draw_wrapped_text(controls, content_x, y, content_width, bottom_y, COLORS["muted"])
+
+        y += self.panel_gap
+        y = self.draw_selection_details(content_x, y, content_width, bottom_y)
 
         y += self.panel_gap
         y = self.draw_section_header("Recent Events", content_x, y, content_width, bottom_y)
@@ -350,6 +300,81 @@ class PygameRenderer:
         y = self.draw_text_line(identity.title, x, y, width, bottom_y, self.big_font)
         y = self.draw_text_line(identity.subtitle, x, y, width, bottom_y, color=COLORS["muted"])
         y = self.draw_text_line(f"Survival: {identity.survival_outlook}", x, y, width, bottom_y, color=COLORS["warning"])
+        return y
+
+    def time_grid_rows(self, sim_speed: int) -> list[tuple[str, object]]:
+        return [
+            ("Day", self.world.day),
+            ("Year", self.world.year),
+            ("Season", self.world.season_label),
+            ("Speed", f"{sim_speed}x"),
+        ]
+
+    def draw_time_grid(self, x: int, y: int, width: int, bottom_y: int, sim_speed: int):
+        rows = self.time_grid_rows(sim_speed)
+        left_x, column_width, right_x, right_width = self.panel_column_layout(x, width)
+        first_y = y
+        y = self.draw_compact_stat_row(rows[0][0], rows[0][1], left_x, first_y, column_width, bottom_y)
+        right_y = self.draw_compact_stat_row(rows[1][0], rows[1][1], right_x, first_y, right_width, bottom_y)
+        second_y = max(y, right_y)
+        y = self.draw_compact_stat_row(rows[2][0], rows[2][1], left_x, second_y, column_width, bottom_y)
+        right_y = self.draw_compact_stat_row(rows[3][0], rows[3][1], right_x, second_y, right_width, bottom_y)
+        return max(y, right_y)
+
+    def colony_summary_lines(self) -> list[str]:
+        settlement = self.world.settlement
+        report = settlement.carrying_capacity_report if settlement is not None else None
+        status = report.status if report is not None else "Unknown"
+        farm_count = len([farm for farm in settlement.farm_plots if farm.active]) if settlement is not None else 0
+
+        lines = [
+            f"{len(self.world.living_agents())} Villagers",
+            status,
+            f"Food {self.world.colony_storage.food} | Wood {self.world.colony_storage.wood}",
+            f"Farms {farm_count} | Mats {self.world.colony_storage.building_materials}",
+        ]
+        reasons = self.colony_reason_lines(max_lines=3)
+        if reasons:
+            lines.append("Reason:")
+            lines.extend(reasons)
+        return lines
+
+    def colony_reason_lines(self, max_lines: int = 3) -> list[str]:
+        settlement = self.world.settlement
+        if settlement is None or settlement.carrying_capacity_report is None:
+            return []
+        report = settlement.carrying_capacity_report
+        if report.status == "Stable":
+            return []
+
+        reasons = []
+        population = max(1, report.population)
+        if report.status == "Food Strained":
+            if self.world.colony_storage.food <= population * 2:
+                reasons.append("Food stores low")
+            if len(settlement.local_food) <= 2:
+                reasons.append("Few local food sources")
+            if not any(farm.active for farm in settlement.farm_plots):
+                reasons.append("No active farms")
+        elif report.status == "Water Strained":
+            reasons.append("Limited local water")
+        elif report.status == "Shelter Strained":
+            reasons.append("Shelter space short")
+
+        if not reasons:
+            reasons.append(report.reason)
+        return reasons[:max_lines]
+
+    def draw_colony_summary(self, x: int, y: int, width: int, bottom_y: int):
+        y = self.draw_section_header("Colony", x, y, width, bottom_y)
+        lines = self.colony_summary_lines()
+        for index, line in enumerate(lines):
+            color = COLORS["warning"] if index == 1 and line != "Stable" else COLORS["text"]
+            if line == "Reason:":
+                color = COLORS["muted"]
+            elif index > 4:
+                color = COLORS["muted"]
+            y = self.draw_text_line(line, x, y, width, bottom_y, color=color)
         return y
 
     def draw_selection_details(self, x: int, y: int, width: int, bottom_y: int):
@@ -392,9 +417,17 @@ class PygameRenderer:
                 details.extend([
                     ("Settlement", settlement.name),
                     ("Pop", settlement.population),
+                    ("Center", f"{settlement.x},{settlement.y}"),
                     ("Radius", settlement.radius),
                     ("Founded", f"D{settlement.founded_day} {settlement.founded_season}"),
+                    ("Claims", len(self.world.reservations.reservations)),
                 ])
+                report = settlement.carrying_capacity_report
+                if report is not None:
+                    details.extend([
+                        ("Capacity", report.capacity),
+                        ("Status", report.status),
+                    ])
             stockpile = self.world.stockpile_at(tile_x, tile_y)
             if stockpile is not None:
                 label = "Food" if stockpile.stockpile_type == "food" else "Wood"
@@ -428,20 +461,6 @@ class PygameRenderer:
         for label, value in details:
             y = self.draw_stat_row(label, value, x, y, width, bottom_y, color=color)
 
-        return y
-
-    def draw_carrying_capacity_details(self, x: int, y: int, width: int, bottom_y: int):
-        settlement = self.world.settlement
-        if settlement is None or settlement.carrying_capacity_report is None:
-            return y
-
-        report = settlement.carrying_capacity_report
-        y = self.draw_section_header("Capacity", x, y, width, bottom_y)
-        y = self.draw_stat_row("Pop", f"{report.population}/{report.capacity}", x, y, width, bottom_y)
-        y = self.draw_stat_row("Status", report.status, x, y, width, bottom_y)
-        y = self.draw_wrapped_text(report.reason, x, y, width, bottom_y, COLORS["warning"] if report.status != "Stable" else COLORS["muted"])
-        for line in report.reason_lines[1:4]:
-            y = self.draw_wrapped_text(line, x, y, width, bottom_y, COLORS["muted"])
         return y
 
     def draw_two_column_section(
