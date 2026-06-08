@@ -317,6 +317,35 @@ Notes:
 
 ## Completed
 
+### TASK-56
+Title: Restore Role-Based Villager Colors
+
+Owner: Renderer Agent / UX Agent / Tester Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #40 by restoring distinct villager colors for Generalist, Forager, Builder, and Scout roles.
+
+Expected Output:
+Villagers render with high-contrast role colors so colony behavior is readable at a glance without selecting individual agents.
+
+Acceptance Criteria:
+- Every known role maps to a distinct color.
+- Unknown or missing roles use a safe fallback color.
+- The renderer draws agents through the centralized role-color helper.
+- Selected-agent role text remains available.
+- No role behavior, AI behavior, goals, or simulation logic changes.
+- Existing tests pass.
+
+Dependencies:
+- TASK-49
+
+Notes:
+- Role colors are gameplay readability, not decoration. They support the hands-off screensaver/ant-farm experience by making builders, foragers, scouts, and generalists distinguishable while watching the map.
+
+---
+
 ### TASK-49
 Title: Simplify Right Panel Colony and Simulation Summaries
 

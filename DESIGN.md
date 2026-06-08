@@ -20,7 +20,7 @@ Need
 
 ## Current Architecture
 
-v0.4 Smarter World is complete.
+v0.5 Colony Roles and Production is complete.
 
 Agents should:
 - remember resources
@@ -67,18 +67,13 @@ UI should:
 - prefer compact grouped sections as more systems are added
 - preserve selection, active events, history, legend, controls, and recent event visibility without changing simulation behavior
 - keep the default right panel player-facing, with debug-style internals reserved for selected-object details
+- use role-based villager colors as gameplay readability, so Generalists, Foragers, Builders, and Scouts can be identified without clicking them
 
 ## Next Focus
 
-v0.5 Settlement Simulation should focus on:
-- roles as soft villager preferences
-- settlement centers
-- physical stockpiles
-- clustered building placement
-- local resource use around village hubs
-- stronger long-term settlement behavior
+The next roadmap work should build from the completed v0.5 settlement foundation without adding player micromanagement.
 
-Do not begin v0.5 by adding reproduction, migration, politics, warfare, or large-scale economy. The next step is making stable shelter clusters become recognizable early villages.
+Future directions include deeper logistics, migration/new settlements, social simulation, roads, richer farming, and rare Mysteries and Wanderers. Do not begin the next milestone by adding politics, warfare, large-scale economy, or player work-order systems.
 
 ## Roles
 
@@ -95,6 +90,7 @@ Role rules:
 - thirst, hunger, and fatigue remain dominant
 - no role is mandatory for colony function
 - there is no player role assignment, job board, task claiming, or micromanagement
+- role colors are intentionally high contrast and player-facing, because watching the colony should reveal what villagers are doing without requiring selection
 
 ## Settlement Center v1
 

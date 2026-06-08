@@ -4,6 +4,8 @@ An automated Pygame colony simulation where autonomous villagers explore, rememb
 
 The project is designed as an emergent colony screensaver and as a playground for agentic simulation systems.
 
+v0.5.0, Colony Roles and Production, turns the prototype survival sandbox into an early settlement simulator. Villagers now found a central village, take on lightweight roles, build around a settlement hub, use visible stockpiles and a workshop, coordinate shared targets through soft reservations, and gradually create farms when food pressure rises.
+
 ## Current Features
 
 - Modular Python package under `src/`
@@ -19,16 +21,26 @@ The project is designed as an emergent colony screensaver and as a playground fo
 - Ambient wildlife with biome-suitable rabbits, deer, boar, and waterfowl
 - Autonomous villagers with hunger, thirst, fatigue, carried food, and carried wood
 - Lightweight villager roles: Generalist, Forager, Builder, and Scout
+- Distinct role-based villager colors for at-a-glance readability
 - Goal-based behavior for drinking, eating, sleeping, gathering, building, depositing, and exploring
 - BFS pathfinding with occupied-tile avoidance
 - Stuck recovery when paths collide or become blocked
 - Personal agent memory for visible food, water, wood, and shelters
 - Shared colony memory so discoveries can benefit other villagers
-- Shelter capacity and building-priority logic
+- Central settlement founding near the map center with clustered villager startup
+- Settlement center and village hub behavior
+- Physical food and wood stockpiles near the settlement
+- Simple workshop that turns stored wood into building materials
+- Clustered building placement near the village hub
+- Local resource use radius with survival overrides
+- Settlement needs / expanded building priorities
+- Resource Reservation v1 for shared food, wood, build-site, and workshop targets
+- Farming v1 with autonomous 2x2 farm plots driven by food pressure
+- Settlement carrying-capacity and pressure status reporting as a measurement only, not a hard population cap
 - Abstract colony storage for shared food and wood
-- Selected-agent and selected-tile inspection UI
-- Readable right-side status panel with side-by-side simulation/colony data, active events, selection, history, legend, controls, and recent events
-- Automated tests for pathfinding, memory, goals, building priorities, storage, movement recovery, world logic, and renderer selection helpers
+- Selected-agent and selected-tile inspection UI with detailed internals
+- Compact player-facing right-side status panel with world identity, time/season, colony status, active events, selection, history, legend, controls, and recent events
+- Automated tests for pathfinding, memory, goals, building priorities, storage, reservations, farming, carrying capacity, movement recovery, world logic, and renderer selection helpers
 
 ## Controls
 
@@ -116,7 +128,14 @@ No setup screen, sliders, dropdowns, or player-facing configuration UI is curren
 - `src/pathfinding.py` - BFS pathfinding
 - `src/colony_memory.py` - Shared resource knowledge
 - `src/colony_storage.py` - Abstract shared food and wood storage
-- `src/building_priorities.py` - Construction priority rules
+- `src/settlement.py` - Settlement center, needs, farms, resource radius, and status tracking
+- `src/stockpile.py` - Physical food and wood stockpile markers
+- `src/workshop.py` - Simple workshop and building-material production
+- `src/building_priorities.py` - Settlement construction priority rules
+- `src/building_placement.py` - Bounded autonomous building placement helpers
+- `src/reservations.py` - Lightweight shared-target reservation manager
+- `src/farming.py` - 2x2 farm plots, placement, growth, and harvest helpers
+- `src/carrying_capacity.py` - Measurement-only settlement pressure report
 - `src/resource_ecology.py` - Terrain and season based resource growth, caps, and die-off
 - `src/environment_events.py` - Temporary drought and heavy rain events
 - `src/world_history.py` - Persistent structured history entries for major events
@@ -130,8 +149,10 @@ No setup screen, sliders, dropdowns, or player-facing configuration UI is curren
 
 ## Current Milestone
 
-v0.4.0 completed the smarter world milestone: deterministic rule-based terrain generation, larger explorable maps, rivers, terrain variety, seasons, ecology, environmental events, wildlife, world history, world identity, and world-generation presets.
+v0.5.0 completed the Colony Roles and Production milestone. The simulation now starts as a founded village, uses role preferences rather than player-assigned jobs, coordinates shared targets through Resource Reservation v1, and supports visible stockpiles, workshop production, autonomous farms, clustered building placement, settlement needs, and carrying-capacity status reporting.
 
-The current milestone is v0.5 settlement simulation. Lightweight roles are implemented as preference modifiers; future v0.5 work will focus on settlement centers, physical storage, building clusters, and stronger village behavior.
+Carrying capacity is a status and health estimate only. It is not a hard population maximum, and the UI intentionally avoids current/max population wording.
+
+Full hauling/job assignment, migration, new settlements, reproduction/social simulation, roads, deeper agriculture, and Mysteries and Wanderers remain future work.
 
 v0.3.0 completed the colony foundation: villagers can use personal and shared knowledge, recover from blocked movement, coordinate around shelter needs, and use simple shared storage.
