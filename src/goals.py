@@ -4,20 +4,28 @@ from typing import TYPE_CHECKING
 from src.actions import (
     Action,
     DepositFoodAction,
+    SeekFoodStockpileAction,
     DepositWoodAction,
+    SeekWoodStockpileAction,
     DrinkAction,
     EatAction,
     EatFromStorageAction,
     GatherFoodAction,
+    HarvestFarmAction,
     GatherWoodAction,
     BuildShelterAction,
+    SeekBuildSiteAction,
+    UseWorkshopAction,
+    SeekWorkshopAction,
     SleepAction,
     WanderAction,
     SeekWaterAction,
     SeekFoodAction,
+    SeekFarmAction,
     SeekWoodAction,
     SeekShelterAction,
 )
+from src.profiler import profiler
 
 if TYPE_CHECKING:
     from src.agent import Agent
@@ -36,12 +44,13 @@ class Goal:
         return bool(self.valid_actions(agent, world))
 
     def score(self, agent: Agent, world: World) -> int:
-        valid_actions = self.valid_actions(agent, world)
+        with profiler.time("goal scoring"):
+            valid_actions = self.valid_actions(agent, world)
 
-        if not valid_actions:
-            return 0
+            if not valid_actions:
+                return 0
 
-        return max(action.score(agent, world) for action in valid_actions)
+            return max(action.score(agent, world) for action in valid_actions)
 
     def choose_action(self, agent: Agent, world: World) -> Action:
         valid_actions = self.valid_actions(agent, world)
@@ -81,6 +90,8 @@ class GatherFoodGoal(Goal):
     name = "Gather food"
     action_types = (
         GatherFoodAction,
+        HarvestFarmAction,
+        SeekFarmAction,
         SeekFoodAction,
     )
 
@@ -89,6 +100,7 @@ class DepositFoodGoal(Goal):
     name = "Deposit food"
     action_types = (
         DepositFoodAction,
+        SeekFoodStockpileAction,
     )
 
 
@@ -123,6 +135,7 @@ class BuildShelterGoal(Goal):
     name = "Build shelter"
     action_types = (
         BuildShelterAction,
+        SeekBuildSiteAction,
     )
 
     def can_do(self, agent: Agent, world: World) -> bool:
@@ -138,7 +151,19 @@ class DepositWoodGoal(Goal):
     name = "Deposit wood"
     action_types = (
         DepositWoodAction,
+        SeekWoodStockpileAction,
     )
+
+
+class WorkshopGoal(Goal):
+    name = "Workshop"
+    action_types = (
+        UseWorkshopAction,
+        SeekWorkshopAction,
+    )
+
+    def score(self, agent: Agent, world: World) -> int:
+        return super().score(agent, world)
 
 
 class ExploreGoal(Goal):

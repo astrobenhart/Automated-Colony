@@ -9,6 +9,8 @@ PANEL_WIDTH = 400
 PANEL_HEIGHT = 160
 PANEL_HEIGTH = PANEL_HEIGHT
 STARTING_AGENTS = 10
+INITIAL_SPAWN_RADIUS = 3
+INITIAL_SPAWN_MAX_RADIUS = 10
 WORLD_SEED = None
 HUNGER_RATE = 1
 THIRST_RATE = 1
@@ -16,7 +18,35 @@ FATIGUE_RATE = 1
 HUNGER_DEATH_THRESHOLD = 100
 THIRST_DEATH_THRESHOLD = 100
 SHELTER_CAPACITY = 3
+SETTLEMENT_RADIUS = 10
+SETTLEMENT_RESOURCE_RADIUS = 12
+SETTLEMENT_EXPANDED_RESOURCE_RADIUS = 24
+STOCKPILE_CAPACITY = 99
+WORKSHOP_PROGRESS_REQUIRED = 3
+BUILDING_MATERIAL_SHELTER_WOOD_DISCOUNT = 1
+DESIRED_BUILDING_MATERIALS = 4
+DESIRED_WOOD_RESERVE = 8
+SHELTER_CAPACITY_BUFFER = 1
+FARM_START_FOOD_DAYS = 1.5
+FARM_COMFORT_FOOD_DAYS = 3.0
+FARM_CREATION_MIN_DAY = 2
+FARM_PLACEMENT_RADIUS_MARGIN = 4
+FARM_GROWTH_THRESHOLD = 100
+FARM_FOOD_CAP = 6
+FARM_SEASON_GROWTH = {
+    "Spring": 42,
+    "Summer": 30,
+    "Autumn": 26,
+    "Winter": 4,
+}
+FARM_MAX_PLOTS_SMALL = 1
+FARM_MAX_PLOTS_MEDIUM = 2
+FARM_MAX_PLOTS_LARGE = 4
+NEED_SCORE_HIGH_THRESHOLD = 50
+NEED_SCORE_LOW_THRESHOLD = 15
+NEED_SCORE_SWITCH_MARGIN = 10
 STUCK_TICK_LIMIT = 3
+NO_PROGRESS_TICK_LIMIT = 5
 RIVER_COUNT = 3
 RIVER_MIN_LENGTH = 8
 RIVER_SOURCE_ELEVATION = 0.70
@@ -69,7 +99,17 @@ COLORS = {
     "food": (230, 80, 80),
     "wood": (130, 80, 35),
     "wildlife": (220, 205, 150),
+    "settlement": (255, 220, 120),
+    "stockpile_food": (240, 120, 100),
+    "stockpile_wood": (170, 110, 55),
+    "workshop": (200, 165, 95),
+    "farm_border": (120, 74, 34),
+    "farm_crop": (190, 175, 70),
     "agent": (245, 245, 245),
+    "role_generalist": (245, 245, 245),
+    "role_forager": (80, 235, 95),
+    "role_builder": (255, 155, 55),
+    "role_scout": (105, 175, 255),
     "dead": (90, 90, 90),
     "grid": (20, 20, 20),
     "panel": (24, 24, 28),
@@ -147,4 +187,9 @@ SYMBOL_LABELS = {
     "d": "Deer",
     "b": "Boar",
     "v": "Waterfowl",
+    "+": "Settlement",
+    "F": "Food Pile",
+    "W": "Wood Pile",
+    "T": "Workshop",
+    "#": "Farm Plot",
 }

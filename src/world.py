@@ -1,10 +1,12 @@
 import random
 from dataclasses import dataclass, field
 
-from src.building_priorities import highest_priority, needed_shelters
+from src.building_priorities import highest_priority, needed_shelters, update_settlement_needs
+from src.carrying_capacity import carrying_capacity_report
 from src.colony_memory import ColonyMemory
 from src.colony_storage import ColonyStorage
 from src.environment_events import update_environment_events
+from src.farming import maybe_create_farm, update_farms
 from src.seasons import (
     day_of_season,
     next_season_index,
@@ -13,12 +15,25 @@ from src.seasons import (
     transition_progress,
 )
 from src.resource_ecology import apply_resource_ecology
+from src.roles import role_for_index
+from src.settlement import (
+    Settlement,
+    choose_resource_target,
+    distance_to_settlement,
+    filter_positions_by_settlement_radius,
+    found_settlement,
+    is_within_resource_radius,
+    resource_search_radius,
+    update_resource_pressures,
+)
 from src.wildlife import spawn_wildlife, update_wildlife
 from src.world_history import WorldHistory
 from src.world_identity import WorldIdentity, generate_world_identity
 from src.worldgen_settings import WorldGenSettings, default_worldgen_settings
 from src.worldgen import generate_world
 from src.agent import Agent
+from src.profiler import profiler
+from src.reservations import ReservationManager
 
 
 @dataclass
@@ -41,6 +56,8 @@ class World:
     animals: list = field(default_factory=list)
     history: WorldHistory = field(default_factory=WorldHistory)
     identity: WorldIdentity | None = None
+    settlement: Settlement | None = None
+    reservations: ReservationManager = field(default_factory=ReservationManager)
 
     day: int = 1
     tick: int = 0
@@ -100,37 +117,160 @@ class World:
         self.identity = generate_world_identity(self)
 
     def spawn_agents(self, amount):
+        if self.settlement is None:
+            self.establish_settlement()
+
         names = [
             "Ari", "Bryn", "Cato", "Dara", "Eli",
             "Fenn", "Gala", "Hale", "Ira", "Juno",
         ]
 
-        for i in range(amount):
-            while True:
-                x = random.randint(0, self.width - 1)
-                y = random.randint(0, self.height - 1)
+        positions = self.initial_spawn_positions(amount)
+        for i, (x, y) in enumerate(positions):
+            self.agents.append(Agent(names[i % len(names)], x, y, role=role_for_index(i)))
 
-                if self.can_move_to(x, y):
-                    self.agents.append(Agent(names[i % len(names)], x, y))
-                    break
-
+        self.update_settlement_population()
         self.log(f"{amount} villagers enter the world.")
 
-    def update(self):
-        self.tick += 1
+    def establish_settlement(self):
+        self.settlement = found_settlement(self)
 
-        from src.config import TICKS_PER_DAY
-        if self.tick % TICKS_PER_DAY == 0:
-            self.advance_day()
+    def initial_spawn_positions(self, amount):
+        from src.config import INITIAL_SPAWN_MAX_RADIUS, INITIAL_SPAWN_RADIUS
 
+        if amount <= 0:
+            return []
+        if self.settlement is None:
+            return self._fallback_spawn_positions(amount)
+
+        positions = []
+        reserved = set()
+        for radius in range(INITIAL_SPAWN_RADIUS, INITIAL_SPAWN_MAX_RADIUS + 1):
+            for pos in self._spawn_candidates_in_radius(radius, reserved):
+                positions.append(pos)
+                reserved.add(pos)
+                if len(positions) == amount:
+                    return positions
+
+        for pos in self._spawn_candidates_in_radius(max(self.width, self.height), reserved):
+            positions.append(pos)
+            reserved.add(pos)
+            if len(positions) == amount:
+                return positions
+
+        return positions
+
+    def _spawn_candidates_in_radius(self, radius, reserved):
+        settlement = self.settlement
+        if settlement is None:
+            return []
+
+        candidates = []
+        for y in range(max(0, settlement.y - radius), min(self.height, settlement.y + radius + 1)):
+            for x in range(max(0, settlement.x - radius), min(self.width, settlement.x + radius + 1)):
+                distance = max(abs(x - settlement.x), abs(y - settlement.y))
+                if distance > radius:
+                    continue
+                if not self.is_valid_spawn_tile(x, y, reserved):
+                    continue
+                candidates.append((distance, abs(x - settlement.x) + abs(y - settlement.y), y, x))
+
+        return [(x, y) for _, _, y, x in sorted(candidates)]
+
+    def _fallback_spawn_positions(self, amount):
+        positions = []
+        reserved = set()
+        for y in range(self.height):
+            for x in range(self.width):
+                if not self.is_valid_spawn_tile(x, y, reserved):
+                    continue
+                positions.append((x, y))
+                reserved.add((x, y))
+                if len(positions) == amount:
+                    return positions
+        return positions
+
+    def is_valid_spawn_tile(self, x, y, reserved=None):
+        reserved = reserved or set()
+        if (x, y) in reserved:
+            return False
+        if not (0 <= x < self.width and 0 <= y < self.height):
+            return False
+        tile = self.tile_at(x, y)
+        if not tile.walkable or tile.kind in ("water", "mountain"):
+            return False
+        if self.agent_at(x, y) is not None:
+            return False
+        if self.settlement is not None and (x, y) == (self.settlement.x, self.settlement.y):
+            return False
+        if self.stockpile_at(x, y) is not None:
+            return False
+        if self.workshop_at(x, y) is not None:
+            return False
+        return True
+
+    def update_settlement_population(self):
+        if self.settlement is not None:
+            self.settlement.population = len(self.living_agents())
+
+    def update_settlement_needs(self, force: bool = False):
+        update_settlement_needs(self, force)
+
+    def update_carrying_capacity(self):
+        if self.settlement is not None:
+            self.settlement.carrying_capacity_report = carrying_capacity_report(self)
+
+    def record_settlement_activity(self):
+        if self.settlement is None:
+            return
         for agent in self.living_agents():
-            agent.update_needs()
-            agent.scan_surroundings(self)
-            action = agent.choose_action(self)
-            action.execute(agent, self)
-            agent.die_if_needed(self)
+            self.settlement.record_activity(agent.x, agent.y)
 
-        update_wildlife(self, random)
+    def update_resource_pressures(self):
+        update_resource_pressures(self)
+
+    def distance_to_settlement(self, x, y):
+        return distance_to_settlement(self, x, y)
+
+    def is_within_resource_radius(self, x, y, radius=None):
+        return is_within_resource_radius(self, x, y, radius)
+
+    def filter_positions_by_settlement_radius(self, positions, radius=None):
+        return filter_positions_by_settlement_radius(self, positions, radius)
+
+    def get_resource_search_radius(self, resource_type, agent=None):
+        return resource_search_radius(self, resource_type, agent)
+
+    def choose_resource_target(self, agent, resource_type, candidates):
+        return choose_resource_target(self, agent, resource_type, candidates)
+
+    def update(self):
+        with profiler.time("world update"):
+            self.tick += 1
+            self.reservations.cleanup(self)
+
+            from src.config import TICKS_PER_DAY
+            if self.tick % TICKS_PER_DAY == 0:
+                self.advance_day()
+
+            for agent in self.living_agents():
+                agent.update_needs()
+                agent.scan_surroundings(self)
+                progress_before = agent.progress_snapshot(self)
+                action = agent.choose_action(self)
+                action.execute(agent, self)
+                agent.die_if_needed(self)
+                if agent.alive:
+                    agent.update_progress_tracking(self, progress_before)
+                    if agent.current_action == "Recovering":
+                        agent.release_reservations(self)
+
+            self.update_settlement_population()
+            self.update_settlement_needs(force=True)
+            self.update_resource_pressures()
+            self.update_carrying_capacity()
+            self.record_settlement_activity()
+            update_wildlife(self, random)
 
     def advance_day(self):
         self.day += 1
@@ -139,6 +279,10 @@ class World:
 
         update_environment_events(self, random)
         self.regrow_resources()
+        update_farms(self)
+        self.update_resource_pressures()
+        maybe_create_farm(self)
+        self.update_carrying_capacity()
         self.log(f"Day {self.day} begins.")
 
     def advance_season(self):
@@ -177,6 +321,43 @@ class World:
             if animal.alive and animal.x == x and animal.y == y:
                 return animal
 
+        return None
+
+    def stockpile_at(self, x, y):
+        if self.settlement is None:
+            return None
+        for stockpile in self.settlement.stockpiles:
+            if stockpile.x == x and stockpile.y == y:
+                return stockpile
+        return None
+
+    def workshop_at(self, x, y):
+        if self.settlement is None:
+            return None
+        for workshop in self.settlement.workshops:
+            if workshop.x == x and workshop.y == y:
+                return workshop
+        return None
+
+    def workshop_at_anywhere(self):
+        if self.settlement is None:
+            return False
+        return any(workshop.active for workshop in self.settlement.workshops)
+
+    def farm_at(self, x, y):
+        if self.settlement is None:
+            return None
+        for farm in self.settlement.farm_plots:
+            if farm.active and (x, y) in farm.tiles:
+                return farm
+        return None
+
+    def farm_at_origin(self, x, y):
+        if self.settlement is None:
+            return None
+        for farm in self.settlement.farm_plots:
+            if farm.active and farm.origin == (x, y):
+                return farm
         return None
 
     def nearby_tile_kind(self, x, y, kind):
@@ -257,5 +438,9 @@ def create_world(
         settings=effective_settings,
     )
     world.generate()
+    world.establish_settlement()
     world.spawn_agents(agent_count if agent_count is not None else STARTING_AGENTS)
+    world.update_settlement_needs(force=True)
+    world.update_resource_pressures()
+    world.update_carrying_capacity()
     return world

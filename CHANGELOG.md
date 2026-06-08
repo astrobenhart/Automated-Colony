@@ -1,5 +1,44 @@
 # Changelog
 
+## v0.5.0 - Colony Roles and Production
+
+The simulation has evolved from a survival sandbox into a true settlement simulator. Villagers now organize around a central settlement, take on specialized roles, build clustered villages, create stockpiles and workshops, coordinate through lightweight resource reservations, and respond to settlement-wide needs. Food pressure can drive the creation of farms, while carrying-capacity reporting helps explain long-term sustainability. The interface has been simplified to focus on the story of the settlement rather than internal debugging information.
+
+### Added
+- Villager roles: Generalist, Forager, Builder, Scout.
+- Role-based villager colors for at-a-glance readability.
+- Centralized settlement founding and clustered villager startup.
+- Settlement center and village hub behavior.
+- Physical food and wood stockpiles.
+- Simple workshop and building materials.
+- Clustered building placement near the village hub.
+- Local resource use radius.
+- Settlement needs / expanded building priorities.
+- Resource Reservation v1 for shared targets.
+- Farming v1 driven by food pressure.
+- Carrying capacity / pressure status report.
+- Future roadmap milestone: Mysteries and Wanderers.
+
+### Changed
+- Startup now begins as a founded settlement rather than scattered villagers.
+- Builders respond to settlement-level needs.
+- Foragers, farms, and storage now support a more stable local food economy.
+- Right panel now presents a cleaner player-facing summary.
+- Carrying capacity is treated as status/health information, not a hard population cap.
+
+### Fixed
+- Villager role colors render distinctly.
+- Local resource radius performance regression resolved.
+- Idle/no-progress recovery reliability improved.
+- Right panel reduced debug-heavy colony details.
+
+### Deferred / Future
+- Full hauling/job assignment.
+- Migration and new settlements.
+- Reproduction and social simulation.
+- Mysteries and Wanderers implementation.
+- Roads and deeper settlement expansion.
+
 ## v0.4.0 - Smarter World
 
 ### Added

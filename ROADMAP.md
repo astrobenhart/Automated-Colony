@@ -117,23 +117,63 @@ Notes:
 
 Goal: Give the colony more structure and long-term survival tools, turning shelter clusters into early village hubs.
 
+Status: Complete for v0.5.0.
+
 Features:
-- [ ] Roles
-- [ ] Settlement center
-- [ ] Village hub behavior around the settlement center
-- [ ] Physical storage or stockpile locations
-- [ ] Clustered building placement near the village hub
-- [ ] Hauling or task claiming for shared resources
-- [ ] Farming
-- [ ] Local resource use radius
-- [ ] Population cap or carrying capacity
-- [ ] Expanded building priorities
-- [ ] Job assignment or task claiming
+- [x] Lightweight villager roles as preference modifiers
+- [x] Role-based villager colors for at-a-glance readability
+- [x] Settlement center
+- [x] Central founding start with clustered villager spawn
+- [x] Village hub behavior around the settlement center
+- [x] Physical storage or stockpile locations
+- [x] Simple workshop near the village hub
+- [x] Clustered building placement near the village hub
+- [x] Local resource use radius
+- [x] Expanded building priorities / settlement needs
+- [x] Resource reservation v1 for shared targets
+- [x] Farming v1
+- [x] Settlement carrying capacity and pressure status, measurement-only
+- [x] Simplified right panel colony and simulation summaries
 
 Notes:
+- v0.5.0 - Colony Roles and Production is closed out. The simulation has evolved from a survival sandbox into a true settlement simulator.
 - Current playtests show believable shelter clustering after early survival pressure.
-- v0.5 should formalize that behavior into a settlement center, local work radius, physical storage, and clustered building placement.
+- Roles v1 is implemented in `src/roles.py` with Generalist, Forager, Builder, and Scout. Roles are soft goal-score preferences, not job assignments; urgent survival needs still dominate.
+- Role colors are restored as a gameplay readability feature. Generalists, Foragers, Builders, and Scouts render with distinct high-contrast colors so the colony can be understood at a glance without selecting villagers.
+- Settlement Center v1 is implemented in `src/settlement.py` as a single conceptual village anchor. It is automatically named and founded near the map center on valid terrain before villagers spawn, tracks living population and radius, and is visible in the right panel and map marker.
+- Central Founding Start v1 establishes the settlement before villagers spawn. The founding tile is chosen by bounded suitability scoring near the map center, and villagers spawn in a deterministic nearby cluster on valid tiles. The exact center is not forced, and no player placement UI is introduced.
+- Village Hub Behavior v1 lets the settlement center bias calm exploration and shelter build-site choice without adding a mandatory return-home goal. Scouts can range farther, builders and foragers remain more local, and settlement activity is tracked in a lightweight heatmap for future roads, stockpiles, workshops, and districts.
+- Physical Stockpiles v1 adds visible food and wood stockpiles near the settlement. Depositing villagers return resources to adjacent stockpile access tiles, while `ColonyStorage` remains the storage source of truth.
+- Workshop v1 adds one basic workshop near the settlement hub. Calm Builders can work there to convert stored wood into building materials, and those materials reduce shelter wood cost when available.
+- Local Resource Radius v1 gives the settlement a soft work territory. Agents prefer reachable local food, water, and wood under normal pressure, expand outward when local resources are scarce, and ignore radius penalties for urgent survival needs. Scouts have a weaker local penalty so they can range farther.
+- Clustered Building Placement v1 adds autonomous settlement-aware build-site scoring for shelters. It prefers loose clusters near the village hub, avoids stockpiles, workshops, and the settlement center, preserves simple access around important tiles, and uses bounded arithmetic scoring without pathfinding. Full zoning, roads, player placement, and city planning remain future work.
+- Expanded Building Priorities v2 reframes construction decisions as centralized settlement needs. The settlement tracks shelter, wood, and materials scores, updates them centrally from population, storage, shelter capacity, and workshop state, and Builders respond to the current need while survival goals still override.
+- Resource Reservation v1 adds soft claims for shared food, wood, shelter build sites, and workshop use. Reservations reduce duplicate effort and crowding, expire automatically, release on completion/recovery/death/invalid targets, and allow critical survival overrides. This is not a generic job board, hauling chain, construction queue, or player work-order system.
+- Resource Reservation v1 satisfies the v0.5 coordination goal. Full hauling and job assignment are deferred because they are larger logistics systems involving item movement, queues, and multi-step production.
+- Farming v1 adds autonomous 2x2 farm plots near the settlement. Farms are created gradually from high settlement food pressure, use bounded local placement scoring without pathfinding, grow once per day with seasonal and environmental-event modifiers, and can be harvested by villagers through the existing food goal. Full agriculture, irrigation, crop choice, player farm placement, and farming UI remain future work.
+- Farming activation is calibrated so healthy food storage and local foraging keep pressure low, while sustained shortages can create one farm per day from day 2 onward until the population-based cap is reached.
+- Settlement Carrying Capacity v1 adds an explanatory pressure report. It estimates current population support from shelter, food, and water, shows the limiting status, and includes reason lines so a report such as "Food Strained" explains the storage, local food, farm food, and water/shelter context behind it. This is a status/reporting system, not population growth or a hard population gate.
+- Right Panel Summary v1 makes the default panel shorter and more player-facing. It keeps world identity, compact Day/Year/Season/Speed information, colony status, resources, capped reasons, and recent events without showing population as a capacity denominator.
+- Workshops should come before full hauling/job assignment. Stockpiles make resources visible; workshops give stored resources a productive use; deeper logistics should come later when there are enough resource destinations to justify the added complexity.
 - Physical stockpiles and building clusters are prerequisites for richer settlement identity and expansion.
+- Full hauling, withdrawal logistics, job assignment, multiple settlements, migration, expansion, and deeper settlement-driven logistics remain future work.
+
+## Future Logistics / v0.6+
+
+Goal: Add deeper resource logistics only after the village has enough production chains and destinations to justify the complexity.
+
+Features:
+- [ ] Full hauling and job assignment system
+- [ ] Hauling chains between resource sources, stockpiles, workshops, farms, and future buildings
+- [ ] Item stacks or explicit carried-resource destinations
+- [ ] Job queues or autonomous job board
+- [ ] Inventory and resource reservations beyond simple target claims
+- [ ] Multi-step production logistics
+
+Notes:
+- Resource Reservation v1 remains the v0.5 coordination layer.
+- Full hauling/logistics should remain autonomous unless a later design explicitly introduces player-visible work orders.
+- Do not add this system until farming, richer production chains, or multiple resource destinations make it worthwhile.
 
 ## v0.6 - Social Simulation
 
@@ -153,7 +193,71 @@ Notes:
 - Social systems should build on stable settlement centers rather than scripted story events.
 - Leadership, families, and reputation should affect how villagers organize locally before broader politics exist.
 
-## v0.7 - History and Emergence
+## v0.7 - Mysteries and Wanderers
+
+Goal: Let the living world occasionally surprise the observer with rare visitors, strange events, and unexplained landmarks that create stories without becoming another management layer.
+
+Features:
+- [ ] Rare visitor framework
+- [ ] Wandering Wizard as one possible visitor
+- [ ] Strange hermits, lost knights, travelling merchants, dreaming pilgrims, golden stags, and other unusual passersby
+- [ ] Strange events such as meteor strikes, falling stars, auroras, ghost lights, singing forests, sudden mist, or animals gathering silently at night
+- [ ] Mystical landmarks such as ancient standing stones, hidden ruins, crystal springs, sleeping giant trees, marked groves, or forgotten shrines
+- [ ] Villager reactions to wonders, visitors, and omens
+- [ ] History entries for mysteries, arrivals, departures, and strange outcomes
+
+Design Goal:
+- The colony simulation should occasionally produce rare and memorable events that surprise the observer.
+- The player does not directly control these events.
+- They emerge from the world and create stories.
+- The goal is wonder, mystery, and unpredictability, not power progression.
+- These systems should deepen the screensaver / ant-farm quality of watching the world unfold.
+
+Rare Visitors:
+- Visitors are not normal villagers.
+- Visitors are autonomous.
+- Visitors arrive and leave.
+- Visitors should feel unusual.
+- Visitors should not become another colony role.
+- Example visitors include a Wandering Wizard, Strange Hermit, Lost Knight, Travelling Merchant, Dreaming Pilgrim, and Golden Stag.
+
+Strange Events:
+- Examples include Meteor Strike, Falling Star, Aurora, Ghost Lights, Singing Forest, Sudden Mist, and animals gathering silently at night.
+- These are examples only; the exact final list should remain open so the world can still surprise the player.
+- Events should be bounded, rare, and integrated with history.
+
+Mysteries and Landmarks:
+- Examples include Ancient Standing Stone, Hidden Ruin, Crystal Spring, Sleeping Giant Tree, Marked Grove, and Forgotten Shrine.
+- Landmarks may appear through world generation, rare events, or visitor interactions.
+- Some landmarks should remain partly unexplained.
+
+Example:
+- Day 217: A wizard appears at the edge of the map.
+- Villagers begin gathering around him.
+- Nobody knows why.
+- Several days later the wizard leaves.
+- Possible outcomes include temporary crop growth, a revealed water source, one villager becoming a Dreamer, a standing stone appearing, or a blessing/curse affecting a small area.
+- The exact effect should remain somewhat mysterious.
+
+Screensaver Principle:
+- The project is partly a simulation and partly a living screensaver.
+- Rare events should occasionally create moments that make the observer stop and watch.
+- The simulation should be capable of surprising the player even after many hours.
+
+Non-Goals:
+- Rare means rare; mysteries should not happen constantly.
+- The user should not summon visitors or command them.
+- Effects should not dominate survival systems.
+- This should not become a spell system, RPG quest system, or another colony management layer.
+- Some mystery should remain unexplained.
+
+Future Architecture Notes:
+- Prefer generic systems over a hardcoded wizard.
+- Possible future modules: `visitors.py`, `mysteries.py`, `magical_events.py`.
+- Possible concepts: `Visitor`, `MysteryEvent`, `MagicalEffect`, rare spawn scheduler, bounded duration, history integration, villager reaction hooks, and renderer markers.
+- The wizard should be one possible visitor, not the entire system.
+
+## v0.8 - History and Emergence
 
 Goal: Make the world generate stories over time through named places, movement, lineage, and ruins.
 
@@ -173,7 +277,7 @@ Notes:
 - Splinter settlements should emerge from resource pressure, population pressure, distance, or social conditions.
 - Ruins and lineage should connect past settlements to current play rather than appear as isolated flavor.
 
-## v0.8 - Village Formation and Historical Settlements
+## v0.9 - Village Formation and Historical Settlements
 
 Goal: Evolve survival colonies into recognizable villages and, eventually, multiple historical settlements with distinct identities.
 

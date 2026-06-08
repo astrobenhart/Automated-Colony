@@ -8,6 +8,203 @@ No active task.
 
 ## Backlog
 
+### TASK-55
+Title: History Integration for Mysteries
+
+Owner: Docs Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan how strange visitors, unexplained events, magical effects, landmarks, arrivals, departures, and outcomes should be recorded in world history.
+
+Expected Output:
+A future design for mystery-aware history entries that preserves ambiguity while still letting memorable events become part of the world's record.
+
+Acceptance Criteria:
+- Mystery history captures arrivals, departures, omens, landmarks, and bounded outcomes.
+- History records enough to support storytelling without explaining every cause.
+- The system does not turn mysteries into quests, objectives, or player-managed events.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-50
+- TASK-52
+- TASK-53
+
+Notes:
+- Some mystery should remain unexplained even when history records that something happened.
+
+---
+
+### TASK-54
+Title: Villager Reactions to Wonders
+
+Owner: Gameplay Vision Agent / Architect Agent
+
+Status: Backlog
+
+Description:
+Plan lightweight autonomous villager reactions to rare visitors, strange events, omens, and mystical landmarks.
+
+Expected Output:
+A scoped design for villagers noticing, gathering around, avoiding, remembering, or briefly responding to wonders without player commands.
+
+Acceptance Criteria:
+- Villagers react autonomously.
+- Reactions are bounded and do not override survival needs indefinitely.
+- Reactions do not become an RPG conversation, quest, or command system.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-50
+- TASK-52
+- TASK-53
+
+Notes:
+- The core experience should be: "Wait... why are they all gathering over there?"
+
+---
+
+### TASK-53
+Title: Mystical Landmarks
+
+Owner: Planner Agent / Architect Agent
+
+Status: Backlog
+
+Description:
+Plan rare unexplained landmarks such as ancient standing stones, hidden ruins, crystal springs, sleeping giant trees, marked groves, and forgotten shrines.
+
+Expected Output:
+A future design for landmarks that can appear through world generation, rare events, or visitor interactions.
+
+Acceptance Criteria:
+- Landmarks are rare and memorable.
+- Landmarks may have bounded effects or no clear effect.
+- Landmarks integrate with world history and renderer markers.
+- Landmarks do not become a player placement, zoning, or management system.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-50
+
+Notes:
+- Landmarks should make the world feel older and stranger than the colony.
+
+---
+
+### TASK-52
+Title: Strange Events
+
+Owner: Planner Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan rare strange events such as meteor strikes, falling stars, auroras, ghost lights, singing forests, sudden mist, and animals gathering silently at night.
+
+Expected Output:
+A future design for rare, bounded, history-aware events that can surprise the observer without dominating survival systems.
+
+Acceptance Criteria:
+- Events are rare and not player-summoned.
+- Effects are bounded in time and impact.
+- Events preserve some uncertainty or mystery.
+- Events do not become a spell system, disaster spam, or management layer.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-50
+
+Notes:
+- The final event list should remain open so the player cannot know every possible surprise.
+
+---
+
+### TASK-51
+Title: Wandering Wizard
+
+Owner: Gameplay Vision Agent / Architect Agent
+
+Status: Backlog
+
+Description:
+Plan the Wandering Wizard as one possible rare visitor, not as the entire mystery system.
+
+Expected Output:
+A scoped design example where a wizard can appear, draw autonomous villager attention, linger briefly, leave, and possibly create a bounded mysterious outcome.
+
+Acceptance Criteria:
+- The wizard arrives and leaves autonomously.
+- Villagers may react without player commands.
+- Possible effects remain bounded and somewhat mysterious.
+- The wizard does not become a controllable unit, spell system, quest giver, or colony role.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-50
+
+Notes:
+- Example outcomes may include temporary crop growth, a revealed water source, a Dreamer, a standing stone, or a small local blessing/curse.
+
+---
+
+### TASK-50
+Title: Rare Visitor Framework
+
+Owner: Planner Agent / Architect Agent
+
+Status: Backlog
+
+Description:
+Plan a generic framework for rare autonomous visitors such as wizards, hermits, lost knights, merchants, pilgrims, and golden stags.
+
+Expected Output:
+A future architecture plan for visitors that arrive, behave, affect the world in bounded ways, integrate with history, and leave without becoming normal villagers.
+
+Acceptance Criteria:
+- Visitors are autonomous and rare.
+- Visitors are not colony roles, migrants, or player-controlled units.
+- The framework supports arrivals, departures, bounded duration, renderer markers, history records, and villager reaction hooks.
+- The framework is generic; the wizard is one possible visitor, not the whole system.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-49
+
+Notes:
+- Possible future modules include `visitors.py`, `mysteries.py`, and `magical_events.py`.
+
+---
+
+### TASK-46
+Title: Design Full Hauling and Job Assignment
+
+Owner: Planner Agent / Architect Agent
+
+Status: Backlog
+
+Description:
+Plan a future logistics system that goes beyond Resource Reservation v1.
+
+Expected Output:
+A scoped design for hauling chains, item stacks, job queues or autonomous job boards, inventory/resource reservations, and multi-step production logistics.
+
+Acceptance Criteria:
+- Resource Reservation v1 remains the completed v0.5 coordination layer.
+- Full hauling/job assignment is clearly deferred to a future milestone.
+- The design identifies prerequisites such as farming, richer production chains, or multiple resource destinations.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-45
+
+Notes:
+- This is future logistics work, not active v0.5 scope.
+
+---
+
 ### TASK-33
 Title: Tune Survival Outlook Labels
 
@@ -119,6 +316,509 @@ Notes:
 ---
 
 ## Completed
+
+### TASK-56
+Title: Restore Role-Based Villager Colors
+
+Owner: Renderer Agent / UX Agent / Tester Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #40 by restoring distinct villager colors for Generalist, Forager, Builder, and Scout roles.
+
+Expected Output:
+Villagers render with high-contrast role colors so colony behavior is readable at a glance without selecting individual agents.
+
+Acceptance Criteria:
+- Every known role maps to a distinct color.
+- Unknown or missing roles use a safe fallback color.
+- The renderer draws agents through the centralized role-color helper.
+- Selected-agent role text remains available.
+- No role behavior, AI behavior, goals, or simulation logic changes.
+- Existing tests pass.
+
+Dependencies:
+- TASK-49
+
+Notes:
+- Role colors are gameplay readability, not decoration. They support the hands-off screensaver/ant-farm experience by making builders, foragers, scouts, and generalists distinguishable while watching the map.
+
+---
+
+### TASK-49
+Title: Simplify Right Panel Colony and Simulation Summaries
+
+Owner: Renderer Agent / UX Agent / Tester Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #38 by making the right panel read like a player-facing colony dashboard instead of a debug summary.
+
+Expected Output:
+The panel keeps world identity, compact time/season info, a short colony health summary, active events, history, legend, controls, recent events, and selected-object details without implying carrying capacity is a hard population cap.
+
+Acceptance Criteria:
+- World identity remains at the top.
+- Day, Year, Season, and Speed are shown in a compact grid without a separate Simulation section title.
+- Colony summary shows villager count as plain text such as `9 Villagers`.
+- Colony summary does not show population as current/max.
+- Debug fields such as center coordinates, radius, claims, raw population, raw capacity, and farm-ready food are removed from the default summary.
+- Capacity status remains visible through a short status label and capped reason lines.
+- Stable colonies omit reason lines in the main summary.
+- Detailed internals remain available through selected-object details.
+- No gameplay, simulation, capacity, farming, reservation, or worldgen logic changes.
+- Existing tests pass.
+
+Dependencies:
+- TASK-48
+
+Notes:
+- Carrying capacity is a status/health estimate, not a hard population maximum. Main-panel copy should avoid max-style population wording.
+
+---
+
+### TASK-48
+Title: Add Settlement Carrying Capacity and Pressure Status
+
+Owner: Gameplay Agent / Renderer Agent / Balance Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #37 by adding an explanatory settlement carrying-capacity report.
+
+Expected Output:
+The settlement panel shows population, estimated support capacity, status, and clear reason lines explaining whether shelter, food, or water is limiting.
+
+Acceptance Criteria:
+- A reusable `CarryingCapacityReport` exists.
+- The report includes `reason` and `reason_lines`.
+- Capacity is estimated from shelter, food, and water support.
+- Food support accounts for stored food, local food, ready farm food, and active farm plots.
+- The lowest support category determines visible capacity.
+- Strained statuses explain the limiting category instead of only naming it.
+- The renderer shows compact capacity status and why-lines.
+- This does not add population growth, migration, hard caps, or player controls.
+- Existing tests pass.
+
+Dependencies:
+- TASK-37
+- TASK-39
+- TASK-41
+- TASK-47
+
+Notes:
+- This is a readability and balance-reporting system. Full population growth, migration, or enforced carrying-capacity mechanics remain future work.
+
+---
+
+### TASK-47
+Title: Add Farming v1
+
+Owner: Architect Agent / Gameplay Agent / Balance Agent / Renderer Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #36 by adding autonomous farms that emerge from settlement food pressure.
+
+Expected Output:
+The colony can create small 2x2 farm plots near the settlement, grow seasonal food over days, and harvest ready farm food without player placement or a full logistics system.
+
+Acceptance Criteria:
+- Farms are 2x2 `FarmPlot` objects that own exactly four valid tiles.
+- Farms are not created at founding; high food pressure can create one farm per daily check up to a population-based cap.
+- Farm placement is bounded near the settlement, deterministic, and avoids water, mountains, stockpiles, workshops, shelters, the settlement center, agents, and existing farms.
+- Farm placement and scoring do not use pathfinding.
+- Farm growth updates once per day and is affected by season, drought, and heavy rain.
+- Villagers can seek and harvest ready farms through the existing food goal.
+- Farm reservations reduce duplicate farm targeting while critical hunger can still override claims.
+- Farm plots render with terrain-like interiors and a brown outline around the whole 2x2 plot.
+- Existing tests pass.
+
+Dependencies:
+- TASK-37
+- TASK-39
+- TASK-40
+- TASK-41
+- TASK-42
+- TASK-44
+- TASK-45
+
+Notes:
+- This is Farming v1. It does not add player farm placement, crop selection, seeds, irrigation, roads, hauling chains, full agriculture, multiple settlements, migration, or social systems.
+- Activation thresholds are intentionally conservative: HIGH food pressure starts at roughly 1.5 effective food days per living population, MEDIUM at roughly 3 days. Farms can emerge during sustained shortage before population growth exists, but should not appear during healthy foraging starts.
+
+---
+
+### TASK-45
+Title: Add Resource Reservation v1
+
+Owner: Architect Agent / Gameplay Agent / Balance Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #35 as lightweight reservations for shared targets instead of a generic task scheduler.
+
+Expected Output:
+Agents avoid duplicating the same food, wood, build-site, or workshop target when alternatives exist, while survival overrides remain safe.
+
+Acceptance Criteria:
+- World owns a small reservation manager.
+- Reservations can be created, released, expire, and clean up stale invalid targets.
+- Food and wood target selection prefers unreserved resource tiles.
+- Critical hunger can use reserved food if no alternative exists.
+- Shelter build-site placement avoids other builders' reserved sites.
+- Workshop use is limited by a workshop reservation.
+- Reservations release on completion, invalidation, death, no-progress recovery, or timeout.
+- Reservation checks use dict lookups and existing bounded candidate lists without pathfinding.
+- Existing tests pass.
+
+Dependencies:
+- TASK-41
+- TASK-42
+- TASK-43
+- TASK-44
+
+Notes:
+- This is Resource Reservation v1. It does not add hauling chains, a job board, task queues, item stacks, inventory reservations, roads, farming, migration, multiple settlements, or player work orders.
+
+---
+
+### TASK-44
+Title: Add Expanded Settlement Building Priorities
+
+Owner: Architect Agent / Gameplay Agent / Balance Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #34 by replacing isolated builder priority checks with centralized settlement needs for shelter, wood, and materials.
+
+Expected Output:
+The settlement answers what it needs most, and Builders respond with construction, wood gathering, or workshop work when survival needs are low.
+
+Acceptance Criteria:
+- Settlement tracks need scores for shelter, wood, and materials.
+- Needs update centrally and cheaply from population, shelter count, storage, and workshop state.
+- Simple hysteresis avoids obvious top-need oscillation.
+- Shelter need rises/falls with shelter capacity pressure.
+- Wood need rises when construction/materials need wood and falls when reserve is healthy.
+- Materials need rises when workshop and wood exist below the material buffer and falls when the buffer is sufficient.
+- Builders gather wood, build shelter, or work the workshop based on settlement needs.
+- Material production stops when the material buffer is full.
+- Shelter construction stops when capacity is sufficient.
+- Survival needs and no-progress recovery remain dominant.
+- Existing tests pass.
+
+Dependencies:
+- TASK-40
+- TASK-41
+- TASK-42
+- TASK-43
+
+Notes:
+- This is Settlement Needs / Building Priorities v2. It does not add hauling, task claiming, job boards, construction queues, roads, player placement, farming, migration, multiple settlements, or social systems.
+
+---
+
+### TASK-43
+Title: Start Villagers Near Central Settlement
+
+Owner: Architect Agent / Gameplay Agent / Worldgen Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #33 by changing startup so the world is generated first, a suitable central settlement is founded, and villagers spawn close to that settlement on valid tiles.
+
+Expected Output:
+A founded-village startup where villagers begin as a nearby group rather than scattered survivors.
+
+Acceptance Criteria:
+- Settlement founding starts near the map center but does not force the exact center.
+- Founding site selection uses bounded cheap suitability scoring.
+- Villagers spawn near the settlement center on valid tiles.
+- Villagers never spawn on water, mountains, non-walkable terrain, occupied tiles, stockpiles, workshops, or the settlement center.
+- Spawn positions are deterministic for fixed seed/settings.
+- Settlement population matches living villagers after spawn.
+- Stockpiles, workshop, clustered building placement, local resource radius, roles, and no-progress recovery remain stable.
+- Existing tests pass.
+
+Dependencies:
+- TASK-37
+- TASK-38
+- TASK-39
+- TASK-40
+- TASK-41
+- TASK-42
+
+Notes:
+- This is startup polish and reliability only. No player placement, setup screen, migration, multiple settlements, roads, hauling, task claiming, or worldgen rewrite was added.
+
+---
+
+### TASK-42
+Title: Add Clustered Building Placement
+
+Owner: Architect Agent / Gameplay Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #31 by adding a small autonomous building placement system for settlement-aware shelter clustering.
+
+Expected Output:
+Reusable build-site helpers that answer where a nearby building should go, with shelter construction preferring loose clusters around the village hub.
+
+Acceptance Criteria:
+- Build-site helpers reject water, mountain, occupied, stockpile, workshop, and settlement-center tiles.
+- Shelter placement uses bounded settlement-area scoring.
+- Scoring prefers nearby village sites, reasonable shelter spacing, and open neighboring access.
+- Scoring penalizes overcrowded blobs and special-tile access blockage.
+- No pathfinding, flood fill, zoning, roads, player placement, hauling, or task claiming is added.
+- Builders fall back gracefully when no ideal local site exists.
+- Existing tests pass.
+
+Dependencies:
+- TASK-37
+- TASK-38
+- TASK-39
+- TASK-40
+- TASK-41
+
+Notes:
+- This is autonomous clustered placement v1. It keeps shelter placement believable without becoming a city planner.
+
+---
+
+### TASK-41
+Title: Add Local Resource Use Radius
+
+Owner: Gameplay Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #29 by adding a soft local resource territory around the settlement.
+
+Expected Output:
+Agents prefer reachable local food, water, and wood when pressure is low, expand outward when resources are scarce, and still use far known resources during urgent survival needs.
+
+Acceptance Criteria:
+- Settlement has resource radius, expanded resource radius, and food/wood/water pressure fields.
+- Radius helpers classify local and far positions.
+- Local food and wood are preferred under normal conditions.
+- Far food, water, and wood remain usable under scarcity or urgent survival needs.
+- Scouts have a weaker local restriction.
+- Foragers and Builders prefer local food/wood respectively when available.
+- Stale or depleted local resources are ignored.
+- Unreachable nearby water does not block reachable farther water.
+- Existing stockpile, workshop, role, no-progress recovery, pathfinding, worldgen, ecology, wildlife, and history tests pass.
+
+Dependencies:
+- TASK-37
+- TASK-38
+- TASK-39
+- TASK-40
+
+Notes:
+- This is a soft scoring preference, not a territory wall. No zoning, roads, hauling, task claiming, multiple settlements, migration, farming, or player micromanagement were added.
+
+---
+
+### TASK-40
+Title: Add Simple Workshop
+
+Owner: Gameplay Agent / Architect Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #28 by adding one simple workshop near the settlement hub.
+
+Expected Output:
+A lightweight workshop that gives Builders productive local behavior, consumes stored wood, produces building materials, and lets those materials support shelter construction.
+
+Acceptance Criteria:
+- A simple workshop exists near the settlement hub.
+- Workshop placement is deterministic and avoids settlement center, stockpiles, water, and mountain terrain.
+- Builders can use the workshop when needs are low.
+- Workshop work consumes stored wood and produces building materials.
+- Workshop tracks progress and total items produced.
+- Building materials reduce shelter wood cost when available.
+- Shelter construction still works without building materials.
+- Survival needs override workshop work.
+- No hauling, reservations, task claiming, production menus, farming, roads, migration, social systems, or player micromanagement are added.
+- Existing tests pass.
+
+Dependencies:
+- TASK-39
+
+Notes:
+- Workshop v1 turns visible stockpiled resources into useful construction support before a full logistics layer exists.
+
+---
+
+### TASK-39
+Title: Add Physical Stockpiles
+
+Owner: Gameplay Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #27 by adding visible food and wood stockpile locations near the settlement center.
+
+Expected Output:
+Settlements create physical stockpile markers, villagers return carried resources to adjacent stockpile access tiles, and deposits update both `ColonyStorage` and the matching visible stockpile amount.
+
+Acceptance Criteria:
+- Food and wood stockpiles spawn automatically near the settlement.
+- Stockpiles are walkable, deterministic, and visually distinct.
+- Deposits update `ColonyStorage`.
+- Deposits update physical stockpile amounts.
+- Agents can deposit from adjacent stockpile access tiles.
+- Agents carrying depositable resources seek stockpiles before depositing.
+- Existing abstract storage withdrawal behavior remains stable.
+- Existing tests pass.
+
+Dependencies:
+- TASK-37
+- TASK-38
+
+Notes:
+- This is Physical Stockpiles v1. It does not add hauling, reservations, task claiming, workshops, farming, roads, multiple settlements, migration, or full withdrawal logistics.
+
+---
+
+### TASK-38
+Title: Add Village Hub Behavior
+
+Owner: Gameplay Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #26 by letting the settlement center bias routine villager behavior without creating a mandatory return-home task.
+
+Expected Output:
+Calm villagers tend to operate near the settlement, scouts can range farther, shelter construction prefers valid local build sites, and settlement activity is tracked for future village systems.
+
+Acceptance Criteria:
+- Settlement helper functions exist for distance, near checks, random local tiles, and valid local build sites.
+- Routine exploration is biased around settlement radius.
+- Scouts can use a larger exploration radius than generalists.
+- Builders and foragers remain more local when possible.
+- Shelter placement prefers settlement-area build sites.
+- Food, water, and sleep survival needs override settlement preferences.
+- Settlement activity tracking records where villagers spend time.
+- Existing tests pass.
+
+Dependencies:
+- TASK-37
+
+Notes:
+- No stockpiles, hauling, roads, workshops, farming, multiple settlements, migration, social systems, or player micromanagement were added.
+
+---
+
+### TASK-37
+Title: Add Settlement Center
+
+Owner: Gameplay Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #25 by adding a lightweight settlement center as the first v0.5 village-structure anchor.
+
+Expected Output:
+Worlds have one automatically placed settlement with a deterministic name, center coordinates, founding date, radius, and living population.
+
+Acceptance Criteria:
+- World has one settlement center after creation.
+- Settlement center is placed on walkable terrain, not water or mountain.
+- Settlement center is deterministic for fixed seed/settings.
+- Settlement center is near the initial villager centroid.
+- Settlement has a short non-empty name.
+- Settlement tracks living population and radius.
+- Settlement info appears in the right panel.
+- A subtle settlement marker appears on the map and in the legend.
+- Existing villager behavior remains autonomous and stable.
+- Existing tests pass.
+
+Dependencies:
+- TASK-35
+- TASK-36
+
+Notes:
+- Settlement Center v1 is conceptual. It does not add physical stockpiles, hauling, task claiming, migration, multiple settlements, reproduction, farming, or player placement.
+
+---
+
+### TASK-36
+Title: Fix No-Progress Survival Recovery
+
+Owner: Gameplay Agent
+
+Status: Completed
+
+Description:
+Resolve GitHub Issue #24 by preventing villagers from passively standing still until hunger or thirst death.
+
+Expected Output:
+Agents clean stale resource memories, let urgent survival needs override role preferences, explore when no survival resource plan exists, and clear stale targets/paths after repeated no-progress ticks.
+
+Acceptance Criteria:
+- Urgent thirst and hunger override role preferences.
+- Hungry agents can eat carried or stored food.
+- Hungry agents can seek known food.
+- Depleted remembered food is cleared or ignored.
+- Agents with no known survival resources explore instead of idling indefinitely.
+- Stale targets and paths are cleared after repeated no-progress ticks.
+- Selected-agent UI exposes the no-progress counter for verification.
+- Existing tests pass.
+
+Dependencies:
+- TASK-35
+
+Notes:
+- This is a blocker reliability fix only; no settlement centers, task claiming, farming, migration, reproduction, worldgen changes, or hunger/thirst balance tuning were added.
+
+---
+
+### TASK-35
+Title: Add Lightweight Villager Roles
+
+Owner: Gameplay Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #23 by adding Generalist, Forager, Builder, and Scout roles as soft behavior preferences.
+
+Expected Output:
+Villagers receive automatic roles that bias routine goal choice without creating job locks or overriding urgent survival needs.
+
+Acceptance Criteria:
+- Villagers have visible roles.
+- Roles are assigned automatically.
+- Role modifiers affect routine goal choice.
+- Urgent thirst, hunger, and fatigue override role preferences.
+- No player assignment, job board, task claiming, farming, settlement center, relationships, reproduction, or migration is added.
+- Existing tests pass.
+
+Dependencies:
+- TASK-34
+
+Notes:
+- Roles are preferences, not worker classes. A starving Builder still seeks food, a thirsty Scout still seeks water, and a tired Forager still seeks shelter.
+
+---
 
 ### TASK-34
 Title: Prepare v0.4.0 Release

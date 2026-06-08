@@ -2,6 +2,8 @@ from __future__ import annotations
 from collections import deque
 from typing import TYPE_CHECKING
 
+from src.profiler import profiler
+
 if TYPE_CHECKING:
     from src.world import World
 
@@ -27,6 +29,16 @@ def find_path(
     If avoid_occupied is True, paths avoid occupied tiles except the start
     tile occupied by the moving agent.
     """
+    with profiler.time("pathfinding"):
+        return _find_path(world, start, destination, avoid_occupied)
+
+
+def _find_path(
+    world: World,
+    start: tuple[int, int],
+    destination: tuple[int, int],
+    avoid_occupied: bool = False,
+) -> list[tuple[int, int]]:
     if start == destination:
         return []
 
