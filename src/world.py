@@ -1,7 +1,7 @@
 import random
 from dataclasses import dataclass, field
 
-from src.building_priorities import highest_priority, needed_shelters
+from src.building_priorities import highest_priority, needed_shelters, update_settlement_needs
 from src.colony_memory import ColonyMemory
 from src.colony_storage import ColonyStorage
 from src.environment_events import update_environment_events
@@ -209,6 +209,9 @@ class World:
         if self.settlement is not None:
             self.settlement.population = len(self.living_agents())
 
+    def update_settlement_needs(self, force: bool = False):
+        update_settlement_needs(self, force)
+
     def record_settlement_activity(self):
         if self.settlement is None:
             return
@@ -252,6 +255,7 @@ class World:
                     agent.update_progress_tracking(self, progress_before)
 
             self.update_settlement_population()
+            self.update_settlement_needs(force=True)
             self.update_resource_pressures()
             self.record_settlement_activity()
             update_wildlife(self, random)
@@ -318,6 +322,11 @@ class World:
             if workshop.x == x and workshop.y == y:
                 return workshop
         return None
+
+    def workshop_at_anywhere(self):
+        if self.settlement is None:
+            return False
+        return any(workshop.active for workshop in self.settlement.workshops)
 
     def nearby_tile_kind(self, x, y, kind):
         for dx, dy in [(0, 0), (0, 1), (1, 0), (0, -1), (-1, 0)]:
@@ -399,4 +408,5 @@ def create_world(
     world.generate()
     world.establish_settlement()
     world.spawn_agents(agent_count if agent_count is not None else STARTING_AGENTS)
+    world.update_settlement_needs(force=True)
     return world

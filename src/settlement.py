@@ -16,6 +16,10 @@ WATER = "water"
 LOW = "LOW"
 MEDIUM = "MEDIUM"
 HIGH = "HIGH"
+NEED_SHELTER = "shelter"
+NEED_WOOD = "wood"
+NEED_MATERIALS = "materials"
+SETTLEMENT_NEEDS = (NEED_SHELTER, NEED_WOOD, NEED_MATERIALS)
 
 
 @dataclass
@@ -58,6 +62,9 @@ class Settlement:
     local_wood: set[tuple[int, int]] = field(default_factory=set)
     local_water: set[tuple[int, int]] = field(default_factory=set)
     local_resource_cache_day: int | None = None
+    need_scores: dict[str, float] = field(default_factory=lambda: {need: 0.0 for need in SETTLEMENT_NEEDS})
+    top_need: str | None = None
+    need_updated_day: int | None = None
 
     def record_activity(self, x: int, y: int):
         pos = (x, y)

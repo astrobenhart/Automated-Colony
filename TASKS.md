@@ -120,6 +120,43 @@ Notes:
 
 ## Completed
 
+### TASK-44
+Title: Add Expanded Settlement Building Priorities
+
+Owner: Architect Agent / Gameplay Agent / Balance Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #34 by replacing isolated builder priority checks with centralized settlement needs for shelter, wood, and materials.
+
+Expected Output:
+The settlement answers what it needs most, and Builders respond with construction, wood gathering, or workshop work when survival needs are low.
+
+Acceptance Criteria:
+- Settlement tracks need scores for shelter, wood, and materials.
+- Needs update centrally and cheaply from population, shelter count, storage, and workshop state.
+- Simple hysteresis avoids obvious top-need oscillation.
+- Shelter need rises/falls with shelter capacity pressure.
+- Wood need rises when construction/materials need wood and falls when reserve is healthy.
+- Materials need rises when workshop and wood exist below the material buffer and falls when the buffer is sufficient.
+- Builders gather wood, build shelter, or work the workshop based on settlement needs.
+- Material production stops when the material buffer is full.
+- Shelter construction stops when capacity is sufficient.
+- Survival needs and no-progress recovery remain dominant.
+- Existing tests pass.
+
+Dependencies:
+- TASK-40
+- TASK-41
+- TASK-42
+- TASK-43
+
+Notes:
+- This is Settlement Needs / Building Priorities v2. It does not add hauling, task claiming, job boards, construction queues, roads, player placement, farming, migration, multiple settlements, or social systems.
+
+---
+
 ### TASK-43
 Title: Start Villagers Near Central Settlement
 

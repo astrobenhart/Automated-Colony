@@ -99,10 +99,11 @@ def test_workshop_production_does_not_run_without_wood():
     assert not UseWorkshopAction().can_do(agent, world)
 
 
-def test_builder_prefers_workshop_more_than_generalist_when_needs_are_low():
+def test_builder_prefers_workshop_more_than_generalist_when_materials_are_needed():
     world = make_world()
     world.settlement = make_settlement_with_workshop()
-    world.colony_storage.deposit_wood(1)
+    world.tile_at(2, 2).kind = "shelter"
+    world.colony_storage.deposit_wood(10)
 
     builder = Agent("Builder", 3, 5, role=BUILDER)
     generalist = Agent("General", 3, 5, role=GENERALIST)
@@ -114,6 +115,7 @@ def test_builder_prefers_workshop_more_than_generalist_when_needs_are_low():
     world.agents.append(generalist)
     generalist_action = generalist.choose_action(world)
 
+    assert world.settlement.top_need == "materials"
     assert builder.current_goal == "Workshop"
     assert builder_action.name == "Working workshop"
     assert generalist_action.name != "Working workshop"

@@ -252,11 +252,13 @@ class PygameRenderer:
         ]
         if self.world.settlement is not None:
             settlement = self.world.settlement
+            top_need = settlement.top_need.capitalize() if settlement.top_need is not None else "None"
             colony_stats.extend([
                 ("Settle", settlement.name),
                 ("Pop", settlement.population),
                 ("Center", f"{settlement.x},{settlement.y}"),
                 ("Rad", settlement.radius),
+                ("Need", top_need),
             ])
         y = self.draw_two_column_section(
             "Simulation",

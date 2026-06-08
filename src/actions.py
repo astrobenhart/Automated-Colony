@@ -16,7 +16,7 @@ from src.settlement import (
     withdraw_from_stockpile,
 )
 from src.building_placement import find_build_site_near_settlement
-from src.building_priorities import SHELTER
+from src.building_priorities import SHELTER, should_produce_building_materials
 from src.profiler import profiler
 from src.workshop import is_adjacent_to_workshop, workshop_access_tile, workshop_for
 
@@ -181,7 +181,7 @@ class DepositWoodAction(Action):
     name = "Depositing wood"
 
     def can_do(self, agent: Agent, world: World) -> bool:
-        if agent.wood <= 0 or world.needs_more_shelters():
+        if agent.wood <= 0 or world.should_gather_wood_for_construction(agent):
             return False
         if stockpile_for(world, WOOD) is None:
             return True
@@ -205,7 +205,7 @@ class SeekWoodStockpileAction(Action):
     def can_do(self, agent: Agent, world: World) -> bool:
         return (
             agent.wood > 0
-            and not world.needs_more_shelters()
+            and not world.should_gather_wood_for_construction(agent)
             and stockpile_for(world, WOOD) is not None
             and not is_adjacent_to_stockpile(world, agent.x, agent.y, WOOD)
             and stockpile_access_tile(world, WOOD, agent) is not None
@@ -306,6 +306,7 @@ class UseWorkshopAction(Action):
     def can_do(self, agent: Agent, world: World) -> bool:
         return (
             _can_use_workshop(agent)
+            and should_produce_building_materials(world)
             and world.colony_storage.wood > 0
             and workshop_for(world) is not None
             and is_adjacent_to_workshop(world, agent.x, agent.y)
@@ -339,6 +340,7 @@ class SeekWorkshopAction(Action):
     def can_do(self, agent: Agent, world: World) -> bool:
         return (
             _can_use_workshop(agent)
+            and should_produce_building_materials(world)
             and world.colony_storage.wood > 0
             and workshop_for(world) is not None
             and not is_adjacent_to_workshop(world, agent.x, agent.y)

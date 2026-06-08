@@ -190,6 +190,30 @@ Design boundaries:
 
 Future systems can use workshops as destinations for hauling, production chains, building upgrades, and specialist roles once the simulation has enough resource flow to justify task claiming.
 
+## Settlement Needs v1
+
+Building priorities are now settlement-level needs rather than independent builder-only decisions.
+
+Implemented behavior:
+- each settlement tracks simple need scores for shelter, wood, and materials
+- needs are updated centrally from population, shelter capacity, colony storage, and workshop availability
+- the top need uses simple thresholds and hysteresis to avoid obvious oscillation
+- Builders respond to the top settlement need when thirst, hunger, and fatigue are under control
+- shelter need drives shelter construction when capacity is short
+- wood need drives wood gathering when construction or material production lacks wood
+- materials need drives workshop use when wood exists and the material buffer is low
+- workshop work slows/stops once the material buffer is full
+
+Design boundaries:
+- no job board
+- no construction queue
+- no hauling or task claiming
+- no roads
+- no player placement
+- no zoning
+
+Thresholds are intentionally conservative and tunable. This is the first step toward settlement-level decision making, not a logistics system.
+
 ## Local Resource Radius v1
 
 The settlement has a soft resource territory, not an invisible wall.
