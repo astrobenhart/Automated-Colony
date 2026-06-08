@@ -120,6 +120,41 @@ Notes:
 
 ## Completed
 
+### TASK-41
+Title: Add Local Resource Use Radius
+
+Owner: Gameplay Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #29 by adding a soft local resource territory around the settlement.
+
+Expected Output:
+Agents prefer reachable local food, water, and wood when pressure is low, expand outward when resources are scarce, and still use far known resources during urgent survival needs.
+
+Acceptance Criteria:
+- Settlement has resource radius, expanded resource radius, and food/wood/water pressure fields.
+- Radius helpers classify local and far positions.
+- Local food and wood are preferred under normal conditions.
+- Far food, water, and wood remain usable under scarcity or urgent survival needs.
+- Scouts have a weaker local restriction.
+- Foragers and Builders prefer local food/wood respectively when available.
+- Stale or depleted local resources are ignored.
+- Unreachable nearby water does not block reachable farther water.
+- Existing stockpile, workshop, role, no-progress recovery, pathfinding, worldgen, ecology, wildlife, and history tests pass.
+
+Dependencies:
+- TASK-37
+- TASK-38
+- TASK-39
+- TASK-40
+
+Notes:
+- This is a soft scoring preference, not a territory wall. No zoning, roads, hauling, task claiming, multiple settlements, migration, farming, or player micromanagement were added.
+
+---
+
 ### TASK-40
 Title: Add Simple Workshop
 

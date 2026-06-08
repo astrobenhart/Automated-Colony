@@ -124,7 +124,7 @@ Features:
 - [x] Physical storage or stockpile locations
 - [x] Simple workshop near the village hub
 - [ ] Clustered building placement near the village hub
-- [ ] Local resource use radius
+- [x] Local resource use radius
 - [ ] Expanded building priorities
 - [ ] Hauling or task claiming for shared resources
 - [ ] Farming
@@ -138,6 +138,7 @@ Notes:
 - Village Hub Behavior v1 lets the settlement center bias calm exploration and shelter build-site choice without adding a mandatory return-home goal. Scouts can range farther, builders and foragers remain more local, and settlement activity is tracked in a lightweight heatmap for future roads, stockpiles, workshops, and districts.
 - Physical Stockpiles v1 adds visible food and wood stockpiles near the settlement. Depositing villagers return resources to adjacent stockpile access tiles, while `ColonyStorage` remains the storage source of truth.
 - Workshop v1 adds one basic workshop near the settlement hub. Calm Builders can work there to convert stored wood into building materials, and those materials reduce shelter wood cost when available.
+- Local Resource Radius v1 gives the settlement a soft work territory. Agents prefer reachable local food, water, and wood under normal pressure, expand outward when local resources are scarce, and ignore radius penalties for urgent survival needs. Scouts have a weaker local penalty so they can range farther.
 - Workshops should come before full hauling/task claiming. Stockpiles make resources visible; workshops give stored resources a productive use; hauling/task claiming should come later when there are enough resource destinations to justify a logistics layer.
 - Next v0.5 steps should build on the settlement center with simple workshops, local work radius, and clustered building placement.
 - Physical stockpiles and building clusters are prerequisites for richer settlement identity and expansion.

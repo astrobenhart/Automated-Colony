@@ -14,13 +14,23 @@ from src.seasons import (
 )
 from src.resource_ecology import apply_resource_ecology
 from src.roles import role_for_index
-from src.settlement import Settlement, found_settlement
+from src.settlement import (
+    Settlement,
+    choose_resource_target,
+    distance_to_settlement,
+    filter_positions_by_settlement_radius,
+    found_settlement,
+    is_within_resource_radius,
+    resource_search_radius,
+    update_resource_pressures,
+)
 from src.wildlife import spawn_wildlife, update_wildlife
 from src.world_history import WorldHistory
 from src.world_identity import WorldIdentity, generate_world_identity
 from src.worldgen_settings import WorldGenSettings, default_worldgen_settings
 from src.worldgen import generate_world
 from src.agent import Agent
+from src.profiler import profiler
 
 
 @dataclass
@@ -135,26 +145,46 @@ class World:
         for agent in self.living_agents():
             self.settlement.record_activity(agent.x, agent.y)
 
+    def update_resource_pressures(self):
+        update_resource_pressures(self)
+
+    def distance_to_settlement(self, x, y):
+        return distance_to_settlement(self, x, y)
+
+    def is_within_resource_radius(self, x, y, radius=None):
+        return is_within_resource_radius(self, x, y, radius)
+
+    def filter_positions_by_settlement_radius(self, positions, radius=None):
+        return filter_positions_by_settlement_radius(self, positions, radius)
+
+    def get_resource_search_radius(self, resource_type, agent=None):
+        return resource_search_radius(self, resource_type, agent)
+
+    def choose_resource_target(self, agent, resource_type, candidates):
+        return choose_resource_target(self, agent, resource_type, candidates)
+
     def update(self):
-        self.tick += 1
+        with profiler.time("world update"):
+            self.tick += 1
 
-        from src.config import TICKS_PER_DAY
-        if self.tick % TICKS_PER_DAY == 0:
-            self.advance_day()
+            from src.config import TICKS_PER_DAY
+            if self.tick % TICKS_PER_DAY == 0:
+                self.advance_day()
 
-        for agent in self.living_agents():
-            agent.update_needs()
-            agent.scan_surroundings(self)
-            progress_before = agent.progress_snapshot(self)
-            action = agent.choose_action(self)
-            action.execute(agent, self)
-            agent.die_if_needed(self)
-            if agent.alive:
-                agent.update_progress_tracking(self, progress_before)
+            for agent in self.living_agents():
+                agent.update_needs()
+                agent.scan_surroundings(self)
+                progress_before = agent.progress_snapshot(self)
+                action = agent.choose_action(self)
+                action.execute(agent, self)
+                agent.die_if_needed(self)
+                if agent.alive:
+                    agent.update_progress_tracking(self, progress_before)
 
-        self.update_settlement_population()
-        self.record_settlement_activity()
-        update_wildlife(self, random)
+            self.update_settlement_population()
+            self.update_resource_pressures()
+            self.record_settlement_activity()
+            update_wildlife(self, random)
 
     def advance_day(self):
         self.day += 1

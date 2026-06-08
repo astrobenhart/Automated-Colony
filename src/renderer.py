@@ -18,6 +18,7 @@ from src.environment_events import active_event_names, environmental_tile_color
 from src.resource_ecology import max_food, max_wood
 from src.seasons import seasonal_tile_color
 from src.agent import Agent
+from src.profiler import profiler
 from src.world import World
 
 
@@ -115,14 +116,15 @@ class PygameRenderer:
                 self.clear_selection()
 
     def draw(self, paused: bool, sim_speed: int):
-        self.validate_selection()
-        self.clamp_camera()
-        self.screen.fill((0, 0, 0))
+        with profiler.time("renderer update"):
+            self.validate_selection()
+            self.clamp_camera()
+            self.screen.fill((0, 0, 0))
 
-        self.draw_world()
-        self.draw_panel(paused, sim_speed)
+            self.draw_world()
+            self.draw_panel(paused, sim_speed)
 
-        pygame.display.flip()
+            pygame.display.flip()
 
     def draw_world(self):
         start_x, start_y, end_x, end_y = self.visible_tile_bounds()

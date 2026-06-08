@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from src.settlement import (
     FOOD,
+    WATER,
     WOOD,
     deposit_to_stockpile,
     is_adjacent_to_stockpile,
@@ -14,6 +15,7 @@ from src.settlement import (
     valid_build_tile_near_settlement,
     withdraw_from_stockpile,
 )
+from src.profiler import profiler
 from src.workshop import is_adjacent_to_workshop, workshop_access_tile, workshop_for
 
 if TYPE_CHECKING:
@@ -402,18 +404,21 @@ def _shared_memory(agent_memory: set[tuple[int, int]], colony_memory: set[tuple[
 
 
 def _known_food(agent: Agent, world: World) -> set[tuple[int, int]]:
-    _forget_invalid_food(agent, world)
-    return set(_shared_memory(agent.remembered_food, world.colony_memory.known_food))
+    with profiler.time("colony memory queries"):
+        _forget_invalid_food(agent, world)
+        return set(_shared_memory(agent.remembered_food, world.colony_memory.known_food))
 
 
 def _known_wood(agent: Agent, world: World) -> set[tuple[int, int]]:
-    _forget_invalid_wood(agent, world)
-    return set(_shared_memory(agent.remembered_wood, world.colony_memory.known_wood))
+    with profiler.time("colony memory queries"):
+        _forget_invalid_wood(agent, world)
+        return set(_shared_memory(agent.remembered_wood, world.colony_memory.known_wood))
 
 
 def _known_water(agent: Agent, world: World) -> set[tuple[int, int]]:
-    _forget_invalid_water(agent, world)
-    return set(_shared_memory(agent.remembered_water, world.colony_memory.known_water))
+    with profiler.time("colony memory queries"):
+        _forget_invalid_water(agent, world)
+        return set(_shared_memory(agent.remembered_water, world.colony_memory.known_water))
 
 
 def _has_food(world: World, pos: tuple[int, int]) -> bool:
@@ -521,7 +526,7 @@ class SeekWaterAction(Action):
         if agent.thirst <= 15:
             return False
         memory = _known_water(agent, world)
-        if not memory:
+        if world.choose_resource_target(agent, WATER, memory) is None:
             return False
         return not world.nearby_tile_kind(agent.x, agent.y, "water")
 
@@ -536,8 +541,17 @@ class SeekWaterAction(Action):
             agent.current_path = []
             agent.record_no_progress()
             return
-        target = _nearest(agent.x, agent.y, memory)
-        _step_along_path(agent, world, target)
+        target = world.choose_resource_target(agent, WATER, memory)
+        if target is None:
+            agent.current_target = None
+            agent.current_path = []
+            agent.record_no_progress()
+            return
+        if not _step_along_path(agent, world, target):
+            _forget_water_target(agent, world, target)
+            fallback = world.choose_resource_target(agent, WATER, _known_water(agent, world))
+            if fallback is not None:
+                _step_along_path(agent, world, fallback)
 
 
 class SeekFoodAction(Action):
@@ -548,7 +562,7 @@ class SeekFoodAction(Action):
         if agent.hunger <= 20:
             return False
         memory = _known_food(agent, world)
-        if not memory:
+        if world.choose_resource_target(agent, FOOD, memory) is None:
             return False
         return world.tile_at(agent.x, agent.y).food == 0
 
@@ -563,8 +577,17 @@ class SeekFoodAction(Action):
             agent.current_path = []
             agent.record_no_progress()
             return
-        target = _nearest(agent.x, agent.y, memory)
-        _step_along_path(agent, world, target)
+        target = world.choose_resource_target(agent, FOOD, memory)
+        if target is None:
+            agent.current_target = None
+            agent.current_path = []
+            agent.record_no_progress()
+            return
+        if not _step_along_path(agent, world, target):
+            _forget_food_target(agent, world, target)
+            fallback = world.choose_resource_target(agent, FOOD, _known_food(agent, world))
+            if fallback is not None:
+                _step_along_path(agent, world, fallback)
 
 
 class SeekWoodAction(Action):
@@ -575,7 +598,7 @@ class SeekWoodAction(Action):
         if not world.should_gather_wood_for_construction(agent):
             return False
         memory = _known_wood(agent, world)
-        if not memory:
+        if world.choose_resource_target(agent, WOOD, memory) is None:
             return False
         return world.tile_at(agent.x, agent.y).wood == 0
 
@@ -590,8 +613,17 @@ class SeekWoodAction(Action):
             agent.current_path = []
             agent.record_no_progress()
             return
-        target = _nearest(agent.x, agent.y, memory)
-        _step_along_path(agent, world, target)
+        target = world.choose_resource_target(agent, WOOD, memory)
+        if target is None:
+            agent.current_target = None
+            agent.current_path = []
+            agent.record_no_progress()
+            return
+        if not _step_along_path(agent, world, target):
+            _forget_wood_target(agent, world, target)
+            fallback = world.choose_resource_target(agent, WOOD, _known_wood(agent, world))
+            if fallback is not None:
+                _step_along_path(agent, world, fallback)
 
 
 class SeekShelterAction(Action):

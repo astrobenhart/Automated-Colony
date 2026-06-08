@@ -186,6 +186,28 @@ Design boundaries:
 
 Future systems can use workshops as destinations for hauling, production chains, building upgrades, and specialist roles once the simulation has enough resource flow to justify task claiming.
 
+## Local Resource Radius v1
+
+The settlement has a soft resource territory, not an invisible wall.
+
+Implemented behavior:
+- settlements track a local resource radius and expanded resource radius
+- food, wood, and water pressure are estimated as LOW, MEDIUM, or HIGH
+- agents prefer reachable local resources under low pressure
+- agents expand to the larger radius when local resources or storage are strained
+- urgent hunger and thirst can use any reachable known resource
+- scouts receive a weaker local penalty and can range farther
+- foragers and builders retain stronger preferences for local food and wood
+
+Design boundaries:
+- no player-controlled territory
+- no zoning
+- no roads
+- no hauling or task claiming
+- no hard boundary that can trap villagers into avoidable starvation or thirst
+
+The radius should make the village feel like it has a work territory while still allowing expansion when scarcity demands it.
+
 ## Settlement Arc
 
 The long-term simulation arc is:

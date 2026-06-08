@@ -28,6 +28,7 @@ from src.goals import (
     ExploreGoal,
     Goal,
 )
+from src.profiler import profiler
 from src.roles import GENERALIST, role_goal_bonus
 
 if TYPE_CHECKING:
@@ -112,40 +113,42 @@ class Agent:
                         world.colony_memory.forget_shelter(pos)
 
     def choose_goal(self, world: World) -> Goal:
-        goals = [
-            DrinkGoal(),
-            EatGoal(),
-            EatFromStorageGoal(),
-            SleepGoal(),
-            GatherFoodGoal(),
-            DepositFoodGoal(),
-            GatherWoodGoal(),
-            BuildShelterGoal(),
-            DepositWoodGoal(),
-            WorkshopGoal(),
-            ExploreGoal(),
-        ]
-        valid_goals = [goal for goal in goals if goal.can_do(self, world)]
-        urgent_survival_goals = [
-            goal
-            for goal in valid_goals
-            if (
-                (goal.name == "Drink" and self.thirst >= 50)
-                or (goal.name in ("Eat", "Eat from storage", "Gather food") and self.hunger >= 50)
-                or (goal.name == "Sleep" and self.fatigue >= 70)
-            )
-        ]
-        if urgent_survival_goals:
-            goal = max(urgent_survival_goals, key=lambda candidate: candidate.score(self, world))
-        elif self.needs_emergency_exploration(valid_goals, world):
-            goal = next(goal for goal in valid_goals if goal.name == "Explore")
-        else:
-            goal = max(valid_goals, key=lambda candidate: self.goal_score(candidate, world))
-        self.current_goal = goal.name
-        return goal
+        with profiler.time("goal selection"):
+            goals = [
+                DrinkGoal(),
+                EatGoal(),
+                EatFromStorageGoal(),
+                SleepGoal(),
+                GatherFoodGoal(),
+                DepositFoodGoal(),
+                GatherWoodGoal(),
+                BuildShelterGoal(),
+                DepositWoodGoal(),
+                WorkshopGoal(),
+                ExploreGoal(),
+            ]
+            valid_goals = [goal for goal in goals if goal.can_do(self, world)]
+            urgent_survival_goals = [
+                goal
+                for goal in valid_goals
+                if (
+                    (goal.name == "Drink" and self.thirst >= 50)
+                    or (goal.name in ("Eat", "Eat from storage", "Gather food") and self.hunger >= 50)
+                    or (goal.name == "Sleep" and self.fatigue >= 70)
+                )
+            ]
+            if urgent_survival_goals:
+                goal = max(urgent_survival_goals, key=lambda candidate: candidate.score(self, world))
+            elif self.needs_emergency_exploration(valid_goals, world):
+                goal = next(goal for goal in valid_goals if goal.name == "Explore")
+            else:
+                goal = max(valid_goals, key=lambda candidate: self.goal_score(candidate, world))
+            self.current_goal = goal.name
+            return goal
 
     def goal_score(self, goal: Goal, world: World) -> int:
-        return goal.score(self, world) + role_goal_bonus(self.role, goal.name)
+        with profiler.time("goal scoring"):
+            return goal.score(self, world) + role_goal_bonus(self.role, goal.name)
 
     def needs_emergency_exploration(self, valid_goals: list[Goal], world: World) -> bool:
         goal_names = {goal.name for goal in valid_goals}

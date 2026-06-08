@@ -23,6 +23,7 @@ from src.actions import (
     SeekWoodAction,
     SeekShelterAction,
 )
+from src.profiler import profiler
 
 if TYPE_CHECKING:
     from src.agent import Agent
@@ -41,12 +42,13 @@ class Goal:
         return bool(self.valid_actions(agent, world))
 
     def score(self, agent: Agent, world: World) -> int:
-        valid_actions = self.valid_actions(agent, world)
+        with profiler.time("goal scoring"):
+            valid_actions = self.valid_actions(agent, world)
 
-        if not valid_actions:
-            return 0
+            if not valid_actions:
+                return 0
 
-        return max(action.score(agent, world) for action in valid_actions)
+            return max(action.score(agent, world) for action in valid_actions)
 
     def choose_action(self, agent: Agent, world: World) -> Action:
         valid_actions = self.valid_actions(agent, world)
