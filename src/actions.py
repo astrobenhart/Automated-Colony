@@ -15,6 +15,8 @@ from src.settlement import (
     valid_build_tile_near_settlement,
     withdraw_from_stockpile,
 )
+from src.building_placement import find_build_site_near_settlement
+from src.building_priorities import SHELTER
 from src.profiler import profiler
 from src.workshop import is_adjacent_to_workshop, workshop_access_tile, workshop_for
 
@@ -228,15 +230,20 @@ class BuildShelterAction(Action):
         tile = world.tile_at(agent.x, agent.y)
         if tile.kind != "grass" or not world.should_build_shelter(agent):
             return False
+        if world.settlement is None:
+            return True
 
-        preferred_site = valid_build_tile_near_settlement(world, agent)
-        if preferred_site is not None and not is_near_settlement(world, agent.x, agent.y):
-            return False
+        preferred_site = find_build_site_near_settlement(world, SHELTER, agent)
+        if preferred_site is not None:
+            return (agent.x, agent.y) == preferred_site or is_near_settlement(world, agent.x, agent.y)
 
-        return True
+        return is_near_settlement(world, agent.x, agent.y)
 
     def score(self, agent: Agent, world: World) -> int:
         if world.should_build_shelter(agent):
+            preferred_site = find_build_site_near_settlement(world, SHELTER, agent)
+            if preferred_site is not None and (agent.x, agent.y) != preferred_site:
+                return 70
             return 80
         return 0
 
@@ -260,17 +267,17 @@ class SeekBuildSiteAction(Action):
     def can_do(self, agent: Agent, world: World) -> bool:
         if not world.should_build_shelter(agent):
             return False
-        target = valid_build_tile_near_settlement(world, agent)
+        target = find_build_site_near_settlement(world, SHELTER, agent)
         if target is None:
             return False
-        return not (world.tile_at(agent.x, agent.y).kind == "grass" and is_near_settlement(world, agent.x, agent.y))
+        return (agent.x, agent.y) != target
 
     def score(self, agent: Agent, world: World) -> int:
         return 78
 
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)
-        target = valid_build_tile_near_settlement(world, agent)
+        target = find_build_site_near_settlement(world, SHELTER, agent)
         if target is None:
             agent.record_no_progress()
             return

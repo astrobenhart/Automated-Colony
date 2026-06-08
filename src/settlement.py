@@ -388,6 +388,13 @@ def random_tile_near_settlement(world, rng=None, role: str | None = None) -> tup
 
 
 def valid_build_tile_near_settlement(world, agent=None) -> tuple[int, int] | None:
+    from src.building_placement import find_build_site_near_settlement
+    from src.building_priorities import SHELTER
+
+    site = find_build_site_near_settlement(world, SHELTER, agent)
+    if site is not None:
+        return site
+
     settlement = world.settlement
     if settlement is None:
         return None

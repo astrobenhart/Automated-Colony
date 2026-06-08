@@ -208,6 +208,26 @@ Design boundaries:
 
 The radius should make the village feel like it has a work territory while still allowing expansion when scarcity demands it.
 
+## Clustered Building Placement v1
+
+Clustered placement is an autonomous helper system, not player zoning.
+
+Implemented behavior:
+- `src/building_placement.py` answers where a nearby building should go
+- shelter construction prefers scored sites near the settlement hub
+- scoring uses distance to the hub, spacing from existing shelters, stockpile/workshop proximity, open neighbors, and cheap access-preservation checks
+- shelters prefer loose clusters instead of solid shelter blobs
+- if no ideal local site exists, builders can still fall back to broader bounded settlement-area placement or existing nearby build behavior
+
+Performance boundaries:
+- no pathfinding in build-site scoring
+- no flood fill
+- no full zoning or road planning
+- no player-directed placement
+- no hauling, reservations, task claiming, or multiple settlements
+
+Future building types can reuse the same helper, but full roads, districts, and stronger settlement planning should come later.
+
 ## Settlement Arc
 
 The long-term simulation arc is:

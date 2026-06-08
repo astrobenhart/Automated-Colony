@@ -120,6 +120,40 @@ Notes:
 
 ## Completed
 
+### TASK-42
+Title: Add Clustered Building Placement
+
+Owner: Architect Agent / Gameplay Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #31 by adding a small autonomous building placement system for settlement-aware shelter clustering.
+
+Expected Output:
+Reusable build-site helpers that answer where a nearby building should go, with shelter construction preferring loose clusters around the village hub.
+
+Acceptance Criteria:
+- Build-site helpers reject water, mountain, occupied, stockpile, workshop, and settlement-center tiles.
+- Shelter placement uses bounded settlement-area scoring.
+- Scoring prefers nearby village sites, reasonable shelter spacing, and open neighboring access.
+- Scoring penalizes overcrowded blobs and special-tile access blockage.
+- No pathfinding, flood fill, zoning, roads, player placement, hauling, or task claiming is added.
+- Builders fall back gracefully when no ideal local site exists.
+- Existing tests pass.
+
+Dependencies:
+- TASK-37
+- TASK-38
+- TASK-39
+- TASK-40
+- TASK-41
+
+Notes:
+- This is autonomous clustered placement v1. It keeps shelter placement believable without becoming a city planner.
+
+---
+
 ### TASK-41
 Title: Add Local Resource Use Radius
 
