@@ -173,27 +173,61 @@ Features:
 Notes:
 - Resource Reservation v1 remains the v0.5 coordination layer.
 - Full hauling/logistics should remain autonomous unless a later design explicitly introduces player-visible work orders.
-- Do not add this system until farming, richer production chains, or multiple resource destinations make it worthwhile.
+- Do not add this system until farming, richer production chains, roads, multiple settlements, or many resource destinations make it worthwhile.
 
-## v0.6 - Social Simulation
+## v0.6 - Villager Life and Social Foundations
 
-Goal: Add relationships and social structure so stable colonies begin to feel like villages.
+Goal: Make villagers feel more like individuals and settlement members without adding fragile population churn.
 
 Features:
-- [ ] Age and lifecycle states
-- [ ] Families
-- [ ] Friendships and rivalries
-- [ ] Leadership
-- [ ] Reputation
-- [ ] Group decisions
-- [ ] Pair bonds and family relationships without scripted romance
+- [ ] Lifecycle labels without old-age death
+- [ ] Simple traits
+- [ ] Mood / morale / condition labels
+- [ ] Basic social memory or familiarity
+- [ ] Leadership as soft influence
+- [ ] Death memory and mourning as flavor/history
 - [ ] Social behavior shaped by settlement membership
+- [ ] Optional pair/family labels only if they do not imply reproduction yet
 
 Notes:
-- Social systems should build on stable settlement centers rather than scripted story events.
-- Leadership, families, and reputation should affect how villagers organize locally before broader politics exist.
+- v0.5 created the stable settlement economy. v0.6 should make the people inside that settlement feel more individual without making the village fragile.
+- Do not add old-age death yet.
+- Do not add reproduction yet.
+- Do not add children yet.
+- Do not add inheritance yet.
+- Do not add full family trees yet.
+- Do not let social systems override survival needs.
+- Do not create guaranteed village extinction.
+- Lifecycle states in v0.6 should be story labels and behavior flavor.
+- Example lifecycle labels: Adult and Elder.
+- Elders may move slower, work less often, influence leadership/memory/history, or be more likely to appear in notable events.
+- Elders should not automatically die of old age until a renewal system exists.
+- Age in v0.6 is identity/story, not attrition.
 
-## v0.7 - Mysteries and Wanderers
+## v0.7 - Migration and Settlement Expansion
+
+Goal: Add population renewal and expansion pressure before deep family systems or old-age death.
+
+Features:
+- [ ] Migration pressure from crowding, carrying capacity, food pressure, or settlement status
+- [ ] Departure groups
+- [ ] Arrival/newcomer events if appropriate
+- [ ] Splinter settlement foundations
+- [ ] New settlement creation from population/resource pressure
+- [ ] Basic settlement identity and founding records
+- [ ] Migration history entries
+- [ ] Simple movement/departure behavior if practical
+- [ ] No complex diplomacy, economy, politics, or warfare
+
+Notes:
+- This builds on the v0.5 carrying-capacity model.
+- Food pressure can lead to farming; population pressure can lead to migration or a new settlement.
+- Migration should start simple: a small group decides to leave, they travel or abstractly depart, and a new settlement is founded or recorded.
+- Do not require full family trees or deep relationship simulation before migration.
+- Migration is the first renewal/expansion mechanism.
+- Old-age death, reproduction, children, inheritance, and full family trees remain deferred until renewal and settlement expansion are stable.
+
+## v0.8 - Mysteries and Wanderers
 
 Goal: Let the living world occasionally surprise the observer with rare visitors, strange events, and unexplained landmarks that create stories without becoming another management layer.
 
@@ -256,57 +290,31 @@ Future Architecture Notes:
 - Possible future modules: `visitors.py`, `mysteries.py`, `magical_events.py`.
 - Possible concepts: `Visitor`, `MysteryEvent`, `MagicalEffect`, rare spawn scheduler, bounded duration, history integration, villager reaction hooks, and renderer markers.
 - The wizard should be one possible visitor, not the entire system.
+- Mysteries work better after villagers have individuality and settlements have history hooks.
+- A wizard is more interesting when villagers can react, remember, gather, fear, admire, or be changed by the event.
 
-## v0.8 - History and Emergence
+## v0.9 - Multi-Settlement History and Ruins
 
-Goal: Make the world generate stories over time through named places, movement, lineage, and ruins.
+Goal: Turn multiple settlements, migrations, failures, and major events into world history.
 
 Features:
 - [ ] Named settlements
-- [ ] Migration between settlements
-- [ ] Splinter settlements when resources become scarce
-- [ ] Lineage and ancestry tracking
+- [ ] Migration paths
+- [ ] Splinter settlement history
+- [ ] Ruins of failed or abandoned settlements
+- [ ] Lineage/ancestry if social systems support it by then
 - [ ] Major historical events
 - [ ] Timeline view
-- [ ] Disasters
-- [ ] Ruins
-- [ ] Myths or legends
+- [ ] Myths or legends generated from real events
+- [ ] Historical links between settlements, ruins, migration, and notable villagers
 
 Notes:
-- Migration should start as a recovery/expansion mechanism before full reproduction and family history are deeply modeled.
-- Splinter settlements should emerge from resource pressure, population pressure, distance, or social conditions.
+- v0.5 already implemented settlement centers, village hubs, clustered building placement, local resource radius, stockpiles, workshops, farms, and carrying-capacity reporting.
+- Those systems are completed prerequisites, not future v0.9 features.
+- v0.9 should focus on long-term history and memory.
+- Migration, memory, ruins, and notable villagers should connect into persistent world stories.
 - Ruins and lineage should connect past settlements to current play rather than appear as isolated flavor.
-
-## v0.9 - Village Formation and Historical Settlements
-
-Goal: Evolve survival colonies into recognizable villages and, eventually, multiple historical settlements with distinct identities.
-
-Roadmap Issue:
-- Issue #14: Roadmap: Settlement and Village Formation Systems
-
-Settlement Formation Stages:
-- Phase 1: Settlement Center
-- Phase 2: Settlement Radius and Local Resource Use
-- Phase 3: Physical Stockpiles and Building Clusters
-- Phase 4: Expansion and Migration
-- Phase 5: Village Identity and History
-
-Features:
-- [ ] Settlement centers as explicit anchors for colony activity
-- [ ] Village hubs that attract shelter, storage, and production buildings
-- [ ] Clustered building placement around hubs
-- [ ] Local resource use radius for routine work
-- [ ] Expansion when nearby food, wood, or water access becomes strained
-- [ ] Migration to recover population or found new settlements
-- [ ] Splinter settlements that emerge from pressure rather than scripts
-- [ ] Settlement identity, names, founding dates, notable events, and remembered residents
-- [ ] Historical links between settlements, ruins, migration, and lineage
-
-Design Notes:
-- Current behavior: villagers cluster near shelters, explore locally, and often stabilize in a small area after early die-off.
-- Desired future behavior: those clusters become recognizable villages with centers, storage, building clusters, and local work patterns.
-- Long-term behavior: worlds can contain multiple settlements with separate identities, histories, migration paths, ruins, and lineages.
-- Settlement growth should remain emergent: resource pressure, population needs, shelter capacity, social ties, and geography should drive expansion.
+- Myths and legends should be generated from real events where possible.
 
 Non-Goals For Now:
 - Warfare

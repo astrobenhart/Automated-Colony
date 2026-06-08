@@ -71,9 +71,52 @@ UI should:
 
 ## Next Focus
 
-The next roadmap work should build from the completed v0.5 settlement foundation without adding player micromanagement.
+v0.5 is the stable settlement-economy foundation.
+
+The next roadmap work should build from the completed v0.5 village behavior without adding player micromanagement.
+
+The v0.6-v0.9 progression should make villages feel alive without making them fragile, noisy, or broken:
+- v0.6 should add individuality without adding population collapse.
+- v0.7 should add migration as the first renewal/expansion mechanism.
+- v0.8 should add rare Mysteries and Wanderers after villagers and settlements can react and remember.
+- v0.9 should synthesize settlement, migration, memory, ruins, and major events into long-term history.
 
 Future directions include deeper logistics, migration/new settlements, social simulation, roads, richer farming, and rare Mysteries and Wanderers. Do not begin the next milestone by adding politics, warfare, large-scale economy, or player work-order systems.
+
+## Stable Living Villages
+
+The simulation should prioritize continuity over novelty.
+
+A small number of meaningful long-term events is preferable to many frequent events.
+
+Systems should build on existing history whenever possible.
+
+Core stability principle:
+- Do not add a new death source before adding a renewal source.
+- Do not introduce old-age death before reproduction, migration, or new arrivals exist.
+- Age in v0.6 is identity/story, not attrition.
+- Villagers should feel more individual without causing guaranteed village extinction.
+- Social systems should add flavor, memory, and identity before they add churn.
+- Survival needs remain dominant over social behavior.
+
+v0.6 life and social foundations should focus on labels and lightweight flavor:
+- Adult and Elder can be lifecycle labels.
+- Elders may move slower, work less often, influence leadership/memory/history, or appear more often in notable events.
+- Elders should not automatically die of old age until a renewal system exists.
+- Traits, mood, morale, familiarity, leadership, mourning, and pair/family labels should remain lightweight.
+- Reproduction, children, inheritance, full family trees, and old-age death remain deferred.
+
+v0.7 migration should provide the first renewal and expansion path:
+- Food pressure can lead to farming.
+- Population pressure can lead to migration or a new settlement.
+- A small group may decide to leave, travel or abstractly depart, and found or record a new settlement.
+- Migration should not require deep family trees, diplomacy, politics, warfare, or a full economy first.
+
+Mysteries are more powerful once villagers and settlements can remember and react:
+- A wizard is more interesting when villagers can gather, fear, admire, remember, or be changed by the event.
+- Rare surprises should feel emergent, not player-triggered.
+- The user observes; the world unfolds; villagers act autonomously.
+- The player should not summon visitors or know every possible surprise.
 
 ## Roles
 

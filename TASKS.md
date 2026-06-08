@@ -8,6 +8,479 @@ No active task.
 
 ## Backlog
 
+### TASK-75
+Title: Historical Links Between Settlements
+
+Owner: Planner Agent / Docs Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan how settlements, ruins, migration paths, notable villagers, and major events should reference each other in long-term world history.
+
+Expected Output:
+A v0.9 design for historical links that connect current settlements to past migrations, abandoned places, and remembered people.
+
+Acceptance Criteria:
+- Historical links connect settlements, ruins, migrations, and notable villagers.
+- Links build on real simulation events whenever possible.
+- Links support storytelling without requiring politics, warfare, or a large economy.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-71
+- TASK-72
+- TASK-73
+- TASK-74
+
+Notes:
+- v0.9 should synthesize previous systems into history rather than reimplement v0.5 village formation features.
+
+---
+
+### TASK-74
+Title: Myths and Legends From Real Events
+
+Owner: Gameplay Vision Agent / Docs Agent
+
+Status: Backlog
+
+Description:
+Plan how the world can turn major events, migrations, mysteries, disasters, and notable villagers into myths or legends.
+
+Expected Output:
+A v0.9 design for generated legends that preserve continuity and mystery.
+
+Acceptance Criteria:
+- Legends are grounded in recorded world events where possible.
+- Legends remain sparse and meaningful rather than frequent random flavor.
+- The system does not become quests, objectives, or player-authored lore.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-55
+- TASK-71
+- TASK-73
+
+Notes:
+- A small number of meaningful long-term events is preferable to many frequent events.
+
+---
+
+### TASK-73
+Title: Migration History and Multi-Settlement Timeline
+
+Owner: Planner Agent / Architect Agent / Docs Agent
+
+Status: Backlog
+
+Description:
+Plan a long-term timeline that records settlement founding, migration paths, splinter settlements, failures, and major events.
+
+Expected Output:
+A v0.9 history design that makes multiple settlements and migrations readable over time.
+
+Acceptance Criteria:
+- Timeline entries cover founding, departures, arrivals, failures, ruins, and major events.
+- Migration paths and splinter settlements are represented without requiring diplomacy or politics.
+- The design builds on the existing world history model.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-62
+- TASK-63
+- TASK-64
+
+Notes:
+- v0.9 should focus on world memory and continuity.
+
+---
+
+### TASK-72
+Title: Ruins of Failed or Abandoned Settlements
+
+Owner: Planner Agent / Architect Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan how failed, abandoned, or migrated-from settlements can leave ruins that connect past settlement stories to the current world.
+
+Expected Output:
+A v0.9 design for ruins that emerge from settlement history instead of isolated flavor placement.
+
+Acceptance Criteria:
+- Ruins connect to real settlement failure, abandonment, migration, or mystery events where possible.
+- Ruins can be named or remembered through history.
+- Ruins do not require combat, warfare, diplomacy, or a full economy.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-63
+- TASK-73
+
+Notes:
+- Ruins should make the world feel older without becoming a management layer.
+
+---
+
+### TASK-71
+Title: Named Settlements and Founding Records
+
+Owner: Planner Agent / Docs Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan how multiple settlements should gain names, founding records, remembered founders, and identity hooks.
+
+Expected Output:
+A v0.7/v0.9 design for settlement identity that can support migration history and ruins.
+
+Acceptance Criteria:
+- Settlement records include names, founding day/season/year, and founding context.
+- Records support splinter settlements and future ruins.
+- The design builds on v0.5 settlement identity instead of replacing it.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-63
+
+Notes:
+- Settlement centers, hubs, stockpiles, clustered placement, and local resource radius are completed v0.5 prerequisites.
+
+---
+
+### TASK-70
+Title: Arrival and Newcomer Events
+
+Owner: Planner Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan simple newcomer or arrival events as a possible renewal mechanism once migration foundations exist.
+
+Expected Output:
+A scoped v0.7 design for arrivals that can replenish or change settlements without adding reproduction or a job board.
+
+Acceptance Criteria:
+- Arrivals are autonomous and settlement-aware.
+- Arrivals do not imply player recruitment controls.
+- Arrivals can interact with carrying capacity, food pressure, and settlement status.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-62
+
+Notes:
+- Arrival events are optional for v0.7, but renewal should exist before old-age death is considered.
+
+---
+
+### TASK-69
+Title: Simple Migration Movement and Departure Behavior
+
+Owner: Planner Agent / Architect Agent
+
+Status: Backlog
+
+Description:
+Plan how a departing group might travel, leave the map, or be abstractly resolved without requiring a full pathing/logistics overhaul.
+
+Expected Output:
+A scoped v0.7 behavior plan for migration departures that preserves performance and avoids fragile simulations.
+
+Acceptance Criteria:
+- Migration can be represented simply if full travel is too expensive or brittle.
+- Departure behavior does not require roads, hauling, or complex task scheduling.
+- Survival needs and pathfinding constraints remain respected.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-62
+- TASK-63
+
+Notes:
+- Keep migration practical before making it visually elaborate.
+
+---
+
+### TASK-68
+Title: Basic Settlement Identity for Splinters
+
+Owner: Planner Agent / Docs Agent
+
+Status: Backlog
+
+Description:
+Plan identity rules for new or splinter settlements, including names, founding context, and relationship to the source settlement.
+
+Expected Output:
+A v0.7 design for simple splinter settlement identity.
+
+Acceptance Criteria:
+- Splinter identity records origin settlement and founding cause.
+- Identity remains lightweight and autonomous.
+- No diplomacy, politics, economy, or multiple-settlement management UI is introduced.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-63
+- TASK-71
+
+Notes:
+- New settlements should emerge from pressure rather than scripts.
+
+---
+
+### TASK-67
+Title: Splinter Settlement Foundation
+
+Owner: Planner Agent / Architect Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan how a small departing group can found or record a new settlement due to population, food, carrying-capacity, or settlement pressure.
+
+Expected Output:
+A v0.7 design for the first simple splinter-settlement foundation model.
+
+Acceptance Criteria:
+- Splinter foundations are driven by settlement/resource pressure.
+- Foundation can be concrete or abstracted if necessary.
+- No full diplomacy, politics, economy, warfare, or player settlement placement is added.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-62
+- TASK-63
+
+Notes:
+- Migration is the first renewal/expansion mechanism.
+
+---
+
+### TASK-66
+Title: Departure Groups
+
+Owner: Planner Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan how small groups decide to leave a settlement under migration pressure.
+
+Expected Output:
+A v0.7 design for departure groups that can support renewal, expansion, and future multi-settlement history.
+
+Acceptance Criteria:
+- Departure groups are small and autonomous.
+- Departure decisions are shaped by settlement pressure, not player commands.
+- The design does not require deep family trees first.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-62
+
+Notes:
+- A departure may be simulated travel or an abstract historical event in early versions.
+
+---
+
+### TASK-65
+Title: Migration Pressure
+
+Owner: Planner Agent / Balance Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan migration pressure from crowding, carrying capacity, food pressure, settlement status, or local resource strain.
+
+Expected Output:
+A v0.7 design that extends the v0.5 carrying-capacity idea from reporting into expansion pressure.
+
+Acceptance Criteria:
+- Population pressure can lead to migration or settlement expansion.
+- Food pressure still leads primarily to farming before migration.
+- Pressure thresholds are conservative and avoid noisy churn.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-48
+
+Notes:
+- Food pressure -> farming. Population pressure -> migration / new settlement.
+
+---
+
+### TASK-64
+Title: Mourning and Death Memory Flavor
+
+Owner: Planner Agent / Docs Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan how villagers and settlements remember deaths through flavor, history, or brief social behavior without adding new death sources.
+
+Expected Output:
+A v0.6 design for death memory and mourning as story/history texture.
+
+Acceptance Criteria:
+- Mourning is bounded and does not override survival needs.
+- Death memory records existing deaths rather than creating new mortality systems.
+- No old-age death is introduced.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-58
+- TASK-60
+
+Notes:
+- Do not add a new death source before adding a renewal source.
+
+---
+
+### TASK-63
+Title: Soft Leadership Influence
+
+Owner: Planner Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan leadership as soft influence over memory, history, or group tendency rather than command authority.
+
+Expected Output:
+A v0.6 design for leadership labels or influence that preserves autonomous villagers.
+
+Acceptance Criteria:
+- Leadership does not become player assignment.
+- Leadership does not override survival needs.
+- Leadership can influence social memory, notable events, or settlement history.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-58
+- TASK-61
+
+Notes:
+- Leadership should make villages feel alive without creating a management layer.
+
+---
+
+### TASK-62
+Title: Basic Social Memory or Familiarity
+
+Owner: Planner Agent / Architect Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan lightweight social memory or familiarity so villagers can feel like settlement members who recognize one another.
+
+Expected Output:
+A v0.6 design for simple familiarity that can later support reactions, leadership, mourning, and migration.
+
+Acceptance Criteria:
+- Social memory remains lightweight and bounded.
+- Social behavior is shaped by settlement membership.
+- Survival needs remain dominant.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-58
+
+Notes:
+- This is social foundation work, not full relationships or family trees.
+
+---
+
+### TASK-61
+Title: Mood Morale and Condition Labels
+
+Owner: Planner Agent / Balance Agent / Docs Agent
+
+Status: Backlog
+
+Description:
+Plan mood, morale, or condition labels that communicate villager state without adding fragile psychological simulation.
+
+Expected Output:
+A v0.6 design for readable condition labels tied to existing survival and settlement context.
+
+Acceptance Criteria:
+- Labels are understandable in the UI or history.
+- Labels do not create new death spirals.
+- Social systems do not override survival needs.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-58
+
+Notes:
+- Labels should add identity and readability before adding heavy behavior.
+
+---
+
+### TASK-60
+Title: Simple Traits
+
+Owner: Planner Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan simple villager traits that add individuality without replacing roles or creating brittle optimization.
+
+Expected Output:
+A v0.6 design for a small set of traits that can influence flavor, history, or tiny behavior preferences.
+
+Acceptance Criteria:
+- Traits are lightweight and readable.
+- Traits do not become player-assigned jobs.
+- Traits do not override urgent survival behavior.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-58
+
+Notes:
+- Traits should help the player remember individuals.
+
+---
+
+### TASK-59
+Title: Lifecycle Labels Without Old-Age Death
+
+Owner: Planner Agent / Gameplay Vision Agent / Docs Agent
+
+Status: Backlog
+
+Description:
+Plan lifecycle labels such as Adult and Elder as story/identity flavor without old-age death.
+
+Expected Output:
+A v0.6 design for lifecycle labels that make villagers feel more individual without causing population attrition.
+
+Acceptance Criteria:
+- Lifecycle labels are identity/story labels, not automatic death timers.
+- Old-age death is explicitly deferred until renewal systems exist.
+- Reproduction, children, inheritance, and full family trees are deferred.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-56
+
+Notes:
+- Do not add a new death source before adding a renewal source.
+- Age in v0.6 is identity/story, not attrition.
+
+---
+
 ### TASK-55
 Title: History Integration for Mysteries
 
