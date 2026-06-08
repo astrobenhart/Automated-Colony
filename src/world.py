@@ -2,9 +2,11 @@ import random
 from dataclasses import dataclass, field
 
 from src.building_priorities import highest_priority, needed_shelters, update_settlement_needs
+from src.carrying_capacity import carrying_capacity_report
 from src.colony_memory import ColonyMemory
 from src.colony_storage import ColonyStorage
 from src.environment_events import update_environment_events
+from src.farming import maybe_create_farm, update_farms
 from src.seasons import (
     day_of_season,
     next_season_index,
@@ -214,6 +216,10 @@ class World:
     def update_settlement_needs(self, force: bool = False):
         update_settlement_needs(self, force)
 
+    def update_carrying_capacity(self):
+        if self.settlement is not None:
+            self.settlement.carrying_capacity_report = carrying_capacity_report(self)
+
     def record_settlement_activity(self):
         if self.settlement is None:
             return
@@ -262,6 +268,7 @@ class World:
             self.update_settlement_population()
             self.update_settlement_needs(force=True)
             self.update_resource_pressures()
+            self.update_carrying_capacity()
             self.record_settlement_activity()
             update_wildlife(self, random)
 
@@ -272,6 +279,10 @@ class World:
 
         update_environment_events(self, random)
         self.regrow_resources()
+        update_farms(self)
+        self.update_resource_pressures()
+        maybe_create_farm(self)
+        self.update_carrying_capacity()
         self.log(f"Day {self.day} begins.")
 
     def advance_season(self):
@@ -332,6 +343,22 @@ class World:
         if self.settlement is None:
             return False
         return any(workshop.active for workshop in self.settlement.workshops)
+
+    def farm_at(self, x, y):
+        if self.settlement is None:
+            return None
+        for farm in self.settlement.farm_plots:
+            if farm.active and (x, y) in farm.tiles:
+                return farm
+        return None
+
+    def farm_at_origin(self, x, y):
+        if self.settlement is None:
+            return None
+        for farm in self.settlement.farm_plots:
+            if farm.active and farm.origin == (x, y):
+                return farm
+        return None
 
     def nearby_tile_kind(self, x, y, kind):
         for dx, dy in [(0, 0), (0, 1), (1, 0), (0, -1), (-1, 0)]:
@@ -414,4 +441,6 @@ def create_world(
     world.establish_settlement()
     world.spawn_agents(agent_count if agent_count is not None else STARTING_AGENTS)
     world.update_settlement_needs(force=True)
+    world.update_resource_pressures()
+    world.update_carrying_capacity()
     return world

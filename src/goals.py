@@ -11,6 +11,7 @@ from src.actions import (
     EatAction,
     EatFromStorageAction,
     GatherFoodAction,
+    HarvestFarmAction,
     GatherWoodAction,
     BuildShelterAction,
     SeekBuildSiteAction,
@@ -20,6 +21,7 @@ from src.actions import (
     WanderAction,
     SeekWaterAction,
     SeekFoodAction,
+    SeekFarmAction,
     SeekWoodAction,
     SeekShelterAction,
 )
@@ -88,6 +90,8 @@ class GatherFoodGoal(Goal):
     name = "Gather food"
     action_types = (
         GatherFoodAction,
+        HarvestFarmAction,
+        SeekFarmAction,
         SeekFoodAction,
     )
 

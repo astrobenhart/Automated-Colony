@@ -27,6 +27,21 @@ BUILDING_MATERIAL_SHELTER_WOOD_DISCOUNT = 1
 DESIRED_BUILDING_MATERIALS = 4
 DESIRED_WOOD_RESERVE = 8
 SHELTER_CAPACITY_BUFFER = 1
+FARM_START_FOOD_DAYS = 1.5
+FARM_COMFORT_FOOD_DAYS = 3.0
+FARM_CREATION_MIN_DAY = 2
+FARM_PLACEMENT_RADIUS_MARGIN = 4
+FARM_GROWTH_THRESHOLD = 100
+FARM_FOOD_CAP = 6
+FARM_SEASON_GROWTH = {
+    "Spring": 42,
+    "Summer": 30,
+    "Autumn": 26,
+    "Winter": 4,
+}
+FARM_MAX_PLOTS_SMALL = 1
+FARM_MAX_PLOTS_MEDIUM = 2
+FARM_MAX_PLOTS_LARGE = 4
 NEED_SCORE_HIGH_THRESHOLD = 50
 NEED_SCORE_LOW_THRESHOLD = 15
 NEED_SCORE_SWITCH_MARGIN = 10
@@ -88,6 +103,8 @@ COLORS = {
     "stockpile_food": (240, 120, 100),
     "stockpile_wood": (170, 110, 55),
     "workshop": (200, 165, 95),
+    "farm_border": (120, 74, 34),
+    "farm_crop": (190, 175, 70),
     "agent": (245, 245, 245),
     "dead": (90, 90, 90),
     "grid": (20, 20, 20),
@@ -170,4 +187,5 @@ SYMBOL_LABELS = {
     "F": "Food Pile",
     "W": "Wood Pile",
     "T": "Workshop",
+    "#": "Farm Plot",
 }

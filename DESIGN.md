@@ -240,6 +240,59 @@ Full hauling and task claiming should build on this later, after the simulation 
 
 v0.5 uses Resource Reservation v1 as lightweight coordination. It prevents duplicate effort without adding a full job board or hauling system. Full hauling/logistics will be revisited once farming, production chains, or multiple resource destinations justify it.
 
+## Farming v1
+
+Farming is autonomous settlement support, not player placement or full agriculture.
+
+Implemented behavior:
+- settlements create 2x2 `FarmPlot` objects only when food pressure is high
+- food pressure becomes HIGH when effective food is at or below 1.5 days of population, MEDIUM at or below 3 days, and LOW above that
+- effective food counts stored food, ready farm food, and a bounded amount of local wild food so normal foraging can delay farms
+- the first farm can be created from the first daily farming check on day 2 or later, never directly during settlement founding
+- sustained high pressure creates at most one farm per day until the population-based cap is reached
+- each farm plot owns exactly four tiles and is tracked by the settlement
+- farm placement uses bounded local scoring near the settlement hub
+- placement avoids water, mountains, stockpiles, workshops, shelters, agents, existing farms, and the settlement center
+- placement scoring uses cheap terrain, distance, openness, water proximity, and special-tile proximity checks without pathfinding
+- farms grow once per day, with Spring/Summer/Autumn growth and much slower Winter growth
+- drought reduces farm growth and heavy rain improves it through the existing environmental event model
+- ready farms can be harvested through the existing food goal
+- Resource Reservation v1 can reserve a farm plot while a villager is moving to harvest it
+- critical hunger can still override farm reservations when no alternative exists
+- farm plots render as terrain-like interiors with a brown outline around the whole 2x2 plot
+
+Design boundaries:
+- no player farm placement
+- no farming setup UI
+- no crop selection, seeds, irrigation, or soil simulation
+- no roads or zoning
+- no full hauling or job board
+- no farms at settlement founding unless future balance rules explicitly create food pressure before the first daily check
+
+Farming should stabilize long-term survival without making wild foraging, winter storage, or environmental pressure irrelevant.
+
+## Settlement Carrying Capacity v1
+
+Carrying capacity is a readable settlement pressure report, not a hard population limit.
+
+Implemented behavior:
+- settlements keep a `CarryingCapacityReport`
+- the report shows living population, estimated capacity, status, one primary reason, and detailed reason lines
+- capacity is the lowest current support estimate across shelter, food, and water
+- shelter support comes from built shelter capacity
+- food support comes from stored food, local wild food, ready farm food, and active farm plots
+- water support comes from local known water access
+- the renderer shows population/capacity, status, and the why-lines under a compact Capacity section
+
+Design boundaries:
+- no population growth
+- no migration
+- no hard population cap enforcement
+- no player controls
+- no new job system or logistics layer
+
+The goal is to make settlement problems legible at a glance. If the panel says `Food Strained`, it should also explain the food/storage/farm context that caused that status.
+
 ## Local Resource Radius v1
 
 The settlement has a soft resource territory, not an invisible wall.

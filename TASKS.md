@@ -147,6 +147,80 @@ Notes:
 
 ## Completed
 
+### TASK-48
+Title: Add Settlement Carrying Capacity and Pressure Status
+
+Owner: Gameplay Agent / Renderer Agent / Balance Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #37 by adding an explanatory settlement carrying-capacity report.
+
+Expected Output:
+The settlement panel shows population, estimated support capacity, status, and clear reason lines explaining whether shelter, food, or water is limiting.
+
+Acceptance Criteria:
+- A reusable `CarryingCapacityReport` exists.
+- The report includes `reason` and `reason_lines`.
+- Capacity is estimated from shelter, food, and water support.
+- Food support accounts for stored food, local food, ready farm food, and active farm plots.
+- The lowest support category determines visible capacity.
+- Strained statuses explain the limiting category instead of only naming it.
+- The renderer shows compact capacity status and why-lines.
+- This does not add population growth, migration, hard caps, or player controls.
+- Existing tests pass.
+
+Dependencies:
+- TASK-37
+- TASK-39
+- TASK-41
+- TASK-47
+
+Notes:
+- This is a readability and balance-reporting system. Full population growth, migration, or enforced carrying-capacity mechanics remain future work.
+
+---
+
+### TASK-47
+Title: Add Farming v1
+
+Owner: Architect Agent / Gameplay Agent / Balance Agent / Renderer Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #36 by adding autonomous farms that emerge from settlement food pressure.
+
+Expected Output:
+The colony can create small 2x2 farm plots near the settlement, grow seasonal food over days, and harvest ready farm food without player placement or a full logistics system.
+
+Acceptance Criteria:
+- Farms are 2x2 `FarmPlot` objects that own exactly four valid tiles.
+- Farms are not created at founding; high food pressure can create one farm per daily check up to a population-based cap.
+- Farm placement is bounded near the settlement, deterministic, and avoids water, mountains, stockpiles, workshops, shelters, the settlement center, agents, and existing farms.
+- Farm placement and scoring do not use pathfinding.
+- Farm growth updates once per day and is affected by season, drought, and heavy rain.
+- Villagers can seek and harvest ready farms through the existing food goal.
+- Farm reservations reduce duplicate farm targeting while critical hunger can still override claims.
+- Farm plots render with terrain-like interiors and a brown outline around the whole 2x2 plot.
+- Existing tests pass.
+
+Dependencies:
+- TASK-37
+- TASK-39
+- TASK-40
+- TASK-41
+- TASK-42
+- TASK-44
+- TASK-45
+
+Notes:
+- This is Farming v1. It does not add player farm placement, crop selection, seeds, irrigation, roads, hauling chains, full agriculture, multiple settlements, migration, or social systems.
+- Activation thresholds are intentionally conservative: HIGH food pressure starts at roughly 1.5 effective food days per living population, MEDIUM at roughly 3 days. Farms can emerge during sustained shortage before population growth exists, but should not appear during healthy foraging starts.
+
+---
+
 ### TASK-45
 Title: Add Resource Reservation v1
 

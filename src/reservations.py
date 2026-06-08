@@ -7,6 +7,7 @@ WOOD = "wood"
 BUILD_SITE = "build_site"
 WORKSHOP = "workshop"
 STOCKPILE_ACCESS = "stockpile_access"
+FARM = "farm"
 
 DEFAULT_RESERVATION_TTL = 12
 
@@ -119,6 +120,9 @@ def _target_is_valid(world, reservation: Reservation) -> bool:
         return workshop is not None and workshop.active
     if reservation.reservation_type == STOCKPILE_ACCESS:
         return world.tile_at(x, y).walkable
+    if reservation.reservation_type == FARM:
+        farm = world.farm_at_origin(x, y)
+        return farm is not None and farm.active and farm.food > 0
     return True
 
 

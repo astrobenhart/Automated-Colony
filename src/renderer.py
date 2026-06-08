@@ -15,6 +15,7 @@ from src.config import (
     FPS,
 )
 from src.environment_events import active_event_names, environmental_tile_color
+from src.farming import farm_border_edges
 from src.resource_ecology import max_food, max_wood
 from src.seasons import seasonal_tile_color
 from src.agent import Agent
@@ -146,6 +147,12 @@ class PygameRenderer:
                 if DEBUG_DRAW_GRID:
                     pygame.draw.rect(self.screen, COLORS["grid"], rect, 1)
 
+                farm = self.world.farm_at(x, y)
+                if farm is not None:
+                    self.draw_farm_border(farm, screen_x, screen_y, x, y)
+                    if farm.food > 0:
+                        self.draw_centered_symbol("#", screen_x, screen_y, COLORS["farm_crop"])
+
                 if tile.food > 0:
                     self.draw_centered_symbol("f", screen_x, screen_y, self.resource_color("food", tile.food, max_food(tile)))
 
@@ -211,6 +218,24 @@ class PygameRenderer:
         )
         self.screen.blit(surface, rect)
 
+    def draw_farm_border(self, farm, screen_x: int, screen_y: int, tile_x: int, tile_y: int):
+        rect = pygame.Rect(
+            screen_x * TILE_SIZE,
+            screen_y * TILE_SIZE,
+            TILE_SIZE,
+            TILE_SIZE,
+        )
+        color = COLORS["farm_border"]
+        edges = farm_border_edges(farm, tile_x, tile_y)
+        if edges["north"]:
+            pygame.draw.line(self.screen, color, rect.topleft, rect.topright, 2)
+        if edges["south"]:
+            pygame.draw.line(self.screen, color, rect.bottomleft, rect.bottomright, 2)
+        if edges["west"]:
+            pygame.draw.line(self.screen, color, rect.topleft, rect.bottomleft, 2)
+        if edges["east"]:
+            pygame.draw.line(self.screen, color, rect.topright, rect.bottomright, 2)
+
     def draw_panel(self, paused: bool, sim_speed: int):
         panel_x = VIEWPORT_WIDTH * TILE_SIZE
         content_x = panel_x + self.panel_padding
@@ -260,7 +285,15 @@ class PygameRenderer:
                 ("Rad", settlement.radius),
                 ("Need", top_need),
                 ("Claims", len(self.world.reservations.reservations)),
+                ("Farms", len(settlement.farm_plots)),
+                ("Farm F", sum(farm.food for farm in settlement.farm_plots if farm.active)),
             ])
+            report = settlement.carrying_capacity_report
+            if report is not None:
+                colony_stats.extend([
+                    ("Cap", report.capacity),
+                    ("Status", report.status),
+                ])
         y = self.draw_two_column_section(
             "Simulation",
             simulation_stats,
@@ -282,6 +315,9 @@ class PygameRenderer:
             bottom_y,
             color=COLORS["muted"],
         )
+
+        y += self.panel_gap
+        y = self.draw_carrying_capacity_details(content_x, y, content_width, bottom_y)
 
         y += self.panel_gap
         y = self.draw_selection_details(content_x, y, content_width, bottom_y)
@@ -375,6 +411,14 @@ class PygameRenderer:
                     ("Progress", workshop.progress),
                     ("Produced", workshop.total_items_produced),
                 ])
+            farm = self.world.farm_at(tile_x, tile_y)
+            if farm is not None:
+                details.extend([
+                    ("Farm Plot", f"{farm.origin_x},{farm.origin_y}"),
+                    ("Growth", farm.growth),
+                    ("Farm Food", farm.food),
+                    ("Fertility", round(farm.fertility, 2)),
+                ])
             color = COLORS["text"]
 
         else:
@@ -384,6 +428,20 @@ class PygameRenderer:
         for label, value in details:
             y = self.draw_stat_row(label, value, x, y, width, bottom_y, color=color)
 
+        return y
+
+    def draw_carrying_capacity_details(self, x: int, y: int, width: int, bottom_y: int):
+        settlement = self.world.settlement
+        if settlement is None or settlement.carrying_capacity_report is None:
+            return y
+
+        report = settlement.carrying_capacity_report
+        y = self.draw_section_header("Capacity", x, y, width, bottom_y)
+        y = self.draw_stat_row("Pop", f"{report.population}/{report.capacity}", x, y, width, bottom_y)
+        y = self.draw_stat_row("Status", report.status, x, y, width, bottom_y)
+        y = self.draw_wrapped_text(report.reason, x, y, width, bottom_y, COLORS["warning"] if report.status != "Stable" else COLORS["muted"])
+        for line in report.reason_lines[1:4]:
+            y = self.draw_wrapped_text(line, x, y, width, bottom_y, COLORS["muted"])
         return y
 
     def draw_two_column_section(

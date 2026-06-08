@@ -17,8 +17,10 @@ from src.settlement import (
 )
 from src.building_placement import find_build_site_near_settlement
 from src.building_priorities import SHELTER, should_produce_building_materials
+from src.farming import HIGH, MEDIUM, choose_farm_target, harvest_farm, settlement_food_pressure
 from src.profiler import profiler
-from src.reservations import BUILD_SITE, FOOD as FOOD_RESERVATION, WOOD as WOOD_RESERVATION, WORKSHOP
+from src.reservations import BUILD_SITE, FARM, FOOD as FOOD_RESERVATION, WOOD as WOOD_RESERVATION, WORKSHOP
+from src.roles import BUILDER, FORAGER, GENERALIST, SCOUT
 from src.workshop import is_adjacent_to_workshop, workshop_access_tile, workshop_for
 
 if TYPE_CHECKING:
@@ -113,6 +115,46 @@ class GatherFoodAction(Action):
         agent.food += 1
         world.reservations.release(FOOD_RESERVATION, (agent.x, agent.y), agent)
         world.log(f"{agent.name} gathers food.")
+
+
+class HarvestFarmAction(Action):
+    name = "Harvesting farm"
+
+    def can_do(self, agent: Agent, world: World) -> bool:
+        farm = world.farm_at(agent.x, agent.y)
+        if farm is None or farm.food <= 0 or not _farm_work_allowed(agent, world):
+            return False
+        return (
+            agent.hunger >= 70
+            or not world.reservations.is_reserved(FARM, farm.origin, by_other_than=agent)
+        )
+
+    def score(self, agent: Agent, world: World) -> int:
+        score = 42 + agent.hunger
+        if agent.role == FORAGER:
+            score += 8
+        elif agent.role == BUILDER:
+            score -= 8
+        elif agent.role == SCOUT:
+            score -= 18
+        return score
+
+    def execute(self, agent: Agent, world: World):
+        super().execute(agent, world)
+        farm = world.farm_at(agent.x, agent.y)
+        if farm is None or farm.food <= 0:
+            agent.record_no_progress()
+            return
+
+        harvested = harvest_farm(world, farm, 1)
+        if harvested <= 0:
+            agent.record_no_progress()
+            return
+
+        agent.reset_stuck()
+        agent.food += harvested
+        world.reservations.release(FARM, farm.origin, agent)
+        world.log(f"{agent.name} harvests farm food.")
 
 
 class DepositFoodAction(Action):
@@ -419,6 +461,22 @@ def _can_use_workshop(agent: Agent) -> bool:
     return agent.hunger < 40 and agent.thirst < 40 and agent.fatigue < 50
 
 
+def _farm_work_allowed(agent: Agent, world: World) -> bool:
+    if agent.thirst >= 50 or agent.fatigue >= 80:
+        return False
+    if agent.hunger >= 35:
+        return True
+
+    pressure = settlement_food_pressure(world)
+    if pressure == HIGH and agent.role != SCOUT:
+        return True
+    if pressure == MEDIUM and agent.role in (FORAGER, GENERALIST):
+        return True
+    if agent.role == FORAGER and world.colony_storage.food <= max(1, len(world.living_agents())):
+        return True
+    return False
+
+
 # ---------------------------------------------------------------------------
 # Seek actions — pathfinding-powered movement toward remembered resources
 # ---------------------------------------------------------------------------
@@ -623,6 +681,41 @@ class SeekFoodAction(Action):
             fallback = world.choose_resource_target(agent, FOOD, _known_food(agent, world))
             if fallback is not None:
                 _step_along_path(agent, world, fallback)
+
+
+class SeekFarmAction(Action):
+    """Move toward a ready farm plot so the agent can harvest food."""
+    name = "Seeking farm"
+
+    def can_do(self, agent: Agent, world: World) -> bool:
+        if not _farm_work_allowed(agent, world):
+            return False
+        farm = choose_farm_target(world, agent)
+        if farm is None:
+            return False
+        return (agent.x, agent.y) not in farm.tiles
+
+    def score(self, agent: Agent, world: World) -> int:
+        return HarvestFarmAction().score(agent, world)
+
+    def execute(self, agent: Agent, world: World):
+        super().execute(agent, world)
+        farm = choose_farm_target(world, agent)
+        if farm is None:
+            agent.current_target = None
+            agent.current_path = []
+            agent.record_no_progress()
+            return
+        if not world.reservations.reserve(FARM, farm.origin, agent, world) and agent.hunger < 70:
+            agent.record_no_progress()
+            return
+
+        target = min(
+            farm.tiles,
+            key=lambda pos: (abs(pos[0] - agent.x) + abs(pos[1] - agent.y), pos[1], pos[0]),
+        )
+        if not _step_along_path(agent, world, target):
+            agent.record_no_progress()
 
 
 class SeekWoodAction(Action):

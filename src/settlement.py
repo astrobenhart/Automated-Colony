@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from math import sqrt
 
 from src.config import SETTLEMENT_EXPANDED_RESOURCE_RADIUS, SETTLEMENT_RADIUS, SETTLEMENT_RESOURCE_RADIUS, STOCKPILE_CAPACITY
+from src.farming import FarmPlot
 from src.profiler import profiler
 from src.reservations import FOOD as FOOD_RESERVATION, WOOD as WOOD_RESERVATION
 from src.roles import BUILDER, FORAGER, GENERALIST, SCOUT
@@ -53,11 +54,13 @@ class Settlement:
     resource_radius: int = SETTLEMENT_RESOURCE_RADIUS
     expanded_resource_radius: int = SETTLEMENT_EXPANDED_RESOURCE_RADIUS
     food_pressure: str = LOW
+    farm_food_pressure: str = LOW
     wood_pressure: str = LOW
     water_pressure: str = LOW
     population: int = 0
     stockpiles: list[Stockpile] = field(default_factory=list)
     workshops: list[Workshop] = field(default_factory=list)
+    farm_plots: list[FarmPlot] = field(default_factory=list)
     activity_heatmap: dict[tuple[int, int], int] = field(default_factory=dict)
     local_food: set[tuple[int, int]] = field(default_factory=set)
     local_wood: set[tuple[int, int]] = field(default_factory=set)
@@ -66,6 +69,7 @@ class Settlement:
     need_scores: dict[str, float] = field(default_factory=lambda: {need: 0.0 for need in SETTLEMENT_NEEDS})
     top_need: str | None = None
     need_updated_day: int | None = None
+    carrying_capacity_report: object | None = None
 
     def record_activity(self, x: int, y: int):
         pos = (x, y)
