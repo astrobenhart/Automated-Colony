@@ -17,10 +17,23 @@ from src.config import (
 from src.environment_events import active_event_names, environmental_tile_color
 from src.farming import farm_border_edges
 from src.resource_ecology import max_food, max_wood
+from src.roles import BUILDER, FORAGER, GENERALIST, SCOUT
 from src.seasons import seasonal_tile_color
 from src.agent import Agent
 from src.profiler import profiler
 from src.world import World
+
+
+ROLE_COLOR_KEYS = {
+    GENERALIST: "role_generalist",
+    FORAGER: "role_forager",
+    BUILDER: "role_builder",
+    SCOUT: "role_scout",
+}
+
+
+def color_for_role(role: str | None) -> tuple[int, int, int]:
+    return COLORS.get(ROLE_COLOR_KEYS.get(role, "agent"), COLORS["agent"])
 
 
 class PygameRenderer:
@@ -178,7 +191,7 @@ class PygameRenderer:
 
                 agent = self.world.agent_at(x, y)
                 if agent:
-                    self.draw_centered_symbol("@", screen_x, screen_y, COLORS["agent"])
+                    self.draw_centered_symbol("@", screen_x, screen_y, color_for_role(agent.role))
 
         self.draw_selection_highlight()
 

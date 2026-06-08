@@ -17,6 +17,8 @@ from src.config import (
     VIEWPORT_WIDTH,
 )
 from src.renderer import PygameRenderer
+from src.renderer import color_for_role
+from src.roles import BUILDER, FORAGER, GENERALIST, ROLES, SCOUT
 from src.seasons import seasonal_tile_color
 from src.settlement import Settlement
 from src.tile import Tile
@@ -276,6 +278,55 @@ def test_resource_symbol_color_reflects_abundance():
 
     assert low_food != high_food
     assert sum(high_food) > sum(low_food)
+
+
+def test_every_known_role_maps_to_a_color():
+    for role in ROLES:
+        color = color_for_role(role)
+
+        assert isinstance(color, tuple)
+        assert len(color) == 3
+        assert all(0 <= channel <= 255 for channel in color)
+
+
+def test_known_role_colors_are_distinct():
+    colors = [color_for_role(role) for role in ROLES]
+
+    assert len(set(colors)) == len(ROLES)
+
+
+def test_unknown_role_uses_safe_fallback_color():
+    assert color_for_role("Mystery Role") == COLORS["agent"]
+    assert color_for_role(None) == COLORS["agent"]
+
+
+def test_role_color_lookup_is_deterministic():
+    assert color_for_role(FORAGER) == color_for_role(FORAGER)
+
+
+def test_renderer_draws_agent_using_role_color(monkeypatch):
+    world = make_world(width=3, height=3)
+    agent = Agent("Bryn", 1, 1, role=BUILDER)
+    world.agents.append(agent)
+    renderer = make_renderer(world)
+    calls = []
+
+    def spy_draw_centered_symbol(symbol, x, y, color):
+        calls.append((symbol, x, y, color))
+
+    monkeypatch.setattr(renderer, "draw_centered_symbol", spy_draw_centered_symbol)
+
+    renderer.draw_world()
+
+    assert ("@", 1, 1, color_for_role(BUILDER)) in calls
+
+
+def test_role_colors_are_bright_for_screensaver_readability():
+    for role in (GENERALIST, FORAGER, BUILDER, SCOUT):
+        color = color_for_role(role)
+
+        assert max(color) >= 175
+        assert sum(color) >= 330
 
 
 def test_history_summary_draws_without_crashing():
