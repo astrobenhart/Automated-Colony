@@ -101,7 +101,10 @@ The settlement center is a conceptual village anchor, not a full building system
 
 Implemented behavior:
 - each world has one settlement
-- the settlement is automatically placed near the initial villager spawn centroid
+- the settlement is automatically founded before villagers spawn
+- the founding tile is selected near the map center using bounded suitability scoring
+- the exact center is not forced; nearby valid terrain is chosen when the center is blocked or poor
+- villagers spawn afterward in a small deterministic cluster around the settlement center
 - the center is placed on walkable terrain
 - the settlement has a deterministic short name connected to the generated world identity
 - it tracks founding day, founding season, living population, and radius
@@ -109,6 +112,7 @@ Implemented behavior:
 
 Non-goals for v1:
 - no player placement
+- no setup screen
 - no physical stockpile tile
 - no hauling jobs
 - no task claiming

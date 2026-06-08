@@ -16,12 +16,15 @@ from src.settlement import (
     WOOD,
     Settlement,
     Stockpile,
+    central_founding_site,
     distance_to_settlement,
     exploration_radius_for_role,
+    is_valid_settlement_site,
     is_adjacent_to_stockpile,
     is_near_settlement,
     nearest_walkable_tile,
     random_tile_near_settlement,
+    settlement_site_score,
     stockpile_access_tile,
     valid_build_tile_near_settlement,
 )
@@ -61,15 +64,42 @@ def test_settlement_center_is_deterministic_for_fixed_seed():
     assert first.settlement.name == second.settlement.name
 
 
-def test_settlement_center_is_near_initial_villager_centroid():
+def test_settlement_center_is_near_map_center():
     world = create_world(seed=28)
     settlement = world.settlement
-    center_x = round(sum(agent.x for agent in world.agents) / len(world.agents))
-    center_y = round(sum(agent.y for agent in world.agents) / len(world.agents))
+    center_x = world.width // 2
+    center_y = world.height // 2
 
-    distance = abs(settlement.x - center_x) + abs(settlement.y - center_y)
+    distance = max(abs(settlement.x - center_x), abs(settlement.y - center_y))
 
-    assert distance <= SETTLEMENT_RADIUS
+    assert distance <= SETTLEMENT_RADIUS * 2
+
+
+def test_central_founding_site_uses_nearby_valid_tile_when_center_is_blocked():
+    world = make_world(width=9, height=9)
+    world.tile_at(4, 4).kind = "water"
+    world.tile_at(4, 3).kind = "mountain"
+
+    x, y = central_founding_site(world)
+
+    assert (x, y) != (4, 4)
+    assert is_valid_settlement_site(world, x, y)
+    assert max(abs(x - 4), abs(y - 4)) <= 1
+
+
+def test_settlement_site_score_prefers_open_resource_rich_center():
+    world = make_world(width=11, height=11)
+    world.tile_at(5, 6).kind = "water"
+    world.tile_at(6, 5).kind = "forest"
+    world.tile_at(6, 5).wood = 2
+    world.tile_at(5, 4).food = 1
+    for x, y in [(0, 0), (0, 1), (1, 0)]:
+        world.tile_at(x, y).kind = "mountain"
+
+    center_score = settlement_site_score(world, 5, 5)
+    corner_score = settlement_site_score(world, 1, 1)
+
+    assert center_score < corner_score
 
 
 def test_settlement_population_reflects_living_agents():

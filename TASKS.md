@@ -120,6 +120,42 @@ Notes:
 
 ## Completed
 
+### TASK-43
+Title: Start Villagers Near Central Settlement
+
+Owner: Architect Agent / Gameplay Agent / Worldgen Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #33 by changing startup so the world is generated first, a suitable central settlement is founded, and villagers spawn close to that settlement on valid tiles.
+
+Expected Output:
+A founded-village startup where villagers begin as a nearby group rather than scattered survivors.
+
+Acceptance Criteria:
+- Settlement founding starts near the map center but does not force the exact center.
+- Founding site selection uses bounded cheap suitability scoring.
+- Villagers spawn near the settlement center on valid tiles.
+- Villagers never spawn on water, mountains, non-walkable terrain, occupied tiles, stockpiles, workshops, or the settlement center.
+- Spawn positions are deterministic for fixed seed/settings.
+- Settlement population matches living villagers after spawn.
+- Stockpiles, workshop, clustered building placement, local resource radius, roles, and no-progress recovery remain stable.
+- Existing tests pass.
+
+Dependencies:
+- TASK-37
+- TASK-38
+- TASK-39
+- TASK-40
+- TASK-41
+- TASK-42
+
+Notes:
+- This is startup polish and reliability only. No player placement, setup screen, migration, multiple settlements, roads, hauling, task claiming, or worldgen rewrite was added.
+
+---
+
 ### TASK-42
 Title: Add Clustered Building Placement
 

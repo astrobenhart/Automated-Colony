@@ -120,6 +120,7 @@ Goal: Give the colony more structure and long-term survival tools, turning shelt
 Features:
 - [x] Lightweight villager roles as preference modifiers
 - [x] Settlement center
+- [x] Central founding start with clustered villager spawn
 - [x] Village hub behavior around the settlement center
 - [x] Physical storage or stockpile locations
 - [x] Simple workshop near the village hub
@@ -135,6 +136,7 @@ Notes:
 - Current playtests show believable shelter clustering after early survival pressure.
 - Roles v1 is implemented in `src/roles.py` with Generalist, Forager, Builder, and Scout. Roles are soft goal-score preferences, not job assignments; urgent survival needs still dominate.
 - Settlement Center v1 is implemented in `src/settlement.py` as a single conceptual village anchor. It is automatically named and placed near the initial villager centroid, tracks living population and radius, and is visible in the right panel and map marker.
+- Central Founding Start v1 establishes the settlement before villagers spawn. The founding tile is chosen by bounded suitability scoring near the map center, and villagers spawn in a deterministic nearby cluster on valid tiles. The exact center is not forced, and no player placement UI is introduced.
 - Village Hub Behavior v1 lets the settlement center bias calm exploration and shelter build-site choice without adding a mandatory return-home goal. Scouts can range farther, builders and foragers remain more local, and settlement activity is tracked in a lightweight heatmap for future roads, stockpiles, workshops, and districts.
 - Physical Stockpiles v1 adds visible food and wood stockpiles near the settlement. Depositing villagers return resources to adjacent stockpile access tiles, while `ColonyStorage` remains the storage source of truth.
 - Workshop v1 adds one basic workshop near the settlement hub. Calm Builders can work there to convert stored wood into building materials, and those materials reduce shelter wood cost when available.

@@ -75,8 +75,7 @@ class Settlement:
 
 
 def found_settlement(world) -> Settlement:
-    center_x, center_y = _agent_centroid(world.agents)
-    x, y = nearest_walkable_tile(world, center_x, center_y)
+    x, y = central_founding_site(world)
     settlement = Settlement(
         name=settlement_name(world),
         x=x,
@@ -88,6 +87,84 @@ def found_settlement(world) -> Settlement:
     settlement.stockpiles = create_stockpiles(world, settlement)
     settlement.workshops = create_workshops(world, settlement)
     return settlement
+
+
+def central_founding_site(world) -> tuple[int, int]:
+    center_x = world.width // 2
+    center_y = world.height // 2
+    search_radius = min(max(world.width, world.height), max(8, SETTLEMENT_RADIUS * 2))
+
+    candidates = []
+    for y in range(max(0, center_y - search_radius), min(world.height, center_y + search_radius + 1)):
+        for x in range(max(0, center_x - search_radius), min(world.width, center_x + search_radius + 1)):
+            center_distance = max(abs(x - center_x), abs(y - center_y))
+            if center_distance > search_radius:
+                continue
+            if not is_valid_settlement_site(world, x, y):
+                continue
+            candidates.append((settlement_site_score(world, x, y, center_x, center_y), center_distance, y, x))
+
+    if candidates:
+        _, _, y, x = min(candidates)
+        return x, y
+
+    return nearest_walkable_tile(world, center_x, center_y)
+
+
+def is_valid_settlement_site(world, x: int, y: int) -> bool:
+    if not (0 <= x < world.width and 0 <= y < world.height):
+        return False
+    tile = world.tile_at(x, y)
+    if not tile.walkable:
+        return False
+    if tile.kind in ("water", "mountain"):
+        return False
+    if world.agent_at(x, y) is not None:
+        return False
+    return True
+
+
+def settlement_site_score(world, x: int, y: int, center_x: int | None = None, center_y: int | None = None) -> int:
+    if center_x is None:
+        center_x = world.width // 2
+    if center_y is None:
+        center_y = world.height // 2
+
+    tile = world.tile_at(x, y)
+    score = max(abs(x - center_x), abs(y - center_y)) * 8
+    score += abs(x - center_x) + abs(y - center_y)
+
+    terrain_bonus = {
+        "grass": -10,
+        "plain": -8,
+        "forest": -6,
+        "wetland": -3,
+        "hill": 3,
+        "dry": 6,
+    }
+    score += terrain_bonus.get(tile.kind, 12)
+
+    open_neighbors = _walkable_count_in_radius(world, x, y, 2)
+    score += max(0, 10 - open_neighbors) * 5
+    score -= min(open_neighbors, 14)
+
+    nearby_water = _nearby_tile_matches(world, x, y, 6, lambda nearby: nearby.kind == WATER)
+    nearby_food = _nearby_tile_matches(world, x, y, 6, lambda nearby: nearby.food > 0)
+    nearby_wood = _nearby_tile_matches(world, x, y, 6, lambda nearby: nearby.wood > 0)
+    if nearby_water:
+        score -= 12
+    else:
+        score += 25
+    if nearby_food:
+        score -= 8
+    else:
+        score += 12
+    if nearby_wood:
+        score -= 8
+    else:
+        score += 12
+
+    return score
 
 
 def create_stockpiles(world, settlement: Settlement) -> list[Stockpile]:
@@ -145,6 +222,27 @@ def nearest_walkable_tile(world, center_x: int, center_y: int) -> tuple[int, int
             return min(candidates, key=lambda pos: (abs(pos[0] - center_x) + abs(pos[1] - center_y), pos[1], pos[0]))
 
     return start_x, start_y
+
+
+def _walkable_count_in_radius(world, center_x: int, center_y: int, radius: int) -> int:
+    count = 0
+    for y in range(max(0, center_y - radius), min(world.height, center_y + radius + 1)):
+        for x in range(max(0, center_x - radius), min(world.width, center_x + radius + 1)):
+            if max(abs(x - center_x), abs(y - center_y)) > radius:
+                continue
+            if world.tile_at(x, y).walkable:
+                count += 1
+    return count
+
+
+def _nearby_tile_matches(world, center_x: int, center_y: int, radius: int, predicate) -> bool:
+    for y in range(max(0, center_y - radius), min(world.height, center_y + radius + 1)):
+        for x in range(max(0, center_x - radius), min(world.width, center_x + radius + 1)):
+            if max(abs(x - center_x), abs(y - center_y)) > radius:
+                continue
+            if predicate(world.tile_at(x, y)):
+                return True
+    return False
 
 
 def distance_to_settlement(world, x: int, y: int) -> int | None:

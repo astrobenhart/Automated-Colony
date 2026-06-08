@@ -113,27 +113,97 @@ class World:
         self.identity = generate_world_identity(self)
 
     def spawn_agents(self, amount):
+        if self.settlement is None:
+            self.establish_settlement()
+
         names = [
             "Ari", "Bryn", "Cato", "Dara", "Eli",
             "Fenn", "Gala", "Hale", "Ira", "Juno",
         ]
 
-        rng = random.Random(self.seed) if self.seed is not None else random
+        positions = self.initial_spawn_positions(amount)
+        for i, (x, y) in enumerate(positions):
+            self.agents.append(Agent(names[i % len(names)], x, y, role=role_for_index(i)))
 
-        for i in range(amount):
-            while True:
-                x = rng.randint(0, self.width - 1)
-                y = rng.randint(0, self.height - 1)
-
-                if self.can_move_to(x, y):
-                    self.agents.append(Agent(names[i % len(names)], x, y, role=role_for_index(i)))
-                    break
-
-        self.establish_settlement()
+        self.update_settlement_population()
         self.log(f"{amount} villagers enter the world.")
 
     def establish_settlement(self):
         self.settlement = found_settlement(self)
+
+    def initial_spawn_positions(self, amount):
+        from src.config import INITIAL_SPAWN_MAX_RADIUS, INITIAL_SPAWN_RADIUS
+
+        if amount <= 0:
+            return []
+        if self.settlement is None:
+            return self._fallback_spawn_positions(amount)
+
+        positions = []
+        reserved = set()
+        for radius in range(INITIAL_SPAWN_RADIUS, INITIAL_SPAWN_MAX_RADIUS + 1):
+            for pos in self._spawn_candidates_in_radius(radius, reserved):
+                positions.append(pos)
+                reserved.add(pos)
+                if len(positions) == amount:
+                    return positions
+
+        for pos in self._spawn_candidates_in_radius(max(self.width, self.height), reserved):
+            positions.append(pos)
+            reserved.add(pos)
+            if len(positions) == amount:
+                return positions
+
+        return positions
+
+    def _spawn_candidates_in_radius(self, radius, reserved):
+        settlement = self.settlement
+        if settlement is None:
+            return []
+
+        candidates = []
+        for y in range(max(0, settlement.y - radius), min(self.height, settlement.y + radius + 1)):
+            for x in range(max(0, settlement.x - radius), min(self.width, settlement.x + radius + 1)):
+                distance = max(abs(x - settlement.x), abs(y - settlement.y))
+                if distance > radius:
+                    continue
+                if not self.is_valid_spawn_tile(x, y, reserved):
+                    continue
+                candidates.append((distance, abs(x - settlement.x) + abs(y - settlement.y), y, x))
+
+        return [(x, y) for _, _, y, x in sorted(candidates)]
+
+    def _fallback_spawn_positions(self, amount):
+        positions = []
+        reserved = set()
+        for y in range(self.height):
+            for x in range(self.width):
+                if not self.is_valid_spawn_tile(x, y, reserved):
+                    continue
+                positions.append((x, y))
+                reserved.add((x, y))
+                if len(positions) == amount:
+                    return positions
+        return positions
+
+    def is_valid_spawn_tile(self, x, y, reserved=None):
+        reserved = reserved or set()
+        if (x, y) in reserved:
+            return False
+        if not (0 <= x < self.width and 0 <= y < self.height):
+            return False
+        tile = self.tile_at(x, y)
+        if not tile.walkable or tile.kind in ("water", "mountain"):
+            return False
+        if self.agent_at(x, y) is not None:
+            return False
+        if self.settlement is not None and (x, y) == (self.settlement.x, self.settlement.y):
+            return False
+        if self.stockpile_at(x, y) is not None:
+            return False
+        if self.workshop_at(x, y) is not None:
+            return False
+        return True
 
     def update_settlement_population(self):
         if self.settlement is not None:
@@ -327,5 +397,6 @@ def create_world(
         settings=effective_settings,
     )
     world.generate()
+    world.establish_settlement()
     world.spawn_agents(agent_count if agent_count is not None else STARTING_AGENTS)
     return world
