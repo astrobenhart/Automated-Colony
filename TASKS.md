@@ -674,7 +674,8 @@ Dependencies:
 - TASK-45
 
 Notes:
-- This is future logistics work, not active v0.5 scope.
+- This is future logistics work, not active v0.6 scope.
+- Resource Reservation v1 remains the current coordination layer until richer production chains, roads, multiple settlements, or many resource destinations justify deeper logistics.
 
 ---
 

@@ -83,6 +83,8 @@ The v0.6-v0.9 progression should make villages feel alive without making them fr
 
 Future directions include deeper logistics, migration/new settlements, social simulation, roads, richer farming, and rare Mysteries and Wanderers. Do not begin the next milestone by adding politics, warfare, large-scale economy, or player work-order systems.
 
+Resource Reservation v1 is the current coordination layer. Full hauling and job assignment remain future logistics work and should not be tied to v0.6. Logistics should be introduced only when there are enough production chains and destinations to justify the added complexity.
+
 ## Stable Living Villages
 
 The simulation should prioritize continuity over novelty.

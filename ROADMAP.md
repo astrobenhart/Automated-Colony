@@ -158,22 +158,25 @@ Notes:
 - Physical stockpiles and building clusters are prerequisites for richer settlement identity and expansion.
 - Full hauling, withdrawal logistics, job assignment, multiple settlements, migration, expansion, and deeper settlement-driven logistics remain future work.
 
-## Future Logistics / v0.6+
+## Future Systems / Backlog
 
-Goal: Add deeper resource logistics only after the village has enough production chains and destinations to justify the complexity.
+### Deeper Logistics
+
+Goal: Add full logistics only when the simulation has enough production chains and destinations to justify the complexity.
 
 Features:
 - [ ] Full hauling and job assignment system
-- [ ] Hauling chains between resource sources, stockpiles, workshops, farms, and future buildings
+- [ ] Hauling chains between resource sources, stockpiles, workshops, farms, roads, and future buildings
 - [ ] Item stacks or explicit carried-resource destinations
 - [ ] Job queues or autonomous job board
 - [ ] Inventory and resource reservations beyond simple target claims
 - [ ] Multi-step production logistics
 
 Notes:
-- Resource Reservation v1 remains the v0.5 coordination layer.
+- Resource Reservation v1 remains the current coordination layer.
 - Full hauling/logistics should remain autonomous unless a later design explicitly introduces player-visible work orders.
-- Do not add this system until farming, richer production chains, roads, multiple settlements, or many resource destinations make it worthwhile.
+- Do not add this system during v0.6.
+- Reconsider deeper logistics only after farming, roads, multiple settlements, or richer production chains make it worthwhile.
 
 ## v0.6 - Villager Life and Social Foundations
 
