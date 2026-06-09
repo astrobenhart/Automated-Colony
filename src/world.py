@@ -17,6 +17,7 @@ from src.seasons import (
 from src.resource_ecology import apply_resource_ecology
 from src.lifecycle import lifecycle_stage_for_index
 from src.roles import role_for_index
+from src.social_memory import update_social_memory
 from src.traits import trait_for_index
 from src.settlement import (
     Settlement,
@@ -136,6 +137,7 @@ class World:
                 role=role_for_index(i),
                 lifecycle_stage=lifecycle_stage_for_index(i),
                 trait=trait_for_index(i),
+                agent_id=f"villager-{i}",
             ))
 
         self.update_settlement_population()
@@ -292,6 +294,7 @@ class World:
         self.update_resource_pressures()
         maybe_create_farm(self)
         self.update_carrying_capacity()
+        update_social_memory(self)
         self.log(f"Day {self.day} begins.")
 
     def advance_season(self):

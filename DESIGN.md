@@ -120,6 +120,34 @@ Trait phases:
 
 Simple Traits v1 implements Phase 1 only. Each villager receives one static display-only trait at creation. Traits appear in selected-villager details and do not affect movement, pathfinding, exploration, gathering, building, workshop use, farming, survival needs, recovery, roles, goals, settlement needs, reservations, or carrying capacity.
 
+## State Labels
+
+State = what the villager is doing or experiencing now.
+
+Mood = how the villager feels.
+
+Only State exists currently. Mood, morale, emotional memory, mood meters, relationship-driven feelings, and emotional systems remain future work.
+
+State Labels v1 are computed from existing villager data such as hunger, thirst, fatigue, current action, current goal, recovery, rest, work, and exploration. State is shown in selected-villager details alongside Role, Life, and Trait.
+
+State labels are descriptive only. They do not affect goal selection, pathfinding, gathering, building, farming, workshops, exploration, role behavior, survival behavior, reservations, carrying capacity, traits, or lifecycle labels.
+
+## Social Memory and Familiarity
+
+Social memory records repeated shared presence.
+
+Familiarity is not friendship.
+
+Social systems should be observational before behavioral.
+
+Social Memory v1 tracks villagers who spend repeated days near one another. Familiarity grows slowly through neutral labels: Stranger, Seen, Acquainted, and Familiar.
+
+The selected-villager UI may show a compact familiarity summary such as `Knows: Bryn (Familiar)`.
+
+Stored social-memory data can support future systems such as leadership, mourning, migration, history, mysteries, and relationships, but it has no gameplay effect yet.
+
+Social memory does not affect goals, pathfinding, gathering, building, farming, workshops, exploration, survival, reservations, carrying capacity, state labels, role behavior, traits, or lifecycle labels.
+
 ## Resource Knowledge Rendering
 
 The world is visible. Resource abundance is discovered.

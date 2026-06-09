@@ -372,60 +372,6 @@ Notes:
 
 ---
 
-### TASK-62
-Title: Basic Social Memory or Familiarity
-
-Owner: Planner Agent / Architect Agent / Gameplay Vision Agent
-
-Status: Backlog
-
-Description:
-Plan lightweight social memory or familiarity so villagers can feel like settlement members who recognize one another.
-
-Expected Output:
-A v0.6 design for simple familiarity that can later support reactions, leadership, mourning, and migration.
-
-Acceptance Criteria:
-- Social memory remains lightweight and bounded.
-- Social behavior is shaped by settlement membership.
-- Survival needs remain dominant.
-- No gameplay code is changed by this planning task.
-
-Dependencies:
-- TASK-58
-
-Notes:
-- This is social foundation work, not full relationships or family trees.
-
----
-
-### TASK-61
-Title: Mood Morale and Condition Labels
-
-Owner: Planner Agent / Balance Agent / Docs Agent
-
-Status: Backlog
-
-Description:
-Plan mood, morale, or condition labels that communicate villager state without adding fragile psychological simulation.
-
-Expected Output:
-A v0.6 design for readable condition labels tied to existing survival and settlement context.
-
-Acceptance Criteria:
-- Labels are understandable in the UI or history.
-- Labels do not create new death spirals.
-- Social systems do not override survival needs.
-- No gameplay code is changed by this planning task.
-
-Dependencies:
-- TASK-58
-
-Notes:
-- Labels should add identity and readability before adding heavy behavior.
-
----
-
 ### TASK-55
 Title: History Integration for Mysteries
 
@@ -735,6 +681,78 @@ Notes:
 ---
 
 ## Completed
+
+### TASK-62
+Title: Basic Social Memory or Familiarity
+
+Owner: Gameplay Agent / Architect Agent / UI Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #50 by adding lightweight social memory based on repeated nearby presence.
+
+Expected Output:
+Villagers track neutral familiarity with nearby villagers over time, selected-villager details show a compact `Knows` summary, and familiarity remains observational only.
+
+Acceptance Criteria:
+- Familiarity starts empty.
+- Nearby living villagers gain familiarity once per day.
+- Far or dead villagers do not gain familiarity.
+- Familiarity grows through Stranger, Seen, Acquainted, and Familiar thresholds.
+- Familiarity score and last-seen day are stored.
+- Selected-villager details include a compact familiarity summary.
+- Social memory has no gameplay, survival, trait, lifecycle, state, role, or goal effects.
+- Existing tests pass.
+
+Dependencies:
+- TASK-58
+- TASK-59
+- TASK-60
+- TASK-61
+
+Notes:
+- Familiarity is not friendship, rivalry, romance, family, or mood.
+- Social systems should be observational before behavioral.
+
+---
+
+### TASK-61
+Title: State Labels for Current Villager Condition
+
+Owner: Gameplay Agent / UI Agent / Architect Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #49 by adding computed State labels for selected villagers without adding mood or morale mechanics.
+
+Expected Output:
+Selected-villager details show a readable State label derived from existing needs and action fields.
+
+Acceptance Criteria:
+- Healthy villager shows Content.
+- Thirsty villager shows Thirsty.
+- Hungry villager shows Hungry.
+- Tired villager shows Tired.
+- Recovering villager shows Recovering.
+- Dead villager shows Dead.
+- Resting, Working, Exploring, and Idle states are derived from current action.
+- Selected-villager details include State.
+- State labels do not affect behavior.
+- Traits and lifecycle labels do not affect State.
+- Mood, morale, emotional systems, mood meters, and behavior modifiers are not added.
+- Existing tests pass.
+
+Dependencies:
+- TASK-59
+- TASK-60
+
+Notes:
+- State describes what the villager is doing or experiencing now.
+- Mood describes how the villager feels and remains future work.
+
+---
 
 ### TASK-77
 Title: Role-Based Resource Discovery Radius

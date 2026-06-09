@@ -31,6 +31,7 @@ from src.goals import (
 from src.profiler import profiler
 from src.lifecycle import ADULT
 from src.roles import FOOD, WATER, WOOD, GENERALIST, discovery_radius, role_goal_bonus
+from src.social_memory import SocialMemoryEntry
 from src.traits import CALM
 
 if TYPE_CHECKING:
@@ -56,12 +57,14 @@ class Agent:
     role: str = GENERALIST
     lifecycle_stage: str = ADULT
     trait: str = CALM
+    agent_id: str | None = None
 
     # Memory of coordinate locations
     remembered_food: set[tuple[int, int]] = field(default_factory=set, repr=False)
     remembered_water: set[tuple[int, int]] = field(default_factory=set, repr=False)
     remembered_wood: set[tuple[int, int]] = field(default_factory=set, repr=False)
     remembered_shelters: set[tuple[int, int]] = field(default_factory=set, repr=False)
+    social_memory: dict[str, SocialMemoryEntry] = field(default_factory=dict, repr=False)
 
     # Active path being followed (list of (x,y) steps, nearest first)
     current_path: list[tuple[int, int]] = field(default_factory=list, repr=False)

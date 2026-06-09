@@ -19,6 +19,8 @@ from src.farming import farm_border_edges
 from src.resource_ecology import max_food, max_wood
 from src.roles import BUILDER, FORAGER, GENERALIST, SCOUT
 from src.seasons import seasonal_tile_color
+from src.social_memory import familiarity_summary
+from src.state import state_label
 from src.agent import Agent
 from src.profiler import profiler
 from src.world import World
@@ -411,6 +413,8 @@ class PygameRenderer:
                 ("Role", agent.role),
                 ("Life", agent.lifecycle_stage),
                 ("Trait", agent.trait),
+                ("State", state_label(agent, self.world)),
+                ("Knows", ", ".join(familiarity_summary(agent)) or "None"),
                 ("Pos", f"({agent.x}, {agent.y})"),
                 ("Needs", f"H{agent.hunger} T{agent.thirst} F{agent.fatigue}"),
                 ("Carry", f"Food {agent.food}, Wood {agent.wood}"),

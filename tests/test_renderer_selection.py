@@ -24,6 +24,8 @@ from src.lifecycle import ELDER
 from src.roles import BUILDER, FORAGER, GENERALIST, ROLES, SCOUT
 from src.seasons import seasonal_tile_color
 from src.settlement import Settlement
+from src.social_memory import SocialMemoryEntry
+from src.state import WORKING
 from src.tile import Tile
 from src.traits import CURIOUS
 from src.world import World
@@ -587,6 +589,52 @@ def test_selected_agent_details_include_trait(monkeypatch):
     renderer.draw_selection_details(0, 0, 200, 200)
 
     assert ("Trait", CURIOUS) in rows
+
+
+def test_selected_agent_details_include_state(monkeypatch):
+    world = make_world(width=3, height=3)
+    agent = Agent("Dara", 1, 1, current_action="Building shelter")
+    world.agents.append(agent)
+    renderer = make_renderer(world)
+    renderer.selected_agent = agent
+    rows = []
+
+    def spy_draw_stat_row(label, value, x, y, width, bottom_y, color=None):
+        rows.append((label, value))
+        return y + 1
+
+    monkeypatch.setattr(renderer, "draw_section_header", lambda *args, **kwargs: args[2])
+    monkeypatch.setattr(renderer, "draw_stat_row", spy_draw_stat_row)
+
+    renderer.draw_selection_details(0, 0, 200, 200)
+
+    assert ("State", WORKING) in rows
+
+
+def test_selected_agent_details_include_familiarity_summary(monkeypatch):
+    world = make_world(width=3, height=3)
+    agent = Agent("Dara", 1, 1)
+    agent.social_memory["bryn"] = SocialMemoryEntry(
+        villager_id="bryn",
+        display_name="Bryn",
+        familiarity_score=30,
+        last_seen_day=30,
+    )
+    world.agents.append(agent)
+    renderer = make_renderer(world)
+    renderer.selected_agent = agent
+    rows = []
+
+    def spy_draw_stat_row(label, value, x, y, width, bottom_y, color=None):
+        rows.append((label, value))
+        return y + 1
+
+    monkeypatch.setattr(renderer, "draw_section_header", lambda *args, **kwargs: args[2])
+    monkeypatch.setattr(renderer, "draw_stat_row", spy_draw_stat_row)
+
+    renderer.draw_selection_details(0, 0, 200, 200)
+
+    assert ("Knows", "Bryn (Familiar)") in rows
 
 
 def test_history_summary_draws_without_crashing():

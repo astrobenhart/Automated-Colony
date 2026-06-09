@@ -186,8 +186,8 @@ Features:
 - [x] Lifecycle labels without old-age death
 - [x] Simple traits
 - [x] Role-based resource discovery radius
-- [ ] Mood / morale / condition labels
-- [ ] Basic social memory or familiarity
+- [x] State labels for current villager condition
+- [x] Basic social memory or familiarity
 - [ ] Leadership as soft influence
 - [ ] Death memory and mourning as flavor/history
 - [ ] Social behavior shaped by settlement membership
@@ -198,6 +198,8 @@ Notes:
 - Lifecycle Labels v1 assigns each villager a static Adult or Elder label at creation. The label appears in selected-villager details and has no aging progression, old-age death, reproduction, or survival impact.
 - Simple Traits v1 assigns each villager one static display-only trait at creation. Traits include positive, neutral, and imperfect labels, appear in selected-villager details, and have no gameplay modifiers yet.
 - Role-Based Resource Discovery Radius v1 gives Scouts the broadest food/wood/water discovery, makes Foragers naturally better at finding food, and keeps Builders locally aware without making discovery dependent on any one role.
+- State Labels v1 computes a selected-villager `State` from existing needs and action fields. State describes what the villager is doing or experiencing now; Mood and morale remain future work.
+- Social Memory v1 records repeated nearby presence once per day. Villagers progress through neutral Stranger, Seen, Acquainted, and Familiar labels, store last-seen day metadata, and show a compact selected-villager `Knows` summary without adding friendships, relationships, events, or behavior effects.
 - Do not add old-age death yet.
 - Do not add reproduction yet.
 - Do not add children yet.
