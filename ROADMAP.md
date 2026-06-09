@@ -189,7 +189,7 @@ Features:
 - [x] State labels for current villager condition
 - [x] Basic social memory or familiarity
 - [x] Overlay Framework v1 with Villagers overlay
-- [ ] Leadership as soft influence
+- [x] Influence foundation for future leadership
 - [ ] Death memory and mourning as flavor/history
 - [ ] Social behavior shaped by settlement membership
 - [ ] Optional pair/family labels only if they do not imply reproduction yet
@@ -201,7 +201,8 @@ Notes:
 - Role-Based Resource Discovery Radius v1 gives Scouts the broadest food/wood/water discovery, makes Foragers naturally better at finding food, and keeps Builders locally aware without making discovery dependent on any one role.
 - State Labels v1 computes a selected-villager `State` from existing needs and action fields. State describes what the villager is doing or experiencing now; Mood and morale remain future work.
 - Social Memory v1 records repeated nearby presence once per day. Villagers progress through neutral Stranger, Seen, Acquainted, and Familiar labels, store last-seen day metadata, and show a compact selected-villager `Knows` summary without adding friendships, relationships, events, or behavior effects.
-- Overlay Framework v1 adds reusable pygame-gui overlays for focused observation. Villagers is the first overlay, opened with `V`, and selecting a row updates the existing selected-villager right-panel details. Overlays are observer tools, not command tools.
+- Overlay Framework v1 adds reusable pygame-gui overlays for focused observation. Villagers is the first overlay, opened with `V`, and uses a master/detail layout for villager inspection while the right panel stays compact. Overlays are observer tools, not command tools.
+- Influence Foundation v1 computes soft social importance from recent incoming familiarity. Influence labels are Low, Emerging, Notable, and Respected, appear in the Villagers overlay, update peak influence metadata, and do not select formal leaders or affect behavior.
 - Do not add old-age death yet.
 - Do not add reproduction yet.
 - Do not add children yet.

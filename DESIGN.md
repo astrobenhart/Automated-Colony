@@ -148,6 +148,28 @@ Stored social-memory data can support future systems such as leadership, mournin
 
 Social memory does not affect goals, pathfinding, gathering, building, farming, workshops, exploration, survival, reservations, carrying capacity, state labels, role behavior, traits, or lifecycle labels.
 
+## Influence Foundation
+
+Influence is soft social importance.
+
+Influence is not leadership.
+
+Influence is not command authority.
+
+Influence emerges from being known, remembered, and familiar to others.
+
+v0.6 Influence Foundation computes a current Influence label from recent incoming social familiarity. Stronger familiarity counts more than weak familiarity, stale memories can stop contributing to current influence, and only the strongest few incoming relationships are counted so raw familiarity does not automatically flatten every long-lived villager to the same score.
+
+Current Influence labels are Low, Emerging, Notable, and Respected. These labels are observer-facing only and appear in the Villagers overlay details pane.
+
+Villagers also store peak influence score as future-facing metadata for history, mourning, migration, mysteries, former leaders, legends, and major events. Peak influence does not affect behavior.
+
+Influence does not affect goals, pathfinding, gathering, building, farming, exploration, role behavior, state labels, mood/morale, social familiarity growth, survival, settlement decisions, reservations, or migration.
+
+Future formal leadership should build on influence without becoming volatile. Influence should remain dynamic. Leadership should remain stable. Future leaders should generally remain leaders until death or a major exceptional event, and succession should happen primarily after death.
+
+Raw familiarity can eventually flatten if everyone knows everyone. Future systems may need recency weighting, decay or staleness, relative ranking, top-relationship weighting, and meaningful relationship caps to keep social importance differentiated over long simulations.
+
 ## Overlay Framework
 
 The right panel remains compact.

@@ -344,34 +344,6 @@ Notes:
 
 ---
 
-### TASK-63
-Title: Soft Leadership Influence
-
-Owner: Planner Agent / Gameplay Vision Agent
-
-Status: Backlog
-
-Description:
-Plan leadership as soft influence over memory, history, or group tendency rather than command authority.
-
-Expected Output:
-A v0.6 design for leadership labels or influence that preserves autonomous villagers.
-
-Acceptance Criteria:
-- Leadership does not become player assignment.
-- Leadership does not override survival needs.
-- Leadership can influence social memory, notable events, or settlement history.
-- No gameplay code is changed by this planning task.
-
-Dependencies:
-- TASK-58
-- TASK-61
-
-Notes:
-- Leadership should make villages feel alive without creating a management layer.
-
----
-
 ### TASK-55
 Title: History Integration for Mysteries
 
@@ -681,6 +653,42 @@ Notes:
 ---
 
 ## Completed
+
+### TASK-63
+Title: Influence Foundation for Future Leadership
+
+Owner: Gameplay Agent / Architect Agent / Social Systems Agent / UI Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #52 by adding computed Influence as soft social importance without adding formal leaders.
+
+Expected Output:
+Villagers receive observer-facing Influence labels based primarily on recent incoming social familiarity, displayed in the Villagers overlay details pane, with peak influence stored for future history systems.
+
+Acceptance Criteria:
+- Influence labels are Low, Emerging, Notable, and Respected.
+- Influence is based on being known, remembered, and familiar to others.
+- Familiar contributes more than Acquainted, and Acquainted contributes more than Seen.
+- Stale memories and top-relationship weighting reduce long-term raw-familiarity saturation.
+- Elder bonus is small and does not automatically make elders highly influential.
+- Peak influence score is stored and does not decrease.
+- No formal leader, Leader role, succession, elections, or command mechanics are added.
+- Influence has no gameplay behavior effects.
+- Existing tests pass.
+
+Dependencies:
+- TASK-59
+- TASK-60
+- TASK-61
+- TASK-62
+
+Notes:
+- Influence is dynamic. Future leadership should be stable and long-lived.
+- Formal leadership, succession, and leader history remain future work.
+
+---
 
 ### TASK-78
 Title: Overlay Framework v1 With Villagers Overlay

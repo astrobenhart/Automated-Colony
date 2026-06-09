@@ -172,6 +172,7 @@ def test_villager_detail_sections_include_player_facing_fields():
     assert ("Goal", "Gather food") in sections["Activity"]
     assert ("Food", 1) in sections["Inventory"]
     assert ("Wood", 2) in sections["Inventory"]
+    assert ("Influence", "Low") in sections["Social"]
     assert ("Knows", "Bryn (Familiar)") in sections["Social"]
 
 

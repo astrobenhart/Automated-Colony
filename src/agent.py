@@ -58,6 +58,7 @@ class Agent:
     lifecycle_stage: str = ADULT
     trait: str = CALM
     agent_id: str | None = None
+    peak_influence_score: int = 0
 
     # Memory of coordinate locations
     remembered_food: set[tuple[int, int]] = field(default_factory=set, repr=False)

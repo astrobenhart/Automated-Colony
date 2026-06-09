@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from src.influence import influence_label
 from src.social_memory import familiarity_summary
 from src.state import state_label
 
@@ -37,7 +38,7 @@ def villager_detail_sections(agent, world=None) -> list[tuple[str, list[tuple[st
         ("Needs", needs_rows(agent)),
         ("Activity", activity_rows(agent)),
         ("Inventory", inventory_rows(agent)),
-        ("Social", social_rows(agent)),
+        ("Social", social_rows(agent, world)),
     ]
 
 
@@ -85,9 +86,12 @@ def inventory_rows(agent) -> list[tuple[str, object]]:
     ]
 
 
-def social_rows(agent) -> list[tuple[str, object]]:
+def social_rows(agent, world=None) -> list[tuple[str, object]]:
     summary = ", ".join(familiarity_summary(agent)) if hasattr(agent, "social_memory") else ""
-    return [("Knows", summary or "None")]
+    return [
+        ("Influence", influence_label(agent, world)),
+        ("Knows", summary or "None"),
+    ]
 
 
 def present_rows(rows: list[tuple[str, object | None]]) -> list[tuple[str, object]]:

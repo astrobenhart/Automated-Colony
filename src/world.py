@@ -7,6 +7,7 @@ from src.colony_memory import ColonyMemory
 from src.colony_storage import ColonyStorage
 from src.environment_events import update_environment_events
 from src.farming import maybe_create_farm, update_farms
+from src.influence import update_influence_peaks
 from src.seasons import (
     day_of_season,
     next_season_index,
@@ -295,6 +296,7 @@ class World:
         maybe_create_farm(self)
         self.update_carrying_capacity()
         update_social_memory(self)
+        update_influence_peaks(self)
         self.log(f"Day {self.day} begins.")
 
     def advance_season(self):
