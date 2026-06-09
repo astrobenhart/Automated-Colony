@@ -136,6 +136,23 @@ Rendering rules:
 - Farms, stockpiles, shelters, workshops, the settlement center, villagers, and wildlife remain visible.
 - Colony memory is the source of truth for resource visibility.
 
+## Role-Based Resource Discovery
+
+Role-based discovery exists to influence colony knowledge growth.
+
+It should not become a critical survival dependency.
+
+A colony without scouts should still function. Scouts accelerate discovery rather than enabling discovery.
+
+Discovery rules:
+- Scouts discover the most across food, wood, and water.
+- Foragers are naturally better at discovering food and water.
+- Generalists remain broadly capable.
+- Builders remain locally aware, especially around wood, and should not feel blind.
+- Discovery uses simple radius checks centered on the villager.
+- There are no view cones, directional vision, line-of-sight, raycasting, BFS, or pathfinding in discovery.
+- Personal memory and colony memory sharing remain the discovery output.
+
 v0.7 migration should provide the first renewal and expansion path:
 - Food pressure can lead to farming.
 - Population pressure can lead to migration or a new settlement.

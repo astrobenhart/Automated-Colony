@@ -30,7 +30,7 @@ from src.goals import (
 )
 from src.profiler import profiler
 from src.lifecycle import ADULT
-from src.roles import GENERALIST, role_goal_bonus
+from src.roles import FOOD, WATER, WOOD, GENERALIST, discovery_radius, role_goal_bonus
 from src.traits import CALM
 
 if TYPE_CHECKING:
@@ -70,52 +70,66 @@ class Agent:
     stuck_ticks: int = 0
     no_progress_ticks: int = 0
 
+    def discovery_radius(self, resource_type: str) -> int:
+        return discovery_radius(self.role, resource_type)
+
     def update_needs(self):
         self.hunger += HUNGER_RATE
         self.thirst += THIRST_RATE
         self.fatigue += FATIGUE_RATE
 
     def scan_surroundings(self, world: World):
-        for dy in range(-5, 6):
-            for dx in range(-5, 6):
+        food_radius = self.discovery_radius(FOOD)
+        wood_radius = self.discovery_radius(WOOD)
+        water_radius = self.discovery_radius(WATER)
+        shelter_radius = 5
+        scan_radius = max(food_radius, wood_radius, water_radius, shelter_radius)
+
+        for dy in range(-scan_radius, scan_radius + 1):
+            for dx in range(-scan_radius, scan_radius + 1):
                 nx = self.x + dx
                 ny = self.y + dy
 
                 if 0 <= nx < world.width and 0 <= ny < world.height:
                     tile = world.tile_at(nx, ny)
                     pos = (nx, ny)
+                    distance = max(abs(dx), abs(dy))
 
                     # Food memory
-                    if tile.food > 0:
-                        self.remembered_food.add(pos)
-                        world.colony_memory.remember_food(pos)
-                    else:
-                        self.remembered_food.discard(pos)
-                        world.colony_memory.forget_food(pos)
+                    if distance <= food_radius:
+                        if tile.food > 0:
+                            self.remembered_food.add(pos)
+                            world.colony_memory.remember_food(pos)
+                        else:
+                            self.remembered_food.discard(pos)
+                            world.colony_memory.forget_food(pos)
 
                     # Wood memory
-                    if tile.kind == "forest" and tile.wood > 0:
-                        self.remembered_wood.add(pos)
-                        world.colony_memory.remember_wood(pos)
-                    else:
-                        self.remembered_wood.discard(pos)
-                        world.colony_memory.forget_wood(pos)
+                    if distance <= wood_radius:
+                        if tile.kind == "forest" and tile.wood > 0:
+                            self.remembered_wood.add(pos)
+                            world.colony_memory.remember_wood(pos)
+                        else:
+                            self.remembered_wood.discard(pos)
+                            world.colony_memory.forget_wood(pos)
 
                     # Water memory
-                    if tile.kind == "water":
-                        self.remembered_water.add(pos)
-                        world.colony_memory.remember_water(pos)
-                    else:
-                        self.remembered_water.discard(pos)
-                        world.colony_memory.forget_water(pos)
+                    if distance <= water_radius:
+                        if tile.kind == "water":
+                            self.remembered_water.add(pos)
+                            world.colony_memory.remember_water(pos)
+                        else:
+                            self.remembered_water.discard(pos)
+                            world.colony_memory.forget_water(pos)
 
                     # Shelter memory
-                    if tile.kind == "shelter":
-                        self.remembered_shelters.add(pos)
-                        world.colony_memory.remember_shelter(pos)
-                    else:
-                        self.remembered_shelters.discard(pos)
-                        world.colony_memory.forget_shelter(pos)
+                    if distance <= shelter_radius:
+                        if tile.kind == "shelter":
+                            self.remembered_shelters.add(pos)
+                            world.colony_memory.remember_shelter(pos)
+                        else:
+                            self.remembered_shelters.discard(pos)
+                            world.colony_memory.forget_shelter(pos)
 
     def choose_goal(self, world: World) -> Goal:
         with profiler.time("goal selection"):

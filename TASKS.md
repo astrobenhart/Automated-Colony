@@ -736,6 +736,43 @@ Notes:
 
 ## Completed
 
+### TASK-77
+Title: Role-Based Resource Discovery Radius
+
+Owner: Gameplay Agent / Architect Agent / Colony Memory Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #48 by making resource discovery radius vary by villager role and resource type.
+
+Expected Output:
+Scouts reveal food, wood, and water farther than other roles; Foragers are better at food discovery; Builders remain locally aware; colony memory sharing and forgetting continue to work.
+
+Acceptance Criteria:
+- Discovery radius varies by role.
+- Discovery radius varies by resource type.
+- Scouts discover more than Generalists and Builders.
+- Foragers discover food farther than Builders.
+- Builders discover wood farther than food.
+- Resources outside discovery radius are not discovered.
+- Resources inside discovery radius are discovered.
+- Colony memory still receives discoveries.
+- Forgetting behavior still removes depleted known resources.
+- Unknown roles use a safe fallback radius.
+- No goal, action, pathfinding, survival, resource-gathering, reservation, renderer, or settlement-need behavior changes.
+- Existing tests pass.
+
+Dependencies:
+- TASK-45
+- TASK-76
+
+Notes:
+- Scouts accelerate discovery rather than enabling discovery.
+- Discovery should slow down without scouts, not stop.
+
+---
+
 ### TASK-76
 Title: Render Only Village-Known Food and Wood Resources
 
