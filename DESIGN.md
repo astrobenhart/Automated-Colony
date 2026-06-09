@@ -107,6 +107,7 @@ v0.6 life and social foundations should focus on labels and lightweight flavor:
 - Elders should not automatically die of old age until a renewal system exists.
 - Traits, mood, morale, familiarity, leadership, mourning, and pair/family labels should remain lightweight.
 - Reproduction, children, inheritance, full family trees, and old-age death remain deferred.
+- Lifecycle Labels v1 is intentionally static identity metadata. Villagers are assigned Adult or Elder when created, the label appears in selected-villager details, and there is no Adult-to-Elder progression or Elder-to-death rule.
 
 v0.7 migration should provide the first renewal and expansion path:
 - Food pressure can lead to farming.

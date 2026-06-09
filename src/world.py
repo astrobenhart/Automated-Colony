@@ -15,6 +15,7 @@ from src.seasons import (
     transition_progress,
 )
 from src.resource_ecology import apply_resource_ecology
+from src.lifecycle import lifecycle_stage_for_index
 from src.roles import role_for_index
 from src.settlement import (
     Settlement,
@@ -127,7 +128,13 @@ class World:
 
         positions = self.initial_spawn_positions(amount)
         for i, (x, y) in enumerate(positions):
-            self.agents.append(Agent(names[i % len(names)], x, y, role=role_for_index(i)))
+            self.agents.append(Agent(
+                names[i % len(names)],
+                x,
+                y,
+                role=role_for_index(i),
+                lifecycle_stage=lifecycle_stage_for_index(i),
+            ))
 
         self.update_settlement_population()
         self.log(f"{amount} villagers enter the world.")

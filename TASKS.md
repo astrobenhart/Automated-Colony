@@ -453,34 +453,6 @@ Notes:
 
 ---
 
-### TASK-59
-Title: Lifecycle Labels Without Old-Age Death
-
-Owner: Planner Agent / Gameplay Vision Agent / Docs Agent
-
-Status: Backlog
-
-Description:
-Plan lifecycle labels such as Adult and Elder as story/identity flavor without old-age death.
-
-Expected Output:
-A v0.6 design for lifecycle labels that make villagers feel more individual without causing population attrition.
-
-Acceptance Criteria:
-- Lifecycle labels are identity/story labels, not automatic death timers.
-- Old-age death is explicitly deferred until renewal systems exist.
-- Reproduction, children, inheritance, and full family trees are deferred.
-- No gameplay code is changed by this planning task.
-
-Dependencies:
-- TASK-56
-
-Notes:
-- Do not add a new death source before adding a renewal source.
-- Age in v0.6 is identity/story, not attrition.
-
----
-
 ### TASK-55
 Title: History Integration for Mysteries
 
@@ -790,6 +762,38 @@ Notes:
 ---
 
 ## Completed
+
+### TASK-59
+Title: Lifecycle Labels Without Old-Age Death
+
+Owner: Gameplay Agent / Architect Agent / Renderer Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #45 by adding static Adult and Elder lifecycle labels as lightweight villager identity metadata.
+
+Expected Output:
+Villagers receive a valid lifecycle label when created, selected-villager details show the label, and no aging mechanics, old-age death, reproduction, children, inheritance, family trees, or lifecycle progression are introduced.
+
+Acceptance Criteria:
+- Villagers are assigned Adult or Elder when created.
+- Lifecycle labels are valid and deterministic by spawn order.
+- Most villagers are Adults and a small minority can be Elders.
+- Lifecycle stage remains unchanged during simulation updates.
+- Lifecycle stage does not trigger death.
+- Selected villager details include lifecycle stage.
+- Existing v0.5 settlement behavior remains stable.
+- Existing tests pass.
+
+Dependencies:
+- TASK-56
+
+Notes:
+- Age is story and identity, not attrition.
+- Do not add a new death source before adding a renewal source.
+
+---
 
 ### TASK-56
 Title: Restore Role-Based Villager Colors

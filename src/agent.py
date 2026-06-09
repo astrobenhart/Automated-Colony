@@ -29,6 +29,7 @@ from src.goals import (
     Goal,
 )
 from src.profiler import profiler
+from src.lifecycle import ADULT
 from src.roles import GENERALIST, role_goal_bonus
 
 if TYPE_CHECKING:
@@ -52,6 +53,7 @@ class Agent:
     current_action: str = "Idle"
     current_goal: str = "Explore"
     role: str = GENERALIST
+    lifecycle_stage: str = ADULT
 
     # Memory of coordinate locations
     remembered_food: set[tuple[int, int]] = field(default_factory=set, repr=False)

@@ -18,6 +18,7 @@ from src.config import (
 )
 from src.renderer import PygameRenderer
 from src.renderer import color_for_role
+from src.lifecycle import ELDER
 from src.roles import BUILDER, FORAGER, GENERALIST, ROLES, SCOUT
 from src.seasons import seasonal_tile_color
 from src.settlement import Settlement
@@ -327,6 +328,26 @@ def test_role_colors_are_bright_for_screensaver_readability():
 
         assert max(color) >= 175
         assert sum(color) >= 330
+
+
+def test_selected_agent_details_include_lifecycle_stage(monkeypatch):
+    world = make_world(width=3, height=3)
+    agent = Agent("Eli", 1, 1, lifecycle_stage=ELDER)
+    world.agents.append(agent)
+    renderer = make_renderer(world)
+    renderer.selected_agent = agent
+    rows = []
+
+    def spy_draw_stat_row(label, value, x, y, width, bottom_y, color=None):
+        rows.append((label, value))
+        return y + 1
+
+    monkeypatch.setattr(renderer, "draw_section_header", lambda *args, **kwargs: args[2])
+    monkeypatch.setattr(renderer, "draw_stat_row", spy_draw_stat_row)
+
+    renderer.draw_selection_details(0, 0, 200, 200)
+
+    assert ("Life", ELDER) in rows
 
 
 def test_history_summary_draws_without_crashing():
