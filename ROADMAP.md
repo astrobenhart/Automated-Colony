@@ -188,6 +188,7 @@ Features:
 - [x] Role-based resource discovery radius
 - [x] State labels for current villager condition
 - [x] Basic social memory or familiarity
+- [x] Overlay Framework v1 with Villagers overlay
 - [ ] Leadership as soft influence
 - [ ] Death memory and mourning as flavor/history
 - [ ] Social behavior shaped by settlement membership
@@ -200,6 +201,7 @@ Notes:
 - Role-Based Resource Discovery Radius v1 gives Scouts the broadest food/wood/water discovery, makes Foragers naturally better at finding food, and keeps Builders locally aware without making discovery dependent on any one role.
 - State Labels v1 computes a selected-villager `State` from existing needs and action fields. State describes what the villager is doing or experiencing now; Mood and morale remain future work.
 - Social Memory v1 records repeated nearby presence once per day. Villagers progress through neutral Stranger, Seen, Acquainted, and Familiar labels, store last-seen day metadata, and show a compact selected-villager `Knows` summary without adding friendships, relationships, events, or behavior effects.
+- Overlay Framework v1 adds reusable pygame-gui overlays for focused observation. Villagers is the first overlay, opened with `V`, and selecting a row updates the existing selected-villager right-panel details. Overlays are observer tools, not command tools.
 - Do not add old-age death yet.
 - Do not add reproduction yet.
 - Do not add children yet.

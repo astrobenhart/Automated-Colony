@@ -20,6 +20,7 @@ from src.renderer import PygameRenderer
 from src.renderer import color_for_role
 from src.renderer import is_food_visible_to_player
 from src.renderer import is_wood_visible_to_player
+from src.overlays.villagers import VILLAGERS_OVERLAY
 from src.lifecycle import ELDER
 from src.roles import BUILDER, FORAGER, GENERALIST, ROLES, SCOUT
 from src.seasons import seasonal_tile_color
@@ -780,3 +781,32 @@ def test_renderer_recognizes_settlement_center():
 
     assert renderer.is_settlement_center(2, 3)
     assert not renderer.is_settlement_center(3, 2)
+
+
+def test_renderer_toggles_villagers_overlay_without_duplicates():
+    world = make_world(width=5, height=5)
+    world.agents = [Agent("Ari", 1, 1)]
+    renderer = make_renderer(world)
+
+    renderer.toggle_villagers_overlay()
+    first_overlay = renderer.overlay_manager.active[VILLAGERS_OVERLAY]
+
+    renderer.toggle_villagers_overlay()
+
+    assert not renderer.overlay_manager.is_open(VILLAGERS_OVERLAY)
+
+    renderer.toggle_villagers_overlay()
+
+    assert renderer.overlay_manager.is_open(VILLAGERS_OVERLAY)
+    assert renderer.overlay_manager.active[VILLAGERS_OVERLAY] is not first_overlay
+    assert len(renderer.overlay_manager.active) == 1
+
+
+def test_renderer_set_world_closes_active_overlays():
+    renderer = make_renderer(make_world(width=5, height=5))
+    renderer.world.agents = [Agent("Ari", 1, 1)]
+    renderer.toggle_villagers_overlay()
+
+    renderer.set_world(make_world(width=5, height=5))
+
+    assert not renderer.overlay_manager.is_open(VILLAGERS_OVERLAY)

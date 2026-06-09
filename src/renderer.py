@@ -1,4 +1,5 @@
 import pygame
+import pygame_gui
 
 from src.config import (
     SCREEN_WIDTH,
@@ -16,6 +17,7 @@ from src.config import (
 )
 from src.environment_events import active_event_names, environmental_tile_color
 from src.farming import farm_border_edges
+from src.overlays.villagers import VILLAGERS_OVERLAY, VillagersOverlay
 from src.resource_ecology import max_food, max_wood
 from src.roles import BUILDER, FORAGER, GENERALIST, SCOUT
 from src.seasons import seasonal_tile_color
@@ -23,6 +25,7 @@ from src.social_memory import familiarity_summary
 from src.state import state_label
 from src.agent import Agent
 from src.profiler import profiler
+from src.ui_overlays import OverlayManager
 from src.world import World
 
 
@@ -53,6 +56,9 @@ class PygameRenderer:
         self.world = world
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Automated ASCII Colony v0.1")
+        self.ui_manager = pygame_gui.UIManager((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.overlay_manager = OverlayManager()
+        self.register_overlays()
 
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont("consolas", 13)
@@ -65,10 +71,36 @@ class PygameRenderer:
         self.camera_x = 0
         self.camera_y = 0
 
+    def register_overlays(self):
+        self.overlay_manager.register_overlay(
+            VILLAGERS_OVERLAY,
+            lambda: VillagersOverlay(self.world, self.ui_manager, self.select_agent),
+        )
+
     def set_world(self, world: World):
         self.world = world
         self.clear_selection()
+        self.overlay_manager.close_all()
         self.clamp_camera()
+
+    def process_ui_event(self, event) -> bool:
+        overlay_consumed = self.overlay_manager.handle_event(event)
+        gui_consumed = self.ui_manager.process_events(event)
+        return overlay_consumed or gui_consumed
+
+    def update_ui(self, time_delta: float):
+        self.overlay_manager.update(time_delta)
+        self.ui_manager.update(time_delta)
+
+    def toggle_villagers_overlay(self):
+        self.overlay_manager.toggle_overlay(VILLAGERS_OVERLAY)
+
+    def select_agent(self, agent: Agent):
+        if agent not in self.world.agents:
+            self.clear_selection()
+            return
+        self.selected_agent = agent
+        self.selected_tile = None
 
     def select_tile_at_pixel(self, mouse_x: int, mouse_y: int):
         tile = self.screen_to_world_tile(mouse_x, mouse_y)
@@ -119,8 +151,7 @@ class PygameRenderer:
 
         agent = self.world.agent_at(tile_x, tile_y)
         if agent is not None:
-            self.selected_agent = agent
-            self.selected_tile = None
+            self.select_agent(agent)
             return
 
         self.selected_agent = None
@@ -147,6 +178,7 @@ class PygameRenderer:
 
             self.draw_world()
             self.draw_panel(paused, sim_speed)
+            self.ui_manager.draw_ui(self.screen)
 
             pygame.display.flip()
 
@@ -300,7 +332,7 @@ class PygameRenderer:
 
         y += self.panel_gap
         y = self.draw_section_header("Controls", content_x, y, content_width, bottom_y)
-        controls = "WASD pan | Space pause | Up/Down speed | R restart | Esc quit"
+        controls = "WASD pan | V villagers | Space pause | Up/Down speed | R restart | Esc quit"
         y = self.draw_wrapped_text(controls, content_x, y, content_width, bottom_y, COLORS["muted"])
 
         y += self.panel_gap

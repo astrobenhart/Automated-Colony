@@ -40,12 +40,14 @@ v0.5.0, Colony Roles and Production, turns the prototype survival sandbox into a
 - Abstract colony storage for shared food and wood
 - Selected-agent and selected-tile inspection UI with detailed internals
 - Compact player-facing right-side status panel with world identity, time/season, colony status, active events, selection, history, legend, controls, and recent events
+- Overlay Framework v1 using pygame-gui, with Villagers as the first observer overlay
 - Automated tests for pathfinding, memory, goals, building priorities, storage, reservations, farming, carrying capacity, movement recovery, world logic, and renderer selection helpers
 
 ## Controls
 
 - `SPACE` - Pause or unpause
 - `W`, `A`, `S`, `D` - Pan the camera
+- `V` - Toggle Villagers overlay
 - `UP` - Increase simulation speed
 - `DOWN` - Decrease simulation speed
 - `R` - Restart the world
@@ -55,10 +57,10 @@ v0.5.0, Colony Roles and Production, turns the prototype survival sandbox into a
 
 ## Installation
 
-Requires Python 3.10+ and Pygame.
+Requires Python 3.10+, Pygame, and pygame-gui.
 
 ```bash
-pip install pygame pytest
+pip install -r requirements.txt
 ```
 
 ## Running
@@ -142,6 +144,8 @@ No setup screen, sliders, dropdowns, or player-facing configuration UI is curren
 - `src/wildlife.py` - Ambient biome-based wildlife spawning and wandering
 - `src/seasons.py` - Season cycle and terrain-aware regrowth rules
 - `src/renderer.py` - Pygame rendering and inspection UI
+- `src/ui_overlays.py` - Reusable overlay manager
+- `src/overlays/` - pygame-gui overlays such as Villagers
 - `tests/` - Pytest coverage for core systems
 - `ROADMAP.md` - Milestone roadmap
 - `TASKS.md` - Task tracker

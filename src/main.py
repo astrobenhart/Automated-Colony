@@ -20,10 +20,12 @@ def main():
         accumulator += dt
 
         for event in pygame.event.get():
+            ui_consumed = renderer.process_ui_event(event)
+
             if event.type == pygame.QUIT:
                 running = False
 
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if not ui_consumed and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 renderer.select_tile_at_pixel(*event.pos)
 
             if event.type == pygame.KEYDOWN:
@@ -56,6 +58,9 @@ def main():
                     renderer.set_world(world)
                     accumulator = 0
 
+                elif event.key == pygame.K_v:
+                    renderer.toggle_villagers_overlay()
+
         if not paused and len(world.living_agents()) > 0:
             step_time = 1 / sim_speed
 
@@ -63,6 +68,7 @@ def main():
                 world.update()
                 accumulator -= step_time
 
+        renderer.update_ui(dt)
         renderer.draw(paused, sim_speed)
         renderer.limit_fps()
 

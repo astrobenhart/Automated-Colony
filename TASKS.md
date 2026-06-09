@@ -682,6 +682,42 @@ Notes:
 
 ## Completed
 
+### TASK-78
+Title: Overlay Framework v1 With Villagers Overlay
+
+Owner: UI Agent / Architect Agent / Renderer Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #51 by adding a reusable pygame-gui overlay framework with Villagers as the first overlay.
+
+Expected Output:
+The `V` key toggles a closable, draggable Villagers overlay listing living villagers. Clicking a villager row updates the existing selected-villager state so the right panel continues showing details.
+
+Acceptance Criteria:
+- pygame-gui is listed as a dependency and integrated with the renderer loop.
+- OverlayManager supports registering, toggling, closing, updating, and event handling for future overlays.
+- Villagers overlay lists living villagers only.
+- Villager rows include compact role, lifecycle, trait, and state text when available.
+- Missing identity fields are handled safely.
+- Clicking a villager row uses the existing selected-agent workflow.
+- Overlay UI clicks do not fall through to map selection.
+- No gameplay behavior is changed.
+- Existing tests pass.
+
+Dependencies:
+- TASK-59
+- TASK-60
+- TASK-61
+- TASK-62
+
+Notes:
+- Overlays are observer tools, not command tools.
+- Future Settlements, History, Wildlife, Visitors, Mysteries, and Ruins overlays should use the same framework.
+
+---
+
 ### TASK-62
 Title: Basic Social Memory or Familiarity
 

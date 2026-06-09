@@ -148,6 +148,20 @@ Stored social-memory data can support future systems such as leadership, mournin
 
 Social memory does not affect goals, pathfinding, gathering, building, farming, workshops, exploration, survival, reservations, carrying capacity, state labels, role behavior, traits, or lifecycle labels.
 
+## Overlay Framework
+
+The right panel remains compact.
+
+Detailed information moves into focused overlays.
+
+Overlays are observer tools, not command tools.
+
+Overlay Framework v1 uses pygame-gui to support reusable, closable, draggable inspection windows without adding player commands or changing simulation behavior.
+
+Villagers is the first overlay. It lists living villagers with compact identity text and lets the observer select a villager from the list. The existing right panel remains the place for selected-villager details.
+
+Future overlays such as Settlements, History, Wildlife, Visitors, Mysteries, and Ruins should plug into the same overlay manager instead of becoming one-off windows.
+
 ## Resource Knowledge Rendering
 
 The world is visible. Resource abundance is discovered.
