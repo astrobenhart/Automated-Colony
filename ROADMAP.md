@@ -184,7 +184,7 @@ Goal: Make villagers feel more like individuals and settlement members without a
 
 Features:
 - [x] Lifecycle labels without old-age death
-- [ ] Simple traits
+- [x] Simple traits
 - [ ] Mood / morale / condition labels
 - [ ] Basic social memory or familiarity
 - [ ] Leadership as soft influence
@@ -195,6 +195,7 @@ Features:
 Notes:
 - v0.5 created the stable settlement economy. v0.6 should make the people inside that settlement feel more individual without making the village fragile.
 - Lifecycle Labels v1 assigns each villager a static Adult or Elder label at creation. The label appears in selected-villager details and has no aging progression, old-age death, reproduction, or survival impact.
+- Simple Traits v1 assigns each villager one static display-only trait at creation. Traits include positive, neutral, and imperfect labels, appear in selected-villager details, and have no gameplay modifiers yet.
 - Do not add old-age death yet.
 - Do not add reproduction yet.
 - Do not add children yet.

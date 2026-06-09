@@ -17,6 +17,7 @@ from src.seasons import (
 from src.resource_ecology import apply_resource_ecology
 from src.lifecycle import lifecycle_stage_for_index
 from src.roles import role_for_index
+from src.traits import trait_for_index
 from src.settlement import (
     Settlement,
     choose_resource_target,
@@ -134,6 +135,7 @@ class World:
                 y,
                 role=role_for_index(i),
                 lifecycle_stage=lifecycle_stage_for_index(i),
+                trait=trait_for_index(i),
             ))
 
         self.update_settlement_population()

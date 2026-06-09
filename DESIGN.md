@@ -109,6 +109,16 @@ v0.6 life and social foundations should focus on labels and lightweight flavor:
 - Reproduction, children, inheritance, full family trees, and old-age death remain deferred.
 - Lifecycle Labels v1 is intentionally static identity metadata. Villagers are assigned Adult or Elder when created, the label appears in selected-villager details, and there is no Adult-to-Elder progression or Elder-to-death rule.
 
+Traits should describe villagers before they influence villagers.
+
+Trait phases:
+- Phase 1: Traits create identity.
+- Phase 2: Traits may influence mood.
+- Phase 3: Traits may influence relationships.
+- Phase 4: Traits may influence behavior.
+
+Simple Traits v1 implements Phase 1 only. Each villager receives one static display-only trait at creation. Traits appear in selected-villager details and do not affect movement, pathfinding, exploration, gathering, building, workshop use, farming, survival needs, recovery, roles, goals, settlement needs, reservations, or carrying capacity.
+
 v0.7 migration should provide the first renewal and expansion path:
 - Food pressure can lead to farming.
 - Population pressure can lead to migration or a new settlement.

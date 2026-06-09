@@ -402,6 +402,7 @@ class PygameRenderer:
                 ("Agent", agent.name),
                 ("Role", agent.role),
                 ("Life", agent.lifecycle_stage),
+                ("Trait", agent.trait),
                 ("Pos", f"({agent.x}, {agent.y})"),
                 ("Needs", f"H{agent.hunger} T{agent.thirst} F{agent.fatigue}"),
                 ("Carry", f"Food {agent.food}, Wood {agent.wood}"),

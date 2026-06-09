@@ -426,33 +426,6 @@ Notes:
 
 ---
 
-### TASK-60
-Title: Simple Traits
-
-Owner: Planner Agent / Gameplay Vision Agent
-
-Status: Backlog
-
-Description:
-Plan simple villager traits that add individuality without replacing roles or creating brittle optimization.
-
-Expected Output:
-A v0.6 design for a small set of traits that can influence flavor, history, or tiny behavior preferences.
-
-Acceptance Criteria:
-- Traits are lightweight and readable.
-- Traits do not become player-assigned jobs.
-- Traits do not override urgent survival behavior.
-- No gameplay code is changed by this planning task.
-
-Dependencies:
-- TASK-58
-
-Notes:
-- Traits should help the player remember individuals.
-
----
-
 ### TASK-55
 Title: History Integration for Mysteries
 
@@ -762,6 +735,39 @@ Notes:
 ---
 
 ## Completed
+
+### TASK-60
+Title: Simple Traits
+
+Owner: Gameplay Agent / Architect Agent / UI Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #46 by adding one static display-only trait to each villager.
+
+Expected Output:
+Villagers receive one readable trait at creation, selected-villager details show the trait, and traits do not change simulation behavior.
+
+Acceptance Criteria:
+- Every villager receives exactly one trait.
+- Trait is one of the known trait values.
+- Trait list includes positive, neutral, and imperfect labels.
+- Lazy, Grumpy, Stubborn, and Timid are valid traits without gameplay penalties.
+- Trait assignment is deterministic by spawn order.
+- Trait remains stable over simulation ticks.
+- Selected-villager details include trait.
+- Traits do not affect movement, pathfinding, work, survival, roles, goals, settlement needs, reservations, or carrying capacity.
+- Existing tests pass.
+
+Dependencies:
+- TASK-59
+
+Notes:
+- Traits should describe villagers before they influence villagers.
+- Simple Traits v1 implements identity only. Mood, relationships, behavior modifiers, inheritance, progression, multiple traits, and player control remain future work.
+
+---
 
 ### TASK-59
 Title: Lifecycle Labels Without Old-Age Death
