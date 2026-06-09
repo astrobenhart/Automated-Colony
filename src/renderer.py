@@ -21,11 +21,10 @@ from src.overlays.villagers import VILLAGERS_OVERLAY, VillagersOverlay
 from src.resource_ecology import max_food, max_wood
 from src.roles import BUILDER, FORAGER, GENERALIST, SCOUT
 from src.seasons import seasonal_tile_color
-from src.social_memory import familiarity_summary
-from src.state import state_label
 from src.agent import Agent
 from src.profiler import profiler
 from src.ui_overlays import OverlayManager
+from src.villager_inspection import compact_villager_rows
 from src.world import World
 
 
@@ -74,7 +73,12 @@ class PygameRenderer:
     def register_overlays(self):
         self.overlay_manager.register_overlay(
             VILLAGERS_OVERLAY,
-            lambda: VillagersOverlay(self.world, self.ui_manager, self.select_agent),
+            lambda: VillagersOverlay(
+                self.world,
+                self.ui_manager,
+                self.select_agent,
+                self.selected_villager,
+            ),
         )
 
     def set_world(self, world: World):
@@ -94,6 +98,9 @@ class PygameRenderer:
 
     def toggle_villagers_overlay(self):
         self.overlay_manager.toggle_overlay(VILLAGERS_OVERLAY)
+
+    def selected_villager(self):
+        return self.selected_agent
 
     def select_agent(self, agent: Agent):
         if agent not in self.world.agents:
@@ -437,28 +444,8 @@ class PygameRenderer:
 
         if self.selected_agent is not None:
             agent = self.selected_agent
-            target = agent.current_target if agent.current_target is not None else "None"
-            known_water = len(agent.remembered_water | self.world.colony_memory.known_water)
-            known_food = len(agent.remembered_food | self.world.colony_memory.known_food)
-            details = [
-                ("Agent", agent.name),
-                ("Role", agent.role),
-                ("Life", agent.lifecycle_stage),
-                ("Trait", agent.trait),
-                ("State", state_label(agent, self.world)),
-                ("Knows", ", ".join(familiarity_summary(agent)) or "None"),
-                ("Pos", f"({agent.x}, {agent.y})"),
-                ("Needs", f"H{agent.hunger} T{agent.thirst} F{agent.fatigue}"),
-                ("Carry", f"Food {agent.food}, Wood {agent.wood}"),
-                ("Goal", agent.current_goal),
-                ("Action", agent.current_action),
-                ("Target", target),
-                ("Path", len(agent.current_path)),
-                ("Idle", agent.no_progress_ticks),
-                ("Recover", agent.current_action == "Recovering"),
-                ("Known W", known_water),
-                ("Known F", known_food),
-            ]
+            details = compact_villager_rows(agent, self.world)
+            details.append(("Details", "Open Villagers overlay"))
             color = COLORS["text"] if agent.alive else COLORS["dead"]
 
         elif self.selected_tile is not None:

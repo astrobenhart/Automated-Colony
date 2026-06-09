@@ -714,6 +714,7 @@ Dependencies:
 
 Notes:
 - Overlays are observer tools, not command tools.
+- Follow-up work moved selected-villager details into the Villagers overlay as a master/detail view so the right panel can stay compact and colony-focused.
 - Future Settlements, History, Wildlife, Visitors, Mysteries, and Ruins overlays should use the same framework.
 
 ---

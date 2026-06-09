@@ -158,7 +158,9 @@ Overlays are observer tools, not command tools.
 
 Overlay Framework v1 uses pygame-gui to support reusable, closable, draggable inspection windows without adding player commands or changing simulation behavior.
 
-Villagers is the first overlay. It lists living villagers with compact identity text and lets the observer select a villager from the list. The existing right panel remains the place for selected-villager details.
+Villagers is the first overlay. It uses a master/detail layout with a living-villager list on the left and selected-villager details on the right. Selecting a villager from the map or overlay updates the same selected-villager state.
+
+The Villagers overlay is the primary villager inspection interface. The right panel remains focused on world identity, time, colony status, resources, active events, selection summary, history, controls, and recent events.
 
 Future overlays such as Settlements, History, Wildlife, Visitors, Mysteries, and Ruins should plug into the same overlay manager instead of becoming one-off windows.
 
