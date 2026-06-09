@@ -736,6 +736,41 @@ Notes:
 
 ## Completed
 
+### TASK-76
+Title: Render Only Village-Known Food and Wood Resources
+
+Owner: Renderer Agent / UX Agent / Gameplay Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #47 by making wild food and wood resource indicators depend on colony memory instead of perfect map knowledge.
+
+Expected Output:
+Terrain remains visible, but unknown wild food and wood do not show map markers or selected-tile quantities until discovered by the village.
+
+Acceptance Criteria:
+- Wild food is shown only when known to colony memory.
+- Wild wood is shown only when known to colony memory.
+- Forgotten resources stop rendering as known resources.
+- Terrain remains visible regardless of resource knowledge.
+- Forest terrain remains visible even when harvestable wood is unknown.
+- Farms, buildings, villagers, wildlife, role colors, lifecycle labels, and traits remain visible.
+- Discovery mechanics, AI behavior, personal memory, colony memory, pathfinding, resource ecology, and survival behavior are unchanged.
+- Existing tests pass.
+
+Dependencies:
+- TASK-45
+- TASK-56
+- TASK-59
+- TASK-60
+
+Notes:
+- The world is visible. Resource abundance is discovered.
+- This is resource-knowledge rendering, not fog-of-war.
+
+---
+
 ### TASK-60
 Title: Simple Traits
 

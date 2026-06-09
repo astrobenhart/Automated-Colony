@@ -36,6 +36,14 @@ def color_for_role(role: str | None) -> tuple[int, int, int]:
     return COLORS.get(ROLE_COLOR_KEYS.get(role, "agent"), COLORS["agent"])
 
 
+def is_food_visible_to_player(world: World, x: int, y: int) -> bool:
+    return (x, y) in world.colony_memory.known_food
+
+
+def is_wood_visible_to_player(world: World, x: int, y: int) -> bool:
+    return (x, y) in world.colony_memory.known_wood
+
+
 class PygameRenderer:
     def __init__(self, world: World):
         pygame.init()
@@ -166,10 +174,10 @@ class PygameRenderer:
                     if farm.food > 0:
                         self.draw_centered_symbol("#", screen_x, screen_y, COLORS["farm_crop"])
 
-                if tile.food > 0:
+                if tile.food > 0 and is_food_visible_to_player(self.world, x, y):
                     self.draw_centered_symbol("f", screen_x, screen_y, self.resource_color("food", tile.food, max_food(tile)))
 
-                if tile.wood > 0:
+                if tile.wood > 0 and is_wood_visible_to_player(self.world, x, y):
                     self.draw_centered_symbol("w", screen_x, screen_y, self.resource_color("wood", tile.wood, max_wood(tile)))
 
                 animal = self.world.animal_at(x, y)
@@ -423,8 +431,8 @@ class PygameRenderer:
             details = [
                 ("Tile", f"({tile_x}, {tile_y})"),
                 ("Terrain", tile.kind),
-                ("Food", tile.food),
-                ("Wood", tile.wood),
+                ("Food", tile.food if is_food_visible_to_player(self.world, tile_x, tile_y) else "Unknown"),
+                ("Wood", tile.wood if is_wood_visible_to_player(self.world, tile_x, tile_y) else "Unknown"),
                 ("Walkable", tile.walkable),
             ]
             if self.is_settlement_center(tile_x, tile_y) and self.world.settlement is not None:

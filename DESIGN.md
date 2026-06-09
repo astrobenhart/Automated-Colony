@@ -68,6 +68,7 @@ UI should:
 - preserve selection, active events, history, legend, controls, and recent event visibility without changing simulation behavior
 - keep the default right panel player-facing, with debug-style internals reserved for selected-object details
 - use role-based villager colors as gameplay readability, so Generalists, Foragers, Builders, and Scouts can be identified without clicking them
+- show the village's discovered resource knowledge rather than perfect food/wood information
 
 ## Next Focus
 
@@ -118,6 +119,22 @@ Trait phases:
 - Phase 4: Traits may influence behavior.
 
 Simple Traits v1 implements Phase 1 only. Each villager receives one static display-only trait at creation. Traits appear in selected-villager details and do not affect movement, pathfinding, exploration, gathering, building, workshop use, farming, survival needs, recovery, roles, goals, settlement needs, reservations, or carrying capacity.
+
+## Resource Knowledge Rendering
+
+The world is visible. Resource abundance is discovered.
+
+The player sees the village's discovered resource knowledge, not perfect resource information. Terrain remains fully visible: plains, grassland, forests, wetlands, rivers, lakes, hills, mountains, and seasonal terrain changes are not hidden or darkened.
+
+This is resource-knowledge rendering, not fog-of-war.
+
+Rendering rules:
+- Wild food markers and quantities appear only when the tile is in colony memory as known food.
+- Wild wood markers and quantities appear only when the tile is in colony memory as known wood.
+- Unknown resource tiles still render their underlying terrain.
+- Forest terrain remains visible even when harvestable wood on that forest tile is unknown.
+- Farms, stockpiles, shelters, workshops, the settlement center, villagers, and wildlife remain visible.
+- Colony memory is the source of truth for resource visibility.
 
 v0.7 migration should provide the first renewal and expansion path:
 - Food pressure can lead to farming.
