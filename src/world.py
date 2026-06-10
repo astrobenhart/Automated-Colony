@@ -9,6 +9,7 @@ from src.colony_storage import ColonyStorage
 from src.environment_events import update_environment_events
 from src.farming import maybe_create_farm, update_farms
 from src.influence import update_influence_peaks
+from src.death_memory import DeathRecord, expire_remembrances
 from src.seasons import (
     day_of_season,
     next_season_index,
@@ -60,6 +61,7 @@ class World:
     active_environment_events: list = field(default_factory=list)
     animals: list = field(default_factory=list)
     history: WorldHistory = field(default_factory=WorldHistory)
+    death_records: list[DeathRecord] = field(default_factory=list)
     identity: WorldIdentity | None = None
     settlement: Settlement | None = None
     reservations: ReservationManager = field(default_factory=ReservationManager)
@@ -301,6 +303,7 @@ class World:
         self.update_carrying_capacity()
         update_social_memory(self)
         update_influence_peaks(self)
+        expire_remembrances(self)
         self.log(f"Day {self.day} begins.")
 
     def advance_season(self):

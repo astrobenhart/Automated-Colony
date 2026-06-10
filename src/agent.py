@@ -61,6 +61,8 @@ class Agent:
     peak_influence_score: int = 0
     appearance_seed: int | None = None
     appearance_type: str | None = None
+    remembering: str | None = None
+    remembrance_expires_day: int = 0
 
     # Memory of coordinate locations
     remembered_food: set[tuple[int, int]] = field(default_factory=set, repr=False)
@@ -254,9 +256,11 @@ class Agent:
             self.alive = False
             self.current_action = "Dead"
             self.release_reservations(world)
-            world.log(f"{self.name} died of starvation.")
+            from src.death_memory import record_death
+            record_death(world, self, "starvation")
         elif self.thirst >= THIRST_DEATH_THRESHOLD:
             self.alive = False
             self.current_action = "Dead"
             self.release_reservations(world)
-            world.log(f"{self.name} died of thirst.")
+            from src.death_memory import record_death
+            record_death(world, self, "thirst")

@@ -170,6 +170,33 @@ Future formal leadership should build on influence without becoming volatile. In
 
 Raw familiarity can eventually flatten if everyone knows everyone. Future systems may need recency weighting, decay or staleness, relative ranking, top-relationship weighting, and meaningful relationship caps to keep social importance differentiated over long simulations.
 
+## Death Memory and Remembrance
+
+Death should create memory and history before it creates mechanics.
+
+Deaths should feel like remembered events in village history rather than temporary status effects, morale penalties, or productivity failures.
+
+Death Memory v1 has three conceptual layers:
+- Death Record: permanent history.
+- Remembrance: temporary social memory.
+- Legacy: future system.
+
+Only Death Record and Remembrance exist currently.
+
+Death Records are permanent identity snapshots created when a villager dies. They preserve name, villager id, role, lifecycle stage, trait, appearance metadata, cause of death, day, season, year, current influence label, peak influence label, and the villagers who remembered them.
+
+Death Records do not rely on the living villager object continuing to exist.
+
+Each villager should create exactly one Death Record.
+
+Remembrance is temporary and personal. Villagers who were meaningfully familiar with the dead may show a compact line such as `Remembering: Rowan` in villager inspection. Remembrance is not a generic Mourning state.
+
+Only meaningful relationships should create remembrance. Familiar villagers can remember the dead; strangers and villagers who only saw them once should not cause colony-wide remembrance.
+
+Remembrance is flavor only. It does not affect goals, pathfinding, gathering, building, farming, exploration, role behavior, state labels, social familiarity growth, influence, survival, productivity, morale, or carrying capacity.
+
+Legacy remains future-facing. The preserved death data may later support former leaders, founders, respected elders, migration stories, remembered dead, settlement history, ruins, legends, or mysteries, but those systems are not implemented in Death Memory v1.
+
 ## Overlay Framework
 
 The right panel remains compact.

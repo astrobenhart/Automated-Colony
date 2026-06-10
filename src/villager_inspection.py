@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from src.death_memory import active_remembrance_name
 from src.influence import influence_label
 from src.social_memory import familiarity_summary
 from src.state import state_label
@@ -69,10 +70,14 @@ def identity_rows(agent, world=None) -> list[tuple[str, object]]:
 
 
 def status_rows(agent, world=None) -> list[tuple[str, object]]:
-    return [
+    rows = [
         ("State", safe_state_label(agent, world) or "Unknown"),
         ("Influence", influence_label(agent, world)),
     ]
+    remembering = active_remembrance_name(agent, world)
+    if remembering:
+        rows.append(("Remembering", remembering))
+    return rows
 
 
 def familiarity_rows(agent) -> list[tuple[str, object]]:

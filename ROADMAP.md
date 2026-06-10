@@ -191,7 +191,7 @@ Features:
 - [x] Overlay Framework v1 with Villagers overlay
 - [x] Influence foundation for future leadership
 - [x] Appearance System v1 with 8-bit villager portraits
-- [ ] Death memory and mourning as flavor/history
+- [x] Death memory and remembrance as flavor/history
 - [ ] Social behavior shaped by settlement membership
 - [ ] Optional pair/family labels only if they do not imply reproduction yet
 
@@ -205,6 +205,7 @@ Notes:
 - Overlay Framework v1 adds reusable pygame-gui overlays for focused observation. Villagers is the first overlay, opened with `V`, and uses a master/detail layout for villager inspection while the right panel stays compact. Overlays are observer tools, not command tools.
 - Influence Foundation v1 computes soft social importance from recent incoming familiarity. Influence labels are Low, Emerging, Notable, and Respected, appear in the Villagers overlay, update peak influence metadata, and do not select formal leaders or affect behavior.
 - Appearance System v1 assigns stable `appearance_seed` and `appearance_type` identity metadata. The Villagers overlay uses procedural layered full-body 8-bit character sprites with outline, skin, hair, eyes, body, role-colored clothing, and accent pixels; elders render with grey hair. The selected villager pane is an RPG-style character card focused on identity, State, Influence, and familiar villagers rather than raw simulation telemetry.
+- Death Memory v1 creates permanent Death Records when villagers die, records one readable world-history entry, and gives familiar villagers a temporary personal `Remembering: Name` line. This is memory and history flavor only; it does not add morale penalties, productivity penalties, graves, funerals, ghosts, resurrection, or legacy mechanics.
 - Do not add old-age death yet.
 - Do not add reproduction yet.
 - Do not add children yet.

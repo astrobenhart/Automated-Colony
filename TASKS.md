@@ -316,34 +316,6 @@ Notes:
 
 ---
 
-### TASK-64
-Title: Mourning and Death Memory Flavor
-
-Owner: Planner Agent / Docs Agent / Gameplay Vision Agent
-
-Status: Backlog
-
-Description:
-Plan how villagers and settlements remember deaths through flavor, history, or brief social behavior without adding new death sources.
-
-Expected Output:
-A v0.6 design for death memory and mourning as story/history texture.
-
-Acceptance Criteria:
-- Mourning is bounded and does not override survival needs.
-- Death memory records existing deaths rather than creating new mortality systems.
-- No old-age death is introduced.
-- No gameplay code is changed by this planning task.
-
-Dependencies:
-- TASK-58
-- TASK-60
-
-Notes:
-- Do not add a new death source before adding a renewal source.
-
----
-
 ### TASK-55
 Title: History Integration for Mysteries
 
@@ -653,6 +625,36 @@ Notes:
 ---
 
 ## Completed
+
+### TASK-80
+Title: Death Memory and Remembrance v1
+
+Owner: Social Systems Agent / History Agent / UI Agent / Architect Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #54 by preserving villager deaths as permanent memory/history records and adding temporary personal remembrance flavor for meaningful relationships.
+
+Expected Output:
+Villager deaths create one permanent `DeathRecord`, one compact world-history entry, and temporary `Remembering: Name` display rows for familiar living villagers.
+
+Acceptance Criteria:
+- Death records preserve identity snapshot, cause of death, day, season, year, influence label, peak influence label, appearance metadata, and remembered-by names.
+- Familiar villagers can temporarily remember the dead.
+- Strangers and one-time sightings do not create colony-wide remembrance.
+- Remembrance expires after a few in-game days.
+- No morale, productivity, movement, AI, survival, grave, ghost, resurrection, or legacy mechanics are added.
+- Existing tests pass.
+
+Dependencies:
+- TASK-58
+- TASK-60
+
+Notes:
+- Death creates memory before mechanics. Legacy remains future-facing.
+
+---
 
 ### TASK-79
 Title: Appearance System v1 With 8-bit Villager Sprites

@@ -6,6 +6,7 @@ from src.environment_events import (
 from src.tile import Tile
 from src.world import World
 from src.world_history import (
+    DEATH,
     ENVIRONMENT,
     HISTORY_CATEGORIES,
     SEASON,
@@ -49,7 +50,7 @@ def test_history_starts_empty_with_future_categories_available():
     history = WorldHistory()
 
     assert history.count() == 0
-    assert {ENVIRONMENT, SEASON, WILDLIFE, SETTLEMENT}.issubset(HISTORY_CATEGORIES)
+    assert {ENVIRONMENT, SEASON, WILDLIFE, SETTLEMENT, DEATH}.issubset(HISTORY_CATEGORIES)
 
 
 def test_history_records_day_year_season_and_category():
