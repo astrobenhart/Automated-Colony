@@ -50,6 +50,7 @@ class Settlement:
     y: int
     founded_day: int
     founded_season: str
+    settlement_id: str | None = None
     radius: int = SETTLEMENT_RADIUS
     resource_radius: int = SETTLEMENT_RESOURCE_RADIUS
     expanded_resource_radius: int = SETTLEMENT_EXPANDED_RESOURCE_RADIUS
@@ -88,12 +89,14 @@ class Settlement:
 
 def found_settlement(world) -> Settlement:
     x, y = central_founding_site(world)
+    name = settlement_name(world)
     settlement = Settlement(
-        name=settlement_name(world),
+        name=name,
         x=x,
         y=y,
         founded_day=world.day,
         founded_season=world.season,
+        settlement_id=settlement_id_for(name, world.seed),
         population=len(world.living_agents()),
     )
     settlement.stockpiles = create_stockpiles(world, settlement)
@@ -628,6 +631,13 @@ def settlement_name(world) -> str:
     suffixes = _suffixes_for_tags(tags)
     suffix = suffixes[_deterministic_index(world.seed, title, tags, len(suffixes))]
     return f"{root}{suffix}"
+
+
+def settlement_id_for(name: str, seed=None) -> str:
+    key = f"{seed}|{name}"
+    digest = hashlib.sha256(key.encode("utf-8")).hexdigest()
+    slug = "".join(char.lower() for char in name if char.isalnum()) or "settlement"
+    return f"{slug}-{digest[:8]}"
 
 
 def _walkable_tiles_in_radius(world, center_x: int, center_y: int, radius: int) -> list[tuple[int, int]]:

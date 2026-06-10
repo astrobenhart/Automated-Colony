@@ -165,7 +165,7 @@ def test_villager_detail_sections_include_player_facing_fields():
     assert ("Trait", "Curious") in sections["Identity"]
     assert ("State", "Working") in sections["Status"]
     assert ("Influence", "Low") in sections["Status"]
-    assert ("", "Bryn") in sections["Familiar With"]
+    assert ("Close Companion", "Bryn") in sections["Bonds"]
 
 
 def test_villager_detail_sections_handle_missing_optional_fields():
@@ -176,7 +176,7 @@ def test_villager_detail_sections_handle_missing_optional_fields():
     assert ("Name", "Mystery") in sections["Identity"]
     assert ("Role", "Unknown") not in sections["Identity"]
     assert ("State", "Idle") in sections["Status"]
-    assert ("", "None") in sections["Familiar With"]
+    assert ("", "None") in sections["Bonds"]
 
 
 def test_villager_character_card_excludes_fast_moving_telemetry():
@@ -208,7 +208,7 @@ def test_villager_character_card_excludes_fast_moving_telemetry():
     assert "Gathering food" not in rendered
 
 
-def test_familiarity_card_display_uses_names_not_raw_counts():
+def test_bond_card_display_uses_labels_and_names_not_raw_counts():
     agent = Agent("Ari", 1, 1)
     agent.social_memory["bryn"] = SocialMemoryEntry(
         villager_id="bryn",
@@ -219,8 +219,8 @@ def test_familiarity_card_display_uses_names_not_raw_counts():
 
     sections = dict(villager_detail_sections(agent))
 
-    assert sections["Familiar With"] == [("", "Bryn")]
-    assert "30" not in "\n".join(str(value) for _, value in sections["Familiar With"])
+    assert sections["Bonds"] == [("Close Companion", "Bryn")]
+    assert "30" not in "\n".join(str(value) for _, value in sections["Bonds"])
 
 
 def test_compact_villager_rows_keep_right_panel_short():

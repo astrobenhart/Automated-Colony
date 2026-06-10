@@ -41,6 +41,7 @@ v0.5.0, Colony Roles and Production, turns the prototype survival sandbox into a
 - Selected-agent and selected-tile inspection UI with detailed internals
 - Compact player-facing right-side status panel with world identity, time/season, colony status, active events, selection, history, legend, controls, and recent events
 - Overlay Framework v1 using pygame-gui, with Villagers as the first observer overlay
+- History overlay as a read-only village chronicle for recent history, remembrance, and remembered dead
 - Automated tests for pathfinding, memory, goals, building priorities, storage, reservations, farming, carrying capacity, movement recovery, world logic, and renderer selection helpers
 
 ## Controls
@@ -48,6 +49,7 @@ v0.5.0, Colony Roles and Production, turns the prototype survival sandbox into a
 - `SPACE` - Pause or unpause
 - `W`, `A`, `S`, `D` - Pan the camera
 - `V` - Toggle Villagers overlay
+- `H` - Toggle History overlay
 - `UP` - Increase simulation speed
 - `DOWN` - Decrease simulation speed
 - `R` - Restart the world

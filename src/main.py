@@ -61,6 +61,9 @@ def main():
                 elif event.key == pygame.K_v:
                     renderer.toggle_villagers_overlay()
 
+                elif event.key == pygame.K_h:
+                    renderer.toggle_history_overlay()
+
         if not paused and len(world.living_agents()) > 0:
             step_time = 1 / sim_speed
 

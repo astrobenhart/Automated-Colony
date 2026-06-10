@@ -63,6 +63,10 @@ class Agent:
     appearance_type: str | None = None
     remembering: str | None = None
     remembrance_expires_day: int = 0
+    home_settlement_id: str | None = None
+    home_settlement_name: str | None = None
+    birth_settlement_id: str | None = None
+    birth_settlement_name: str | None = None
 
     # Memory of coordinate locations
     remembered_food: set[tuple[int, int]] = field(default_factory=set, repr=False)

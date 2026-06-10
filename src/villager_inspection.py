@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from src.death_memory import active_remembrance_name
 from src.influence import influence_label
+from src.social_bonds import social_bonds
 from src.social_memory import familiarity_summary
 from src.state import state_label
 
@@ -37,7 +38,7 @@ def villager_detail_sections(agent, world=None) -> list[tuple[str, list[tuple[st
     return [
         ("Identity", identity_rows(agent, world)),
         ("Status", status_rows(agent, world)),
-        ("Familiar With", familiarity_rows(agent)),
+        ("Bonds", bond_rows(agent)),
     ]
 
 
@@ -66,6 +67,7 @@ def identity_rows(agent, world=None) -> list[tuple[str, object]]:
         ("Name", getattr(agent, "name", None)),
         ("Role", role_life),
         ("Trait", getattr(agent, "trait", None)),
+        ("Home", getattr(agent, "home_settlement_name", None)),
     ])
 
 
@@ -91,6 +93,13 @@ def familiarity_rows(agent) -> list[tuple[str, object]]:
     if not names:
         return [("", "None")]
     return [("", name) for name in names]
+
+
+def bond_rows(agent) -> list[tuple[str, object]]:
+    bonds = social_bonds(agent)
+    if not bonds:
+        return [("", "None")]
+    return [(bond.label, bond.name) for bond in bonds]
 
 
 def present_rows(rows: list[tuple[str, object | None]]) -> list[tuple[str, object]]:

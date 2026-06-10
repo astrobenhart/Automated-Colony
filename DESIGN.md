@@ -106,7 +106,7 @@ v0.6 life and social foundations should focus on labels and lightweight flavor:
 - Adult and Elder can be lifecycle labels.
 - Elders may move slower, work less often, influence leadership/memory/history, or appear more often in notable events.
 - Elders should not automatically die of old age until a renewal system exists.
-- Traits, mood, morale, familiarity, leadership, mourning, and pair/family labels should remain lightweight.
+- Traits, mood, morale, familiarity, influence, remembrance, settlement identity, and social bond labels should remain lightweight.
 - Reproduction, children, inheritance, full family trees, and old-age death remain deferred.
 - Lifecycle Labels v1 is intentionally static identity metadata. Villagers are assigned Adult or Elder when created, the label appears in selected-villager details, and there is no Adult-to-Elder progression or Elder-to-death rule.
 
@@ -197,6 +197,45 @@ Remembrance is flavor only. It does not affect goals, pathfinding, gathering, bu
 
 Legacy remains future-facing. The preserved death data may later support former leaders, founders, respected elders, migration stories, remembered dead, settlement history, ruins, legends, or mysteries, but those systems are not implemented in Death Memory v1.
 
+## Settlement Identity and Belonging
+
+Settlement membership should create belonging before it creates politics.
+
+Settlement Identity v1 is informational only. It gives villagers a stable home settlement identity so character cards, death records, and Chronicle entries can refer to where a villager belongs.
+
+v0.6 implementation:
+- villagers receive `home_settlement_id` and `home_settlement_name`
+- villagers also store future-facing `birth_settlement_id` and `birth_settlement_name`
+- starting villagers belong to the starting settlement
+- villager character cards show a compact `Home` row
+- death records preserve settlement identity
+- death-history and Chronicle wording can say `Rowan of Oakvale` when the data is available
+
+Settlement identity does not affect goals, pathfinding, gathering, building, farming, exploration, role behavior, survival, social familiarity growth, remembrance rules, influence calculation, resource ownership, work groups, or movement.
+
+There are no factions, politics, migration, settlement conflict, player controls, settlement bonuses, or same-settlement social bonuses in v1.
+
+Future systems may use this identity layer for migration, splinter settlements, founders, settlement histories, multi-settlement worlds, ruins, and long-term lineage/history links.
+
+## Social Bond Labels
+
+Social bonds should describe familiarity before they imply family.
+
+Social Bond Labels v1 are display-only labels derived from existing social memory. They do not create a relationship simulation.
+
+Current labels:
+- Often Seen With
+- Trusted Neighbor
+- Close Companion
+
+These labels are non-romantic and non-family. They must not imply partners, spouses, parents, children, siblings, households, couples, ancestry, reproduction, marriage, or pair bonding.
+
+Bond labels are shown compactly on villager character cards and are capped to the strongest few known villagers. They use existing familiarity levels rather than raw familiarity scores.
+
+Social Bond Labels do not affect AI, movement, pathfinding, gathering, building, farming, state labels, death/remembrance behavior, influence calculation, settlement membership, survival, social-memory growth, or any other gameplay behavior.
+
+Family, reproduction, ancestry, children, romance, households, and pair-bond systems are deferred until migration, lifecycle, population, and long-term history systems are intentionally designed.
+
 ## Overlay Framework
 
 The right panel remains compact.
@@ -216,6 +255,31 @@ Villager details use an RPG-style character card. The card prioritizes identity 
 Fast-changing telemetry is intentionally excluded from the character card. Raw hunger, thirst, fatigue, carried inventory counts, path data, target data, and internal counters belong in tests or future debug tools, not in the primary villager profile.
 
 Future overlays such as Settlements, History, Wildlife, Visitors, Mysteries, and Ruins should plug into the same overlay manager instead of becoming one-off windows.
+
+## History Overlay
+
+The History overlay is a read-only village chronicle.
+
+Its purpose is to make the simulation readable as a story.
+
+It is not a management tool.
+
+It is not a debug console.
+
+It is not a death viewer, graveyard UI, or memorial-management UI.
+
+History Overlay v1 uses the existing Overlay Framework and opens with `H`. It reads existing world data rather than creating separate storage for UI.
+
+Current Chronicle content includes:
+- recent world-history entries
+- active remembrance lines such as `Ari is remembering Rowan.`
+- remembered dead from permanent Death Records
+
+History entries should use readable player-facing language and season/year dates where possible, such as `Summer, Year 2`, instead of raw ticks or debug counters.
+
+Remembered dead are shown as compact story cards with name, role, lifecycle stage, influence label, cause of death, date, and remembered-by names when available.
+
+Future Chronicle content may include settlement founding, first farms, first workshops, shortages, influential villagers, visitors, mysteries, migrations, leaders, ruins, and legends. Those event types should slot into the same Chronicle structure later, but are not implemented in v1.
 
 ## Appearance System
 

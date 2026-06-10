@@ -17,6 +17,7 @@ from src.config import (
 )
 from src.environment_events import active_event_names, environmental_tile_color
 from src.farming import farm_border_edges
+from src.overlays.history import HISTORY_OVERLAY, HistoryOverlay
 from src.overlays.villagers import VILLAGERS_OVERLAY, VillagersOverlay
 from src.resource_ecology import max_food, max_wood
 from src.role_colors import color_for_role
@@ -67,6 +68,13 @@ class PygameRenderer:
                 self.selected_villager,
             ),
         )
+        self.overlay_manager.register_overlay(
+            HISTORY_OVERLAY,
+            lambda: HistoryOverlay(
+                self.world,
+                self.ui_manager,
+            ),
+        )
 
     def set_world(self, world: World):
         self.world = world
@@ -85,6 +93,9 @@ class PygameRenderer:
 
     def toggle_villagers_overlay(self):
         self.overlay_manager.toggle_overlay(VILLAGERS_OVERLAY)
+
+    def toggle_history_overlay(self):
+        self.overlay_manager.toggle_overlay(HISTORY_OVERLAY)
 
     def selected_villager(self):
         return self.selected_agent
@@ -326,7 +337,7 @@ class PygameRenderer:
 
         y += self.panel_gap
         y = self.draw_section_header("Controls", content_x, y, content_width, bottom_y)
-        controls = "WASD pan | V villagers | Space pause | Up/Down speed | R restart | Esc quit"
+        controls = "WASD pan | V villagers | H history | Space pause | Up/Down speed | R restart | Esc quit"
         y = self.draw_wrapped_text(controls, content_x, y, content_width, bottom_y, COLORS["muted"])
 
         y += self.panel_gap

@@ -30,6 +30,10 @@ class DeathRecord:
     day: int
     season: str
     year: int
+    home_settlement_id: str | None = None
+    home_settlement_name: str | None = None
+    birth_settlement_id: str | None = None
+    birth_settlement_name: str | None = None
     remembered_by: list[str] = field(default_factory=list)
 
 
@@ -54,6 +58,10 @@ def record_death(world: World, agent: Agent, cause_of_death: str) -> DeathRecord
         day=world.day,
         season=world.season,
         year=world.year,
+        home_settlement_id=getattr(agent, "home_settlement_id", None),
+        home_settlement_name=getattr(agent, "home_settlement_name", None),
+        birth_settlement_id=getattr(agent, "birth_settlement_id", None),
+        birth_settlement_name=getattr(agent, "birth_settlement_name", None),
         remembered_by=remembered_by,
     )
     world.death_records.append(record)
@@ -128,10 +136,16 @@ def record_death_history(world: World, record: DeathRecord):
 
 def death_history_description(record: DeathRecord) -> str:
     phrase = villager_phrase(record)
-    description = f"{record.name}, {phrase}, died of {record.cause_of_death}."
+    description = f"{villager_history_name(record)}, {phrase}, died of {record.cause_of_death}."
     if record.remembered_by:
         description += f" They were remembered by {format_names(record.remembered_by)}."
     return description
+
+
+def villager_history_name(record: DeathRecord) -> str:
+    if record.home_settlement_name:
+        return f"{record.name} of {record.home_settlement_name}"
+    return record.name
 
 
 def villager_phrase(record: DeathRecord) -> str:

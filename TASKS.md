@@ -626,6 +626,100 @@ Notes:
 
 ## Completed
 
+### TASK-83
+Title: Social Bond Labels
+
+Owner: Roadmap Agent / Social Systems Agent / UI Agent / History Agent / Architect Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Replace the risky v0.6 pair/family-label roadmap idea with non-romantic, non-family Social Bond Labels derived from existing familiarity.
+
+Expected Output:
+Villager character cards show compact display-only bond labels such as Often Seen With, Trusted Neighbor, and Close Companion without adding relationship mechanics.
+
+Acceptance Criteria:
+- Bond labels derive from existing social memory and familiarity levels.
+- Bond labels do not appear for strangers.
+- Display is capped to the strongest few bonds.
+- Labels avoid family, romance, reproduction, household, marriage, and pair-bond wording.
+- Raw familiarity scores are not shown.
+- Bond labels do not affect AI, movement, pathfinding, gathering, building, farming, remembrance, influence, settlement membership, survival, or social-memory growth.
+- Roadmap and design docs defer family/reproduction/romance systems.
+- Existing tests pass.
+
+Dependencies:
+- TASK-60
+- TASK-82
+
+Notes:
+- Social bonds describe familiarity before they imply family.
+
+---
+
+### TASK-82
+Title: Settlement Identity and Belonging
+
+Owner: Social Systems Agent / History Agent / UI Agent / Architect Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #56 by adding stable settlement belonging metadata for villagers without adding behavior, politics, migration, factions, or social bonuses.
+
+Expected Output:
+Villagers have home and birth settlement identity, character cards show Home, and death-history / Chronicle wording can use settlement names when available.
+
+Acceptance Criteria:
+- Starting villagers receive `home_settlement_id` and `home_settlement_name`.
+- Starting villagers also receive future-facing `birth_settlement_id` and `birth_settlement_name`.
+- Character cards show a compact Home row when settlement identity exists.
+- Death records preserve settlement identity.
+- History and Chronicle wording fall back safely when settlement identity is missing.
+- Familiarity, remembrance, influence, AI, pathfinding, gathering, building, farming, exploration, and survival behavior are unchanged.
+- Existing tests pass.
+
+Dependencies:
+- TASK-80
+- TASK-81
+
+Notes:
+- Settlement membership creates belonging before politics. Migration, splinter settlements, founders, factions, and settlement conflict remain future work.
+
+---
+
+### TASK-81
+Title: History Overlay GUI
+
+Owner: UI Agent / History Agent / Social Systems Agent / Architect Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #55 by adding a read-only Chronicle overlay through the existing Overlay Framework.
+
+Expected Output:
+Pressing `H` opens a History overlay that displays recent history, active remembrance, and remembered dead in a story-facing village chronicle format.
+
+Acceptance Criteria:
+- `H` toggles the History overlay without duplicating windows.
+- Recent history entries are shown newest first.
+- Temporary remembrance appears as natural language such as `Ari is remembering Rowan.`
+- Remembered dead are shown as compact story cards from existing Death Records.
+- Dates use season/year formatting where possible.
+- Empty states work for both history and remembered dead.
+- The overlay is read-only and does not change gameplay behavior.
+- Existing tests pass.
+
+Dependencies:
+- TASK-80
+
+Notes:
+- This is a Chronicle, not a death viewer, graveyard UI, memorial UI, management tool, or debug console.
+
+---
+
 ### TASK-80
 Title: Death Memory and Remembrance v1
 

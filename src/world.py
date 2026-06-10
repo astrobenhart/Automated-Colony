@@ -133,6 +133,8 @@ class World:
         ]
 
         positions = self.initial_spawn_positions(amount)
+        home_settlement_id = self.settlement.settlement_id if self.settlement is not None else None
+        home_settlement_name = self.settlement.name if self.settlement is not None else None
         for i, (x, y) in enumerate(positions):
             appearance_seed = appearance_seed_for(self.seed, i, names[i % len(names)])
             self.agents.append(Agent(
@@ -145,6 +147,10 @@ class World:
                 agent_id=f"villager-{i}",
                 appearance_seed=appearance_seed,
                 appearance_type=appearance_type_for_seed(appearance_seed),
+                home_settlement_id=home_settlement_id,
+                home_settlement_name=home_settlement_name,
+                birth_settlement_id=home_settlement_id,
+                birth_settlement_name=home_settlement_name,
             ))
 
         self.update_settlement_population()

@@ -192,8 +192,9 @@ Features:
 - [x] Influence foundation for future leadership
 - [x] Appearance System v1 with 8-bit villager portraits
 - [x] Death memory and remembrance as flavor/history
-- [ ] Social behavior shaped by settlement membership
-- [ ] Optional pair/family labels only if they do not imply reproduction yet
+- [x] History Overlay GUI as a read-only village chronicle
+- [x] Settlement identity and belonging
+- [x] Optional Social Bond Labels
 
 Notes:
 - v0.5 created the stable settlement economy. v0.6 should make the people inside that settlement feel more individual without making the village fragile.
@@ -206,9 +207,14 @@ Notes:
 - Influence Foundation v1 computes soft social importance from recent incoming familiarity. Influence labels are Low, Emerging, Notable, and Respected, appear in the Villagers overlay, update peak influence metadata, and do not select formal leaders or affect behavior.
 - Appearance System v1 assigns stable `appearance_seed` and `appearance_type` identity metadata. The Villagers overlay uses procedural layered full-body 8-bit character sprites with outline, skin, hair, eyes, body, role-colored clothing, and accent pixels; elders render with grey hair. The selected villager pane is an RPG-style character card focused on identity, State, Influence, and familiar villagers rather than raw simulation telemetry.
 - Death Memory v1 creates permanent Death Records when villagers die, records one readable world-history entry, and gives familiar villagers a temporary personal `Remembering: Name` line. This is memory and history flavor only; it does not add morale penalties, productivity penalties, graves, funerals, ghosts, resurrection, or legacy mechanics.
+- History Overlay v1 adds a read-only Chronicle opened with `H`. It shows recent history entries, active remembrance lines, and compact remembered-dead cards using story-facing language and readable season/year dates. It is not a death viewer, graveyard UI, debug log, or management tool.
+- Settlement Identity v1 gives villagers stable home and birth settlement fields, displays Home on character cards, and lets death history / Chronicle wording use names such as `Rowan of Oakvale`. This is belonging and future migration groundwork only; it adds no behavior bonuses, same-settlement familiarity changes, politics, factions, migration, or conflict.
+- Social Bond Labels v1 replace the old pair/family-label idea with non-romantic, non-family display labels derived from existing familiarity. Character cards may show labels such as Often Seen With, Trusted Neighbor, and Close Companion. These labels do not affect behavior, remembrance, influence, settlement membership, survival, or social-memory growth.
 - Do not add old-age death yet.
 - Do not add reproduction yet.
 - Do not add children yet.
+- Do not add romance yet.
+- Do not add family, ancestry, households, couples, marriage, or pair-bond systems yet.
 - Do not add inheritance yet.
 - Do not add full family trees yet.
 - Do not let social systems override survival needs.
