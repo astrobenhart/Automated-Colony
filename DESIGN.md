@@ -209,12 +209,22 @@ Character sprites use a simple layered architecture:
 
 The first sprite consumer is the Villagers overlay. The selected villager shows a crisp full-body pixel-art sprite generated at low resolution and scaled up with nearest-neighbor scaling.
 
-The sprite style is inspired by compact Game Boy Color-era RPG character presentation without copying specific sprites, characters, palettes, or assets.
+The sprite style is inspired by compact Game Boy Color-era RPG character presentation without copying specific sprites, characters, palettes, or assets. Villagers should read as cute chibi RPG people rather than blocky icons or voxel-style figures.
+
+Sprite proportions should favor:
+- a large head, roughly half the sprite height
+- a compact body
+- short legs
+- a rounded silhouette
+
+Hair is the primary visual differentiator. Hairstyles, hair shape, and hair silhouette should help villagers feel recognizable at a glance.
 
 Sprites reflect appearance, lifecycle stage, and role color:
 - appearance controls skin tone, hair color, hair style, face shape, and eye placement
 - elders use grey / white hair
 - clothing uses the same role colors used for villagers on the map
+- clothing uses a simple highlight / midtone / shadow palette derived from the role color instead of a single flat fill
+- simple pixel shading on hair and clothing gives the sprite charm and depth without becoming realistic
 
 Sprites are identity and presentation only. They do not affect AI, roles, traits, lifecycle behavior, state labels, familiarity, influence, resources, pathfinding, romance, family, reproduction, or inheritance.
 

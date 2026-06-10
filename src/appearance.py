@@ -37,7 +37,7 @@ HAIR_COLORS = (
     (207, 168, 95),
 )
 
-HAIR_STYLES = ("Crop", "Sweep", "Parted", "Curls")
+HAIR_STYLES = ("Short", "Long", "Messy", "Parted", "Curly", "Straight")
 
 
 def appearance_seed_for(world_seed, index: int, name: str) -> int:

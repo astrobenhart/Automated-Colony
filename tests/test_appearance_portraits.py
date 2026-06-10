@@ -18,7 +18,9 @@ from src.portraits import (
     portrait_appearance_for,
     portrait_layer_metadata,
     portrait_seed_for,
+    role_color_palette,
     sprite_layer_metadata,
+    sprite_proportions,
 )
 from src.role_colors import color_for_role
 from src.roles import BUILDER, FORAGER
@@ -73,6 +75,15 @@ def test_role_clothing_uses_shared_role_color():
     assert surface.get_at((13, 18))[:3] == color_for_role(BUILDER)
 
 
+def test_role_clothing_palette_adds_highlight_and_shadow():
+    highlight, midtone, shadow = role_color_palette(color_for_role(BUILDER))
+
+    assert midtone == color_for_role(BUILDER)
+    assert highlight != midtone
+    assert shadow != midtone
+    assert sum(highlight) > sum(midtone) > sum(shadow)
+
+
 def test_elder_portrait_hair_differs_from_adult():
     adult = Agent("Ari", 1, 1, lifecycle_stage=ADULT, appearance_seed=42)
     elder = Agent("Ari", 1, 1, lifecycle_stage=ELDER, appearance_seed=42)
@@ -109,11 +120,28 @@ def test_character_sprite_has_full_body_rpg_proportions():
     agent = Agent("Dara", 1, 1, role=FORAGER, appearance_seed=99)
 
     surface = draw_character_sprite_surface(agent)
+    proportions = sprite_proportions()
 
-    assert surface.get_at((16, 13))[:3] == sprite_layer_metadata(agent)["skin"]
+    assert 0.45 <= proportions["head"] / 32 <= 0.55
+    assert 0.35 <= proportions["body"] / 32 <= 0.45
+    assert 0.10 <= proportions["legs"] / 32 <= 0.20
+    assert surface.get_at((12, 16))[:3] == sprite_layer_metadata(agent)["skin"]
     assert surface.get_at((13, 18))[:3] == color_for_role(FORAGER)
     assert surface.get_at((11, 26))[:3] != color_for_role(FORAGER)
     assert surface.get_at((11, 26))[:3] != sprite_layer_metadata(agent)["skin"]
+
+
+def test_hair_is_a_visible_sprite_differentiator():
+    short_hair = Agent("Ari", 1, 1, appearance_seed=0)
+    long_hair = Agent("Bryn", 1, 1, appearance_seed=11)
+
+    first = portrait_appearance_for(short_hair)
+    second = portrait_appearance_for(long_hair)
+    first_surface = draw_character_sprite_surface(short_hair)
+    second_surface = draw_character_sprite_surface(long_hair)
+
+    assert first.hair_style != second.hair_style
+    assert first_surface.get_at((8, 17))[:3] != second_surface.get_at((8, 17))[:3]
 
 
 def test_sprite_alias_uses_same_cached_surface_as_portrait_api():
