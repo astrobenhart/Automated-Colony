@@ -59,6 +59,8 @@ class Agent:
     trait: str = CALM
     agent_id: str | None = None
     peak_influence_score: int = 0
+    appearance_seed: int | None = None
+    appearance_type: str | None = None
 
     # Memory of coordinate locations
     remembered_food: set[tuple[int, int]] = field(default_factory=set, repr=False)

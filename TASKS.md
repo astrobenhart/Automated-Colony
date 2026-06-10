@@ -654,6 +654,44 @@ Notes:
 
 ## Completed
 
+### TASK-79
+Title: Appearance System v1 With 8-bit Villager Sprites
+
+Owner: UI Agent / Portrait Agent / Identity Agent / Architect Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #53 by adding stable appearance metadata and procedural pixel-art character sprites as the first consumer.
+
+Expected Output:
+Villagers have deterministic `appearance_seed` and `appearance_type` metadata, and the Villagers overlay shows a cached full-body 8-bit character sprite for the selected villager.
+
+Acceptance Criteria:
+- `appearance_seed` and `appearance_type` are assigned when villagers are created.
+- Appearance metadata is deterministic for fixed seed and spawn order.
+- Sprites are generated procedurally from layered outline, skin, hair, eyes, body, clothing, and accent pixels.
+- Sprite clothing uses the same role colors as map villagers.
+- Elder sprites visibly differ through grey / white hair.
+- Sprites are cached and not regenerated every frame.
+- Sprite generation handles missing optional fields safely.
+- No gameplay behavior is changed.
+- Existing tests pass.
+
+Dependencies:
+- TASK-59
+- TASK-60
+- TASK-61
+- TASK-62
+- TASK-78
+
+Notes:
+- This is Appearance System v1, not a gender system.
+- The Villagers overlay character card is identity/story-focused and intentionally excludes raw needs, inventory, path, target, and internal telemetry.
+- Future layers may add hats, cloaks, beards, walking sticks, accessories, scars, blessings, founder markers, or mystery effects.
+
+---
+
 ### TASK-63
 Title: Influence Foundation for Future Leadership
 

@@ -19,26 +19,13 @@ from src.environment_events import active_event_names, environmental_tile_color
 from src.farming import farm_border_edges
 from src.overlays.villagers import VILLAGERS_OVERLAY, VillagersOverlay
 from src.resource_ecology import max_food, max_wood
-from src.roles import BUILDER, FORAGER, GENERALIST, SCOUT
+from src.role_colors import color_for_role
 from src.seasons import seasonal_tile_color
 from src.agent import Agent
 from src.profiler import profiler
 from src.ui_overlays import OverlayManager
 from src.villager_inspection import compact_villager_rows
 from src.world import World
-
-
-ROLE_COLOR_KEYS = {
-    GENERALIST: "role_generalist",
-    FORAGER: "role_forager",
-    BUILDER: "role_builder",
-    SCOUT: "role_scout",
-}
-
-
-def color_for_role(role: str | None) -> tuple[int, int, int]:
-    return COLORS.get(ROLE_COLOR_KEYS.get(role, "agent"), COLORS["agent"])
-
 
 def is_food_visible_to_player(world: World, x: int, y: int) -> bool:
     return (x, y) in world.colony_memory.known_food

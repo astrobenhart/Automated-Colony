@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import pygame
 import pygame_gui
-from pygame_gui.elements import UIButton, UILabel, UIScrollingContainer, UIWindow
+from pygame_gui.elements import UIButton, UIImage, UILabel, UIScrollingContainer, UIWindow
 
+from src.portraits import DISPLAY_SIZE, generate_villager_sprite
 from src.villager_inspection import villager_detail_sections, villager_row_text
 
 
@@ -25,7 +26,7 @@ class VillagersOverlay:
         self.get_selected_agent = get_selected_agent or (lambda: None)
         self.closed = False
         self.buttons: dict[UIButton, object] = {}
-        self.detail_labels: list[UILabel] = []
+        self.detail_elements: list = []
         self.refresh_timer = 0.0
 
         window_rect = rect or pygame.Rect(24, 48, 760, 460)
@@ -106,9 +107,9 @@ class VillagersOverlay:
             self.buttons[button] = agent
 
     def refresh_details(self):
-        for label in list(self.detail_labels):
-            label.kill()
-        self.detail_labels.clear()
+        for element in list(self.detail_elements):
+            element.kill()
+        self.detail_elements.clear()
 
         selected = self.selected_living_agent()
         sections = villager_detail_sections(selected, self.world)
@@ -117,6 +118,16 @@ class VillagersOverlay:
         row_height = 24
         content_width = self.details_container.relative_rect.width - padding * 4
 
+        if selected is not None:
+            portrait = UIImage(
+                relative_rect=pygame.Rect(padding, y, DISPLAY_SIZE, DISPLAY_SIZE),
+                image_surface=generate_villager_sprite(selected),
+                manager=self.ui_manager,
+                container=self.details_container,
+            )
+            self.detail_elements.append(portrait)
+            y += DISPLAY_SIZE + 10
+
         for section_title, rows in sections:
             title = UILabel(
                 relative_rect=pygame.Rect(padding, y, content_width, row_height),
@@ -124,17 +135,18 @@ class VillagersOverlay:
                 manager=self.ui_manager,
                 container=self.details_container,
             )
-            self.detail_labels.append(title)
+            self.detail_elements.append(title)
             y += row_height
 
             for label, value in rows:
+                text = f"{label}: {value}" if label else str(value)
                 detail = UILabel(
                     relative_rect=pygame.Rect(padding + 8, y, content_width - 8, row_height),
-                    text=f"{label}: {value}",
+                    text=text,
                     manager=self.ui_manager,
                     container=self.details_container,
                 )
-                self.detail_labels.append(detail)
+                self.detail_elements.append(detail)
                 y += row_height
 
             y += 8

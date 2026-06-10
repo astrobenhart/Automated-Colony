@@ -2,6 +2,7 @@ import random
 from dataclasses import dataclass, field
 
 from src.building_priorities import highest_priority, needed_shelters, update_settlement_needs
+from src.appearance import appearance_seed_for, appearance_type_for_seed
 from src.carrying_capacity import carrying_capacity_report
 from src.colony_memory import ColonyMemory
 from src.colony_storage import ColonyStorage
@@ -131,6 +132,7 @@ class World:
 
         positions = self.initial_spawn_positions(amount)
         for i, (x, y) in enumerate(positions):
+            appearance_seed = appearance_seed_for(self.seed, i, names[i % len(names)])
             self.agents.append(Agent(
                 names[i % len(names)],
                 x,
@@ -139,6 +141,8 @@ class World:
                 lifecycle_stage=lifecycle_stage_for_index(i),
                 trait=trait_for_index(i),
                 agent_id=f"villager-{i}",
+                appearance_seed=appearance_seed,
+                appearance_type=appearance_type_for_seed(appearance_seed),
             ))
 
         self.update_settlement_population()

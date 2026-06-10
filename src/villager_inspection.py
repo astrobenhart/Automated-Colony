@@ -35,10 +35,8 @@ def villager_detail_sections(agent, world=None) -> list[tuple[str, list[tuple[st
 
     return [
         ("Identity", identity_rows(agent, world)),
-        ("Needs", needs_rows(agent)),
-        ("Activity", activity_rows(agent)),
-        ("Inventory", inventory_rows(agent)),
-        ("Social", social_rows(agent, world)),
+        ("Status", status_rows(agent, world)),
+        ("Familiar With", familiarity_rows(agent)),
     ]
 
 
@@ -55,43 +53,39 @@ def compact_villager_rows(agent, world=None) -> list[tuple[str, object]]:
 
 
 def identity_rows(agent, world=None) -> list[tuple[str, object]]:
+    role_life = " · ".join(
+        str(value)
+        for value in (
+            getattr(agent, "role", None),
+            getattr(agent, "lifecycle_stage", None),
+        )
+        if value
+    )
     return present_rows([
         ("Name", getattr(agent, "name", None)),
-        ("Role", getattr(agent, "role", None)),
-        ("Life", getattr(agent, "lifecycle_stage", None)),
+        ("Role", role_life),
         ("Trait", getattr(agent, "trait", None)),
-        ("State", safe_state_label(agent, world)),
     ])
 
 
-def needs_rows(agent) -> list[tuple[str, object]]:
+def status_rows(agent, world=None) -> list[tuple[str, object]]:
     return [
-        ("Hunger", getattr(agent, "hunger", "Unknown")),
-        ("Thirst", getattr(agent, "thirst", "Unknown")),
-        ("Fatigue", getattr(agent, "fatigue", "Unknown")),
-    ]
-
-
-def activity_rows(agent) -> list[tuple[str, object]]:
-    return [
-        ("Action", getattr(agent, "current_action", "Unknown")),
-        ("Goal", getattr(agent, "current_goal", "Unknown")),
-    ]
-
-
-def inventory_rows(agent) -> list[tuple[str, object]]:
-    return [
-        ("Food", getattr(agent, "food", 0)),
-        ("Wood", getattr(agent, "wood", 0)),
-    ]
-
-
-def social_rows(agent, world=None) -> list[tuple[str, object]]:
-    summary = ", ".join(familiarity_summary(agent)) if hasattr(agent, "social_memory") else ""
-    return [
+        ("State", safe_state_label(agent, world) or "Unknown"),
         ("Influence", influence_label(agent, world)),
-        ("Knows", summary or "None"),
     ]
+
+
+def familiarity_rows(agent) -> list[tuple[str, object]]:
+    if not hasattr(agent, "social_memory"):
+        return [("", "None")]
+
+    names = [
+        item.split(" (", 1)[0]
+        for item in familiarity_summary(agent)
+    ]
+    if not names:
+        return [("", "None")]
+    return [("", name) for name in names]
 
 
 def present_rows(rows: list[tuple[str, object | None]]) -> list[tuple[str, object]]:

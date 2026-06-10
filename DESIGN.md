@@ -184,7 +184,41 @@ Villagers is the first overlay. It uses a master/detail layout with a living-vil
 
 The Villagers overlay is the primary villager inspection interface. The right panel remains focused on world identity, time, colony status, resources, active events, selection summary, history, controls, and recent events.
 
+Villager details use an RPG-style character card. The card prioritizes identity and story: portrait, name, role, lifecycle stage, trait, high-level State, Influence, and familiar villagers.
+
+Fast-changing telemetry is intentionally excluded from the character card. Raw hunger, thirst, fatigue, carried inventory counts, path data, target data, and internal counters belong in tests or future debug tools, not in the primary villager profile.
+
 Future overlays such as Settlements, History, Wildlife, Visitors, Mysteries, and Ruins should plug into the same overlay manager instead of becoming one-off windows.
+
+## Appearance System
+
+Appearance System v1 adds stable identity metadata:
+- `appearance_seed`
+- `appearance_type`
+
+Villager character sprites are generated procedurally from appearance metadata. They are deterministic, lightweight, and do not require an external art pipeline.
+
+Character sprites use a simple layered architecture:
+- outline
+- base / skin
+- hair
+- eyes
+- body
+- clothing
+- accent pixels
+
+The first sprite consumer is the Villagers overlay. The selected villager shows a crisp full-body pixel-art sprite generated at low resolution and scaled up with nearest-neighbor scaling.
+
+The sprite style is inspired by compact Game Boy Color-era RPG character presentation without copying specific sprites, characters, palettes, or assets.
+
+Sprites reflect appearance, lifecycle stage, and role color:
+- appearance controls skin tone, hair color, hair style, face shape, and eye placement
+- elders use grey / white hair
+- clothing uses the same role colors used for villagers on the map
+
+Sprites are identity and presentation only. They do not affect AI, roles, traits, lifecycle behavior, state labels, familiarity, influence, resources, pathfinding, romance, family, reproduction, or inheritance.
+
+Future layers may add hats, cloaks, beards, walking sticks, accessories, scars, blessings, founder markers, mystery effects, or historical markers without replacing the base appearance system.
 
 ## Resource Knowledge Rendering
 

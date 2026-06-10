@@ -99,7 +99,7 @@ def test_villagers_overlay_button_selects_existing_villager():
         ui_manager,
         lambda selected_agent: selected.update(agent=selected_agent),
         lambda: selected["agent"],
-        rect=pygame.Rect(20, 20, 520, 260),
+        rect=pygame.Rect(20, 20, 640, 300),
     )
     button = next(iter(overlay.buttons))
     event = pygame.event.Event(
@@ -126,7 +126,7 @@ def test_villagers_overlay_refresh_removes_dead_villager():
         world,
         ui_manager,
         lambda agent: None,
-        rect=pygame.Rect(20, 20, 520, 260),
+        rect=pygame.Rect(20, 20, 640, 300),
     )
 
     bryn.alive = False
@@ -161,19 +161,11 @@ def test_villager_detail_sections_include_player_facing_fields():
     sections = dict(villager_detail_sections(agent))
 
     assert ("Name", "Ari") in sections["Identity"]
-    assert ("Role", "Forager") in sections["Identity"]
-    assert ("Life", "Adult") in sections["Identity"]
+    assert ("Role", "Forager · Adult") in sections["Identity"]
     assert ("Trait", "Curious") in sections["Identity"]
-    assert ("State", "Working") in sections["Identity"]
-    assert ("Hunger", 12) in sections["Needs"]
-    assert ("Thirst", 8) in sections["Needs"]
-    assert ("Fatigue", 3) in sections["Needs"]
-    assert ("Action", "Gathering food") in sections["Activity"]
-    assert ("Goal", "Gather food") in sections["Activity"]
-    assert ("Food", 1) in sections["Inventory"]
-    assert ("Wood", 2) in sections["Inventory"]
-    assert ("Influence", "Low") in sections["Social"]
-    assert ("Knows", "Bryn (Familiar)") in sections["Social"]
+    assert ("State", "Working") in sections["Status"]
+    assert ("Influence", "Low") in sections["Status"]
+    assert ("", "Bryn") in sections["Familiar With"]
 
 
 def test_villager_detail_sections_handle_missing_optional_fields():
@@ -183,10 +175,52 @@ def test_villager_detail_sections_handle_missing_optional_fields():
 
     assert ("Name", "Mystery") in sections["Identity"]
     assert ("Role", "Unknown") not in sections["Identity"]
-    assert ("State", "Idle") in sections["Identity"]
-    assert ("Food", 0) in sections["Inventory"]
-    assert ("Wood", 0) in sections["Inventory"]
-    assert ("Knows", "None") in sections["Social"]
+    assert ("State", "Idle") in sections["Status"]
+    assert ("", "None") in sections["Familiar With"]
+
+
+def test_villager_character_card_excludes_fast_moving_telemetry():
+    agent = Agent(
+        "Ari",
+        1,
+        1,
+        hunger=12,
+        thirst=8,
+        fatigue=3,
+        food=1,
+        wood=2,
+        current_action="Gathering food",
+        current_goal="Gather food",
+    )
+
+    sections = dict(villager_detail_sections(agent))
+    labels = {label for rows in sections.values() for label, _ in rows}
+    rendered = "\n".join(f"{label}: {value}" for rows in sections.values() for label, value in rows)
+
+    assert "Hunger" not in labels
+    assert "Thirst" not in labels
+    assert "Fatigue" not in labels
+    assert "Food" not in labels
+    assert "Wood" not in labels
+    assert "Action" not in labels
+    assert "Goal" not in labels
+    assert "12" not in rendered
+    assert "Gathering food" not in rendered
+
+
+def test_familiarity_card_display_uses_names_not_raw_counts():
+    agent = Agent("Ari", 1, 1)
+    agent.social_memory["bryn"] = SocialMemoryEntry(
+        villager_id="bryn",
+        display_name="Bryn",
+        familiarity_score=30,
+        last_seen_day=30,
+    )
+
+    sections = dict(villager_detail_sections(agent))
+
+    assert sections["Familiar With"] == [("", "Bryn")]
+    assert "30" not in "\n".join(str(value) for _, value in sections["Familiar With"])
 
 
 def test_compact_villager_rows_keep_right_panel_short():
@@ -223,4 +257,22 @@ def test_open_overlay_details_follow_map_selection():
     overlay.refresh_details()
 
     assert overlay.selected_living_agent() is bryn
-    assert any(getattr(label, "text", "") == "Name: Bryn" for label in overlay.detail_labels)
+    assert any(getattr(label, "text", "") == "Name: Bryn" for label in overlay.detail_elements)
+
+
+def test_open_overlay_details_include_selected_villager_portrait():
+    pygame.init()
+    pygame.display.set_mode((640, 480))
+    ui_manager = pygame_gui.UIManager((640, 480))
+    world = make_world()
+    agent = Agent("Ari", 1, 1, appearance_seed=42)
+    world.agents = [agent]
+    overlay = VillagersOverlay(
+        world,
+        ui_manager,
+        lambda selected: None,
+        lambda: agent,
+        rect=pygame.Rect(20, 20, 640, 300),
+    )
+
+    assert any(element.__class__.__name__ == "UIImage" for element in overlay.detail_elements)
