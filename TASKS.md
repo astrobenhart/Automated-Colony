@@ -8,6 +8,314 @@ No active task.
 
 ## Backlog
 
+### TASK-75
+Title: Historical Links Between Settlements
+
+Owner: Planner Agent / Docs Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan how settlements, ruins, migration paths, notable villagers, and major events should reference each other in long-term world history.
+
+Expected Output:
+A v0.9 design for historical links that connect current settlements to past migrations, abandoned places, and remembered people.
+
+Acceptance Criteria:
+- Historical links connect settlements, ruins, migrations, and notable villagers.
+- Links build on real simulation events whenever possible.
+- Links support storytelling without requiring politics, warfare, or a large economy.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-71
+- TASK-72
+- TASK-73
+- TASK-74
+
+Notes:
+- v0.9 should synthesize previous systems into history rather than reimplement v0.5 village formation features.
+
+---
+
+### TASK-74
+Title: Myths and Legends From Real Events
+
+Owner: Gameplay Vision Agent / Docs Agent
+
+Status: Backlog
+
+Description:
+Plan how the world can turn major events, migrations, mysteries, disasters, and notable villagers into myths or legends.
+
+Expected Output:
+A v0.9 design for generated legends that preserve continuity and mystery.
+
+Acceptance Criteria:
+- Legends are grounded in recorded world events where possible.
+- Legends remain sparse and meaningful rather than frequent random flavor.
+- The system does not become quests, objectives, or player-authored lore.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-55
+- TASK-71
+- TASK-73
+
+Notes:
+- A small number of meaningful long-term events is preferable to many frequent events.
+
+---
+
+### TASK-73
+Title: Migration History and Multi-Settlement Timeline
+
+Owner: Planner Agent / Architect Agent / Docs Agent
+
+Status: Backlog
+
+Description:
+Plan a long-term timeline that records settlement founding, migration paths, splinter settlements, failures, and major events.
+
+Expected Output:
+A v0.9 history design that makes multiple settlements and migrations readable over time.
+
+Acceptance Criteria:
+- Timeline entries cover founding, departures, arrivals, failures, ruins, and major events.
+- Migration paths and splinter settlements are represented without requiring diplomacy or politics.
+- The design builds on the existing world history model.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-62
+- TASK-63
+- TASK-64
+
+Notes:
+- v0.9 should focus on world memory and continuity.
+
+---
+
+### TASK-72
+Title: Ruins of Failed or Abandoned Settlements
+
+Owner: Planner Agent / Architect Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan how failed, abandoned, or migrated-from settlements can leave ruins that connect past settlement stories to the current world.
+
+Expected Output:
+A v0.9 design for ruins that emerge from settlement history instead of isolated flavor placement.
+
+Acceptance Criteria:
+- Ruins connect to real settlement failure, abandonment, migration, or mystery events where possible.
+- Ruins can be named or remembered through history.
+- Ruins do not require combat, warfare, diplomacy, or a full economy.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-63
+- TASK-73
+
+Notes:
+- Ruins should make the world feel older without becoming a management layer.
+
+---
+
+### TASK-71
+Title: Named Settlements and Founding Records
+
+Owner: Planner Agent / Docs Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan how multiple settlements should gain names, founding records, remembered founders, and identity hooks.
+
+Expected Output:
+A v0.7/v0.9 design for settlement identity that can support migration history and ruins.
+
+Acceptance Criteria:
+- Settlement records include names, founding day/season/year, and founding context.
+- Records support splinter settlements and future ruins.
+- The design builds on v0.5 settlement identity instead of replacing it.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-63
+
+Notes:
+- Settlement centers, hubs, stockpiles, clustered placement, and local resource radius are completed v0.5 prerequisites.
+
+---
+
+### TASK-70
+Title: Arrival and Newcomer Events
+
+Owner: Planner Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan simple newcomer or arrival events as a possible renewal mechanism once migration foundations exist.
+
+Expected Output:
+A scoped v0.7 design for arrivals that can replenish or change settlements without adding reproduction or a job board.
+
+Acceptance Criteria:
+- Arrivals are autonomous and settlement-aware.
+- Arrivals do not imply player recruitment controls.
+- Arrivals can interact with carrying capacity, food pressure, and settlement status.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-62
+
+Notes:
+- Arrival events are optional for v0.7, but renewal should exist before old-age death is considered.
+
+---
+
+### TASK-69
+Title: Simple Migration Movement and Departure Behavior
+
+Owner: Planner Agent / Architect Agent
+
+Status: Backlog
+
+Description:
+Plan how a departing group might travel, leave the map, or be abstractly resolved without requiring a full pathing/logistics overhaul.
+
+Expected Output:
+A scoped v0.7 behavior plan for migration departures that preserves performance and avoids fragile simulations.
+
+Acceptance Criteria:
+- Migration can be represented simply if full travel is too expensive or brittle.
+- Departure behavior does not require roads, hauling, or complex task scheduling.
+- Survival needs and pathfinding constraints remain respected.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-62
+- TASK-63
+
+Notes:
+- Keep migration practical before making it visually elaborate.
+
+---
+
+### TASK-68
+Title: Basic Settlement Identity for Splinters
+
+Owner: Planner Agent / Docs Agent
+
+Status: Backlog
+
+Description:
+Plan identity rules for new or splinter settlements, including names, founding context, and relationship to the source settlement.
+
+Expected Output:
+A v0.7 design for simple splinter settlement identity.
+
+Acceptance Criteria:
+- Splinter identity records origin settlement and founding cause.
+- Identity remains lightweight and autonomous.
+- No diplomacy, politics, economy, or multiple-settlement management UI is introduced.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-63
+- TASK-71
+
+Notes:
+- New settlements should emerge from pressure rather than scripts.
+
+---
+
+### TASK-67
+Title: Splinter Settlement Foundation
+
+Owner: Planner Agent / Architect Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan how a small departing group can found or record a new settlement due to population, food, carrying-capacity, or settlement pressure.
+
+Expected Output:
+A v0.7 design for the first simple splinter-settlement foundation model.
+
+Acceptance Criteria:
+- Splinter foundations are driven by settlement/resource pressure.
+- Foundation can be concrete or abstracted if necessary.
+- No full diplomacy, politics, economy, warfare, or player settlement placement is added.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-62
+- TASK-63
+
+Notes:
+- Migration is the first renewal/expansion mechanism.
+
+---
+
+### TASK-66
+Title: Departure Groups
+
+Owner: Planner Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan how small groups decide to leave a settlement under migration pressure.
+
+Expected Output:
+A v0.7 design for departure groups that can support renewal, expansion, and future multi-settlement history.
+
+Acceptance Criteria:
+- Departure groups are small and autonomous.
+- Departure decisions are shaped by settlement pressure, not player commands.
+- The design does not require deep family trees first.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-62
+
+Notes:
+- A departure may be simulated travel or an abstract historical event in early versions.
+
+---
+
+### TASK-65
+Title: Migration Pressure
+
+Owner: Planner Agent / Balance Agent / Gameplay Vision Agent
+
+Status: Backlog
+
+Description:
+Plan migration pressure from crowding, carrying capacity, food pressure, settlement status, or local resource strain.
+
+Expected Output:
+A v0.7 design that extends the v0.5 carrying-capacity idea from reporting into expansion pressure.
+
+Acceptance Criteria:
+- Population pressure can lead to migration or settlement expansion.
+- Food pressure still leads primarily to farming before migration.
+- Pressure thresholds are conservative and avoid noisy churn.
+- No gameplay code is changed by this planning task.
+
+Dependencies:
+- TASK-48
+
+Notes:
+- Food pressure -> farming. Population pressure -> migration / new settlement.
+
+---
+
 ### TASK-55
 Title: History Integration for Mysteries
 
@@ -201,7 +509,8 @@ Dependencies:
 - TASK-45
 
 Notes:
-- This is future logistics work, not active v0.5 scope.
+- This is future logistics work, not active v0.6 scope.
+- Resource Reservation v1 remains the current coordination layer until richer production chains, roads, multiple settlements, or many resource destinations justify deeper logistics.
 
 ---
 
@@ -316,6 +625,450 @@ Notes:
 ---
 
 ## Completed
+
+### TASK-83
+Title: Social Bond Labels
+
+Owner: Roadmap Agent / Social Systems Agent / UI Agent / History Agent / Architect Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Replace the risky v0.6 pair/family-label roadmap idea with non-romantic, non-family Social Bond Labels derived from existing familiarity.
+
+Expected Output:
+Villager character cards show compact display-only bond labels such as Often Seen With, Trusted Neighbor, and Close Companion without adding relationship mechanics.
+
+Acceptance Criteria:
+- Bond labels derive from existing social memory and familiarity levels.
+- Bond labels do not appear for strangers.
+- Display is capped to the strongest few bonds.
+- Labels avoid family, romance, reproduction, household, marriage, and pair-bond wording.
+- Raw familiarity scores are not shown.
+- Bond labels do not affect AI, movement, pathfinding, gathering, building, farming, remembrance, influence, settlement membership, survival, or social-memory growth.
+- Roadmap and design docs defer family/reproduction/romance systems.
+- Existing tests pass.
+
+Dependencies:
+- TASK-60
+- TASK-82
+
+Notes:
+- Social bonds describe familiarity before they imply family.
+
+---
+
+### TASK-82
+Title: Settlement Identity and Belonging
+
+Owner: Social Systems Agent / History Agent / UI Agent / Architect Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #56 by adding stable settlement belonging metadata for villagers without adding behavior, politics, migration, factions, or social bonuses.
+
+Expected Output:
+Villagers have home and birth settlement identity, character cards show Home, and death-history / Chronicle wording can use settlement names when available.
+
+Acceptance Criteria:
+- Starting villagers receive `home_settlement_id` and `home_settlement_name`.
+- Starting villagers also receive future-facing `birth_settlement_id` and `birth_settlement_name`.
+- Character cards show a compact Home row when settlement identity exists.
+- Death records preserve settlement identity.
+- History and Chronicle wording fall back safely when settlement identity is missing.
+- Familiarity, remembrance, influence, AI, pathfinding, gathering, building, farming, exploration, and survival behavior are unchanged.
+- Existing tests pass.
+
+Dependencies:
+- TASK-80
+- TASK-81
+
+Notes:
+- Settlement membership creates belonging before politics. Migration, splinter settlements, founders, factions, and settlement conflict remain future work.
+
+---
+
+### TASK-81
+Title: History Overlay GUI
+
+Owner: UI Agent / History Agent / Social Systems Agent / Architect Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #55 by adding a read-only Chronicle overlay through the existing Overlay Framework.
+
+Expected Output:
+Pressing `H` opens a History overlay that displays recent history, active remembrance, and remembered dead in a story-facing village chronicle format.
+
+Acceptance Criteria:
+- `H` toggles the History overlay without duplicating windows.
+- Recent history entries are shown newest first.
+- Temporary remembrance appears as natural language such as `Ari is remembering Rowan.`
+- Remembered dead are shown as compact story cards from existing Death Records.
+- Dates use season/year formatting where possible.
+- Empty states work for both history and remembered dead.
+- The overlay is read-only and does not change gameplay behavior.
+- Existing tests pass.
+
+Dependencies:
+- TASK-80
+
+Notes:
+- This is a Chronicle, not a death viewer, graveyard UI, memorial UI, management tool, or debug console.
+
+---
+
+### TASK-80
+Title: Death Memory and Remembrance v1
+
+Owner: Social Systems Agent / History Agent / UI Agent / Architect Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #54 by preserving villager deaths as permanent memory/history records and adding temporary personal remembrance flavor for meaningful relationships.
+
+Expected Output:
+Villager deaths create one permanent `DeathRecord`, one compact world-history entry, and temporary `Remembering: Name` display rows for familiar living villagers.
+
+Acceptance Criteria:
+- Death records preserve identity snapshot, cause of death, day, season, year, influence label, peak influence label, appearance metadata, and remembered-by names.
+- Familiar villagers can temporarily remember the dead.
+- Strangers and one-time sightings do not create colony-wide remembrance.
+- Remembrance expires after a few in-game days.
+- No morale, productivity, movement, AI, survival, grave, ghost, resurrection, or legacy mechanics are added.
+- Existing tests pass.
+
+Dependencies:
+- TASK-58
+- TASK-60
+
+Notes:
+- Death creates memory before mechanics. Legacy remains future-facing.
+
+---
+
+### TASK-79
+Title: Appearance System v1 With 8-bit Villager Sprites
+
+Owner: UI Agent / Portrait Agent / Identity Agent / Architect Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #53 by adding stable appearance metadata and procedural pixel-art character sprites as the first consumer.
+
+Expected Output:
+Villagers have deterministic `appearance_seed` and `appearance_type` metadata, and the Villagers overlay shows a cached full-body 8-bit character sprite for the selected villager.
+
+Acceptance Criteria:
+- `appearance_seed` and `appearance_type` are assigned when villagers are created.
+- Appearance metadata is deterministic for fixed seed and spawn order.
+- Sprites are generated procedurally from layered outline, skin, hair, eyes, body, clothing, and accent pixels.
+- Sprite clothing uses the same role colors as map villagers.
+- Elder sprites visibly differ through grey / white hair.
+- Sprites are cached and not regenerated every frame.
+- Sprite generation handles missing optional fields safely.
+- No gameplay behavior is changed.
+- Existing tests pass.
+
+Dependencies:
+- TASK-59
+- TASK-60
+- TASK-61
+- TASK-62
+- TASK-78
+
+Notes:
+- This is Appearance System v1, not a gender system.
+- The Villagers overlay character card is identity/story-focused and intentionally excludes raw needs, inventory, path, target, and internal telemetry.
+- Future layers may add hats, cloaks, beards, walking sticks, accessories, scars, blessings, founder markers, or mystery effects.
+
+---
+
+### TASK-63
+Title: Influence Foundation for Future Leadership
+
+Owner: Gameplay Agent / Architect Agent / Social Systems Agent / UI Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #52 by adding computed Influence as soft social importance without adding formal leaders.
+
+Expected Output:
+Villagers receive observer-facing Influence labels based primarily on recent incoming social familiarity, displayed in the Villagers overlay details pane, with peak influence stored for future history systems.
+
+Acceptance Criteria:
+- Influence labels are Low, Emerging, Notable, and Respected.
+- Influence is based on being known, remembered, and familiar to others.
+- Familiar contributes more than Acquainted, and Acquainted contributes more than Seen.
+- Stale memories and top-relationship weighting reduce long-term raw-familiarity saturation.
+- Elder bonus is small and does not automatically make elders highly influential.
+- Peak influence score is stored and does not decrease.
+- No formal leader, Leader role, succession, elections, or command mechanics are added.
+- Influence has no gameplay behavior effects.
+- Existing tests pass.
+
+Dependencies:
+- TASK-59
+- TASK-60
+- TASK-61
+- TASK-62
+
+Notes:
+- Influence is dynamic. Future leadership should be stable and long-lived.
+- Formal leadership, succession, and leader history remain future work.
+
+---
+
+### TASK-78
+Title: Overlay Framework v1 With Villagers Overlay
+
+Owner: UI Agent / Architect Agent / Renderer Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #51 by adding a reusable pygame-gui overlay framework with Villagers as the first overlay.
+
+Expected Output:
+The `V` key toggles a closable, draggable Villagers overlay listing living villagers. Clicking a villager row updates the existing selected-villager state so the right panel continues showing details.
+
+Acceptance Criteria:
+- pygame-gui is listed as a dependency and integrated with the renderer loop.
+- OverlayManager supports registering, toggling, closing, updating, and event handling for future overlays.
+- Villagers overlay lists living villagers only.
+- Villager rows include compact role, lifecycle, trait, and state text when available.
+- Missing identity fields are handled safely.
+- Clicking a villager row uses the existing selected-agent workflow.
+- Overlay UI clicks do not fall through to map selection.
+- No gameplay behavior is changed.
+- Existing tests pass.
+
+Dependencies:
+- TASK-59
+- TASK-60
+- TASK-61
+- TASK-62
+
+Notes:
+- Overlays are observer tools, not command tools.
+- Follow-up work moved selected-villager details into the Villagers overlay as a master/detail view so the right panel can stay compact and colony-focused.
+- Future Settlements, History, Wildlife, Visitors, Mysteries, and Ruins overlays should use the same framework.
+
+---
+
+### TASK-62
+Title: Basic Social Memory or Familiarity
+
+Owner: Gameplay Agent / Architect Agent / UI Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #50 by adding lightweight social memory based on repeated nearby presence.
+
+Expected Output:
+Villagers track neutral familiarity with nearby villagers over time, selected-villager details show a compact `Knows` summary, and familiarity remains observational only.
+
+Acceptance Criteria:
+- Familiarity starts empty.
+- Nearby living villagers gain familiarity once per day.
+- Far or dead villagers do not gain familiarity.
+- Familiarity grows through Stranger, Seen, Acquainted, and Familiar thresholds.
+- Familiarity score and last-seen day are stored.
+- Selected-villager details include a compact familiarity summary.
+- Social memory has no gameplay, survival, trait, lifecycle, state, role, or goal effects.
+- Existing tests pass.
+
+Dependencies:
+- TASK-58
+- TASK-59
+- TASK-60
+- TASK-61
+
+Notes:
+- Familiarity is not friendship, rivalry, romance, family, or mood.
+- Social systems should be observational before behavioral.
+
+---
+
+### TASK-61
+Title: State Labels for Current Villager Condition
+
+Owner: Gameplay Agent / UI Agent / Architect Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #49 by adding computed State labels for selected villagers without adding mood or morale mechanics.
+
+Expected Output:
+Selected-villager details show a readable State label derived from existing needs and action fields.
+
+Acceptance Criteria:
+- Healthy villager shows Content.
+- Thirsty villager shows Thirsty.
+- Hungry villager shows Hungry.
+- Tired villager shows Tired.
+- Recovering villager shows Recovering.
+- Dead villager shows Dead.
+- Resting, Working, Exploring, and Idle states are derived from current action.
+- Selected-villager details include State.
+- State labels do not affect behavior.
+- Traits and lifecycle labels do not affect State.
+- Mood, morale, emotional systems, mood meters, and behavior modifiers are not added.
+- Existing tests pass.
+
+Dependencies:
+- TASK-59
+- TASK-60
+
+Notes:
+- State describes what the villager is doing or experiencing now.
+- Mood describes how the villager feels and remains future work.
+
+---
+
+### TASK-77
+Title: Role-Based Resource Discovery Radius
+
+Owner: Gameplay Agent / Architect Agent / Colony Memory Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #48 by making resource discovery radius vary by villager role and resource type.
+
+Expected Output:
+Scouts reveal food, wood, and water farther than other roles; Foragers are better at food discovery; Builders remain locally aware; colony memory sharing and forgetting continue to work.
+
+Acceptance Criteria:
+- Discovery radius varies by role.
+- Discovery radius varies by resource type.
+- Scouts discover more than Generalists and Builders.
+- Foragers discover food farther than Builders.
+- Builders discover wood farther than food.
+- Resources outside discovery radius are not discovered.
+- Resources inside discovery radius are discovered.
+- Colony memory still receives discoveries.
+- Forgetting behavior still removes depleted known resources.
+- Unknown roles use a safe fallback radius.
+- No goal, action, pathfinding, survival, resource-gathering, reservation, renderer, or settlement-need behavior changes.
+- Existing tests pass.
+
+Dependencies:
+- TASK-45
+- TASK-76
+
+Notes:
+- Scouts accelerate discovery rather than enabling discovery.
+- Discovery should slow down without scouts, not stop.
+
+---
+
+### TASK-76
+Title: Render Only Village-Known Food and Wood Resources
+
+Owner: Renderer Agent / UX Agent / Gameplay Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #47 by making wild food and wood resource indicators depend on colony memory instead of perfect map knowledge.
+
+Expected Output:
+Terrain remains visible, but unknown wild food and wood do not show map markers or selected-tile quantities until discovered by the village.
+
+Acceptance Criteria:
+- Wild food is shown only when known to colony memory.
+- Wild wood is shown only when known to colony memory.
+- Forgotten resources stop rendering as known resources.
+- Terrain remains visible regardless of resource knowledge.
+- Forest terrain remains visible even when harvestable wood is unknown.
+- Farms, buildings, villagers, wildlife, role colors, lifecycle labels, and traits remain visible.
+- Discovery mechanics, AI behavior, personal memory, colony memory, pathfinding, resource ecology, and survival behavior are unchanged.
+- Existing tests pass.
+
+Dependencies:
+- TASK-45
+- TASK-56
+- TASK-59
+- TASK-60
+
+Notes:
+- The world is visible. Resource abundance is discovered.
+- This is resource-knowledge rendering, not fog-of-war.
+
+---
+
+### TASK-60
+Title: Simple Traits
+
+Owner: Gameplay Agent / Architect Agent / UI Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #46 by adding one static display-only trait to each villager.
+
+Expected Output:
+Villagers receive one readable trait at creation, selected-villager details show the trait, and traits do not change simulation behavior.
+
+Acceptance Criteria:
+- Every villager receives exactly one trait.
+- Trait is one of the known trait values.
+- Trait list includes positive, neutral, and imperfect labels.
+- Lazy, Grumpy, Stubborn, and Timid are valid traits without gameplay penalties.
+- Trait assignment is deterministic by spawn order.
+- Trait remains stable over simulation ticks.
+- Selected-villager details include trait.
+- Traits do not affect movement, pathfinding, work, survival, roles, goals, settlement needs, reservations, or carrying capacity.
+- Existing tests pass.
+
+Dependencies:
+- TASK-59
+
+Notes:
+- Traits should describe villagers before they influence villagers.
+- Simple Traits v1 implements identity only. Mood, relationships, behavior modifiers, inheritance, progression, multiple traits, and player control remain future work.
+
+---
+
+### TASK-59
+Title: Lifecycle Labels Without Old-Age Death
+
+Owner: Gameplay Agent / Architect Agent / Renderer Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #45 by adding static Adult and Elder lifecycle labels as lightweight villager identity metadata.
+
+Expected Output:
+Villagers receive a valid lifecycle label when created, selected-villager details show the label, and no aging mechanics, old-age death, reproduction, children, inheritance, family trees, or lifecycle progression are introduced.
+
+Acceptance Criteria:
+- Villagers are assigned Adult or Elder when created.
+- Lifecycle labels are valid and deterministic by spawn order.
+- Most villagers are Adults and a small minority can be Elders.
+- Lifecycle stage remains unchanged during simulation updates.
+- Lifecycle stage does not trigger death.
+- Selected villager details include lifecycle stage.
+- Existing v0.5 settlement behavior remains stable.
+- Existing tests pass.
+
+Dependencies:
+- TASK-56
+
+Notes:
+- Age is story and identity, not attrition.
+- Do not add a new death source before adding a renewal source.
+
+---
 
 ### TASK-56
 Title: Restore Role-Based Villager Colors

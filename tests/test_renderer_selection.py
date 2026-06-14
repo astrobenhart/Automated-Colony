@@ -18,6 +18,9 @@ from src.config import (
 )
 from src.renderer import PygameRenderer
 from src.renderer import color_for_role
+from src.renderer import is_food_visible_to_player
+from src.renderer import is_wood_visible_to_player
+from src.overlays.villagers import VILLAGERS_OVERLAY
 from src.roles import BUILDER, FORAGER, GENERALIST, ROLES, SCOUT
 from src.seasons import seasonal_tile_color
 from src.settlement import Settlement
@@ -280,6 +283,222 @@ def test_resource_symbol_color_reflects_abundance():
     assert sum(high_food) > sum(low_food)
 
 
+def test_known_food_is_visible_to_player():
+    world = make_world(width=3, height=3)
+    world.tiles[1][1].food = 2
+    world.colony_memory.remember_food((1, 1))
+
+    assert is_food_visible_to_player(world, 1, 1)
+
+
+def test_unknown_food_is_hidden_as_resource(monkeypatch):
+    world = make_world(width=3, height=3)
+    world.tiles[1][1].food = 2
+    renderer = make_renderer(world)
+    calls = []
+
+    def spy_draw_centered_symbol(symbol, x, y, color):
+        calls.append((symbol, x, y, color))
+
+    monkeypatch.setattr(renderer, "draw_centered_symbol", spy_draw_centered_symbol)
+
+    renderer.draw_world()
+
+    assert not is_food_visible_to_player(world, 1, 1)
+    assert not any(symbol == "f" and x == 1 and y == 1 for symbol, x, y, _ in calls)
+
+
+def test_known_food_renders_resource_symbol(monkeypatch):
+    world = make_world(width=3, height=3)
+    world.tiles[1][1].food = 2
+    world.colony_memory.remember_food((1, 1))
+    renderer = make_renderer(world)
+    calls = []
+
+    def spy_draw_centered_symbol(symbol, x, y, color):
+        calls.append((symbol, x, y, color))
+
+    monkeypatch.setattr(renderer, "draw_centered_symbol", spy_draw_centered_symbol)
+
+    renderer.draw_world()
+
+    assert any(symbol == "f" and x == 1 and y == 1 for symbol, x, y, _ in calls)
+
+
+def test_forgotten_food_stops_rendering_as_known_resource(monkeypatch):
+    world = make_world(width=3, height=3)
+    world.tiles[1][1].food = 2
+    world.colony_memory.remember_food((1, 1))
+    world.colony_memory.forget_food((1, 1))
+    renderer = make_renderer(world)
+    calls = []
+
+    def spy_draw_centered_symbol(symbol, x, y, color):
+        calls.append((symbol, x, y, color))
+
+    monkeypatch.setattr(renderer, "draw_centered_symbol", spy_draw_centered_symbol)
+
+    renderer.draw_world()
+
+    assert not is_food_visible_to_player(world, 1, 1)
+    assert not any(symbol == "f" and x == 1 and y == 1 for symbol, x, y, _ in calls)
+
+
+def test_known_wood_is_visible_to_player():
+    world = make_world(width=3, height=3)
+    world.tiles[1][1].kind = "forest"
+    world.tiles[1][1].wood = 2
+    world.colony_memory.remember_wood((1, 1))
+
+    assert is_wood_visible_to_player(world, 1, 1)
+
+
+def test_unknown_wood_is_hidden_as_resource(monkeypatch):
+    world = make_world(width=3, height=3)
+    world.tiles[1][1].kind = "forest"
+    world.tiles[1][1].wood = 2
+    renderer = make_renderer(world)
+    calls = []
+
+    def spy_draw_centered_symbol(symbol, x, y, color):
+        calls.append((symbol, x, y, color))
+
+    monkeypatch.setattr(renderer, "draw_centered_symbol", spy_draw_centered_symbol)
+
+    renderer.draw_world()
+
+    assert not is_wood_visible_to_player(world, 1, 1)
+    assert not any(symbol == "w" and x == 1 and y == 1 for symbol, x, y, _ in calls)
+
+
+def test_known_wood_renders_resource_symbol(monkeypatch):
+    world = make_world(width=3, height=3)
+    world.tiles[1][1].kind = "forest"
+    world.tiles[1][1].wood = 2
+    world.colony_memory.remember_wood((1, 1))
+    renderer = make_renderer(world)
+    calls = []
+
+    def spy_draw_centered_symbol(symbol, x, y, color):
+        calls.append((symbol, x, y, color))
+
+    monkeypatch.setattr(renderer, "draw_centered_symbol", spy_draw_centered_symbol)
+
+    renderer.draw_world()
+
+    assert any(symbol == "w" and x == 1 and y == 1 for symbol, x, y, _ in calls)
+
+
+def test_forgotten_wood_stops_rendering_as_known_resource(monkeypatch):
+    world = make_world(width=3, height=3)
+    world.tiles[1][1].kind = "forest"
+    world.tiles[1][1].wood = 2
+    world.colony_memory.remember_wood((1, 1))
+    world.colony_memory.forget_wood((1, 1))
+    renderer = make_renderer(world)
+    calls = []
+
+    def spy_draw_centered_symbol(symbol, x, y, color):
+        calls.append((symbol, x, y, color))
+
+    monkeypatch.setattr(renderer, "draw_centered_symbol", spy_draw_centered_symbol)
+
+    renderer.draw_world()
+
+    assert not is_wood_visible_to_player(world, 1, 1)
+    assert not any(symbol == "w" and x == 1 and y == 1 for symbol, x, y, _ in calls)
+
+
+def test_terrain_remains_visible_when_food_resource_is_unknown():
+    world = make_world(width=3, height=3)
+    world.tiles[1][1].food = 2
+    renderer = make_renderer(world)
+
+    renderer.draw_world()
+
+    terrain_pixel = renderer.screen.get_at((1 * TILE_SIZE + 1, 1 * TILE_SIZE + 1))[:3]
+    assert terrain_pixel == renderer.tile_color("grass")
+
+
+def test_forest_terrain_remains_visible_when_wood_resource_is_unknown():
+    world = make_world(width=3, height=3)
+    world.tiles[1][1].kind = "forest"
+    world.tiles[1][1].wood = 2
+    renderer = make_renderer(world)
+
+    renderer.draw_world()
+
+    terrain_pixel = renderer.screen.get_at((1 * TILE_SIZE + 1, 1 * TILE_SIZE + 1))[:3]
+    assert terrain_pixel == renderer.tile_color("forest")
+
+
+def test_resource_visibility_uses_colony_memory_not_agent_personal_memory(monkeypatch):
+    world = make_world(width=3, height=3)
+    world.tiles[1][1].food = 2
+    agent = Agent("Ari", 0, 0)
+    agent.remembered_food.add((1, 1))
+    world.agents.append(agent)
+    renderer = make_renderer(world)
+    calls = []
+
+    def spy_draw_centered_symbol(symbol, x, y, color):
+        calls.append((symbol, x, y, color))
+
+    monkeypatch.setattr(renderer, "draw_centered_symbol", spy_draw_centered_symbol)
+
+    renderer.draw_world()
+
+    assert not is_food_visible_to_player(world, 1, 1)
+    assert not any(symbol == "f" and x == 1 and y == 1 for symbol, x, y, _ in calls)
+
+
+def test_selected_tile_resource_details_hide_unknown_quantities(monkeypatch):
+    world = make_world(width=3, height=3)
+    world.tiles[1][1].food = 2
+    world.tiles[1][1].kind = "forest"
+    world.tiles[1][1].wood = 3
+    renderer = make_renderer(world)
+    renderer.selected_tile = (1, 1)
+    rows = []
+
+    def spy_draw_stat_row(label, value, x, y, width, bottom_y, color=None):
+        rows.append((label, value))
+        return y + 1
+
+    monkeypatch.setattr(renderer, "draw_section_header", lambda *args, **kwargs: args[2])
+    monkeypatch.setattr(renderer, "draw_stat_row", spy_draw_stat_row)
+
+    renderer.draw_selection_details(0, 0, 200, 200)
+
+    assert ("Food", "Unknown") in rows
+    assert ("Wood", "Unknown") in rows
+    assert ("Terrain", "forest") in rows
+
+
+def test_selected_tile_resource_details_show_known_quantities(monkeypatch):
+    world = make_world(width=3, height=3)
+    world.tiles[1][1].food = 2
+    world.tiles[1][1].kind = "forest"
+    world.tiles[1][1].wood = 3
+    world.colony_memory.remember_food((1, 1))
+    world.colony_memory.remember_wood((1, 1))
+    renderer = make_renderer(world)
+    renderer.selected_tile = (1, 1)
+    rows = []
+
+    def spy_draw_stat_row(label, value, x, y, width, bottom_y, color=None):
+        rows.append((label, value))
+        return y + 1
+
+    monkeypatch.setattr(renderer, "draw_section_header", lambda *args, **kwargs: args[2])
+    monkeypatch.setattr(renderer, "draw_stat_row", spy_draw_stat_row)
+
+    renderer.draw_selection_details(0, 0, 200, 200)
+
+    assert ("Food", 2) in rows
+    assert ("Wood", 3) in rows
+
+
 def test_every_known_role_maps_to_a_color():
     for role in ROLES:
         color = color_for_role(role)
@@ -327,6 +546,50 @@ def test_role_colors_are_bright_for_screensaver_readability():
 
         assert max(color) >= 175
         assert sum(color) >= 330
+
+
+def test_selected_agent_details_use_compact_villager_summary(monkeypatch):
+    world = make_world(width=3, height=3)
+    agent = Agent("Eli", 1, 1, role=SCOUT, current_action="Wandering")
+    world.agents.append(agent)
+    renderer = make_renderer(world)
+    renderer.selected_agent = agent
+    rows = []
+
+    def spy_draw_stat_row(label, value, x, y, width, bottom_y, color=None):
+        rows.append((label, value))
+        return y + 1
+
+    monkeypatch.setattr(renderer, "draw_section_header", lambda *args, **kwargs: args[2])
+    monkeypatch.setattr(renderer, "draw_stat_row", spy_draw_stat_row)
+
+    renderer.draw_selection_details(0, 0, 200, 200)
+
+    assert ("Agent", "Eli") in rows
+    assert ("Role", SCOUT) in rows
+    assert ("State", "Exploring") in rows
+    assert ("Action", "Wandering") in rows
+    assert ("Details", "Open Villagers overlay") in rows
+
+
+def test_selected_agent_details_omit_deep_villager_fields(monkeypatch):
+    world = make_world(width=3, height=3)
+    agent = Agent("Cato", 1, 1, lifecycle_stage="Elder", trait="Curious")
+    world.agents.append(agent)
+    renderer = make_renderer(world)
+    renderer.selected_agent = agent
+    rows = []
+
+    def spy_draw_stat_row(label, value, x, y, width, bottom_y, color=None):
+        rows.append((label, value))
+        return y + 1
+
+    monkeypatch.setattr(renderer, "draw_section_header", lambda *args, **kwargs: args[2])
+    monkeypatch.setattr(renderer, "draw_stat_row", spy_draw_stat_row)
+
+    renderer.draw_selection_details(0, 0, 200, 200)
+
+    assert not any(label in ("Life", "Trait", "Knows", "Needs", "Carry", "Path", "Idle") for label, _ in rows)
 
 
 def test_history_summary_draws_without_crashing():
@@ -472,3 +735,32 @@ def test_renderer_recognizes_settlement_center():
 
     assert renderer.is_settlement_center(2, 3)
     assert not renderer.is_settlement_center(3, 2)
+
+
+def test_renderer_toggles_villagers_overlay_without_duplicates():
+    world = make_world(width=5, height=5)
+    world.agents = [Agent("Ari", 1, 1)]
+    renderer = make_renderer(world)
+
+    renderer.toggle_villagers_overlay()
+    first_overlay = renderer.overlay_manager.active[VILLAGERS_OVERLAY]
+
+    renderer.toggle_villagers_overlay()
+
+    assert not renderer.overlay_manager.is_open(VILLAGERS_OVERLAY)
+
+    renderer.toggle_villagers_overlay()
+
+    assert renderer.overlay_manager.is_open(VILLAGERS_OVERLAY)
+    assert renderer.overlay_manager.active[VILLAGERS_OVERLAY] is not first_overlay
+    assert len(renderer.overlay_manager.active) == 1
+
+
+def test_renderer_set_world_closes_active_overlays():
+    renderer = make_renderer(make_world(width=5, height=5))
+    renderer.world.agents = [Agent("Ari", 1, 1)]
+    renderer.toggle_villagers_overlay()
+
+    renderer.set_world(make_world(width=5, height=5))
+
+    assert not renderer.overlay_manager.is_open(VILLAGERS_OVERLAY)

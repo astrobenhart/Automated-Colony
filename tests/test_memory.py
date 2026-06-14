@@ -2,6 +2,7 @@ from src.world import World
 from src.tile import Tile
 from src.agent import Agent
 from src.actions import SeekFoodAction, SeekWaterAction, SeekWoodAction
+from src.roles import SCOUT
 
 
 def test_agent_memory_scanning():
@@ -9,7 +10,7 @@ def test_agent_memory_scanning():
     world = World(15, 15)
     world.tiles = [[Tile("grass") for _ in range(15)] for _ in range(15)]
 
-    # Place resources within vision range (radius 5 from agent at 5,5)
+    # Place resources within scout discovery range from agent at (5, 5)
     # Food at (2, 2) -> Chebyshev distance dx=3, dy=3 -> In range
     world.tiles[2][2].food = 3
 
@@ -23,15 +24,15 @@ def test_agent_memory_scanning():
     # Shelter at (0, 0) -> Chebyshev distance dx=5, dy=5 -> In range
     world.tiles[0][0].kind = "shelter"
 
-    # Place resources out of vision range (Chebyshev distance > 5 from agent at 5,5)
-    # Food at (11, 5) -> Chebyshev distance dx=6, dy=0 -> Out of range
-    world.tiles[5][11].food = 2
+    # Place resources out of scout discovery range
+    # Food at (12, 5) -> Chebyshev distance dx=7, dy=0 -> Out of range
+    world.tiles[5][12].food = 2
 
     # Water at (5, 12) -> Chebyshev distance dx=0, dy=7 -> Out of range
     world.tiles[12][5].kind = "water"
 
     # Create agent at (5, 5)
-    agent = Agent("TestAgent", 5, 5)
+    agent = Agent("TestAgent", 5, 5, role=SCOUT)
     world.agents.append(agent)
 
     # Scan surroundings
@@ -48,7 +49,7 @@ def test_agent_memory_scanning():
     assert (0, 0) in world.colony_memory.known_shelters
 
     # Assertions for out-of-range resources
-    assert (11, 5) not in agent.remembered_food
+    assert (12, 5) not in agent.remembered_food
     assert (5, 12) not in agent.remembered_water
 
     # Test depletion/removal: deplete food at (2, 2)
@@ -67,7 +68,7 @@ def test_colony_memory_shares_water_between_agents():
     world.tiles = [[Tile("grass") for _ in range(12)] for _ in range(11)]
     world.tiles[5][10].kind = "water"
 
-    scout = Agent("Scout", 5, 5)
+    scout = Agent("Scout", 5, 5, role=SCOUT)
     thirsty_agent = Agent("Thirsty", 0, 5, thirst=80)
     world.agents.extend([scout, thirsty_agent])
 
@@ -94,7 +95,7 @@ def test_colony_memory_shares_food_between_agents():
     world.tiles = [[Tile("grass") for _ in range(12)] for _ in range(11)]
     world.tiles[5][10].food = 2
 
-    scout = Agent("Scout", 5, 5)
+    scout = Agent("Scout", 5, 5, role=SCOUT)
     hungry_agent = Agent("Hungry", 0, 5, hunger=80)
     world.agents.extend([scout, hungry_agent])
 
@@ -122,7 +123,7 @@ def test_colony_memory_shares_wood_between_agents():
     world.tiles[5][10].kind = "forest"
     world.tiles[5][10].wood = 3
 
-    scout = Agent("Scout", 5, 5)
+    scout = Agent("Scout", 5, 5, role=SCOUT)
     builder = Agent("Builder", 0, 5)
     world.agents.extend([scout, builder])
 

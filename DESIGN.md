@@ -68,12 +68,303 @@ UI should:
 - preserve selection, active events, history, legend, controls, and recent event visibility without changing simulation behavior
 - keep the default right panel player-facing, with debug-style internals reserved for selected-object details
 - use role-based villager colors as gameplay readability, so Generalists, Foragers, Builders, and Scouts can be identified without clicking them
+- show the village's discovered resource knowledge rather than perfect food/wood information
 
 ## Next Focus
 
-The next roadmap work should build from the completed v0.5 settlement foundation without adding player micromanagement.
+v0.5 is the stable settlement-economy foundation.
+
+The next roadmap work should build from the completed v0.5 village behavior without adding player micromanagement.
+
+The v0.6-v0.9 progression should make villages feel alive without making them fragile, noisy, or broken:
+- v0.6 should add individuality without adding population collapse.
+- v0.7 should add migration as the first renewal/expansion mechanism.
+- v0.8 should add rare Mysteries and Wanderers after villagers and settlements can react and remember.
+- v0.9 should synthesize settlement, migration, memory, ruins, and major events into long-term history.
 
 Future directions include deeper logistics, migration/new settlements, social simulation, roads, richer farming, and rare Mysteries and Wanderers. Do not begin the next milestone by adding politics, warfare, large-scale economy, or player work-order systems.
+
+Resource Reservation v1 is the current coordination layer. Full hauling and job assignment remain future logistics work and should not be tied to v0.6. Logistics should be introduced only when there are enough production chains and destinations to justify the added complexity.
+
+## Stable Living Villages
+
+The simulation should prioritize continuity over novelty.
+
+A small number of meaningful long-term events is preferable to many frequent events.
+
+Systems should build on existing history whenever possible.
+
+Core stability principle:
+- Do not add a new death source before adding a renewal source.
+- Do not introduce old-age death before reproduction, migration, or new arrivals exist.
+- Age in v0.6 is identity/story, not attrition.
+- Villagers should feel more individual without causing guaranteed village extinction.
+- Social systems should add flavor, memory, and identity before they add churn.
+- Survival needs remain dominant over social behavior.
+
+v0.6 life and social foundations should focus on labels and lightweight flavor:
+- Adult and Elder can be lifecycle labels.
+- Elders may move slower, work less often, influence leadership/memory/history, or appear more often in notable events.
+- Elders should not automatically die of old age until a renewal system exists.
+- Traits, mood, morale, familiarity, influence, remembrance, settlement identity, and social bond labels should remain lightweight.
+- Reproduction, children, inheritance, full family trees, and old-age death remain deferred.
+- Lifecycle Labels v1 is intentionally static identity metadata. Villagers are assigned Adult or Elder when created, the label appears in selected-villager details, and there is no Adult-to-Elder progression or Elder-to-death rule.
+
+Traits should describe villagers before they influence villagers.
+
+Trait phases:
+- Phase 1: Traits create identity.
+- Phase 2: Traits may influence mood.
+- Phase 3: Traits may influence relationships.
+- Phase 4: Traits may influence behavior.
+
+Simple Traits v1 implements Phase 1 only. Each villager receives one static display-only trait at creation. Traits appear in selected-villager details and do not affect movement, pathfinding, exploration, gathering, building, workshop use, farming, survival needs, recovery, roles, goals, settlement needs, reservations, or carrying capacity.
+
+## State Labels
+
+State = what the villager is doing or experiencing now.
+
+Mood = how the villager feels.
+
+Only State exists currently. Mood, morale, emotional memory, mood meters, relationship-driven feelings, and emotional systems remain future work.
+
+State Labels v1 are computed from existing villager data such as hunger, thirst, fatigue, current action, current goal, recovery, rest, work, and exploration. State is shown in selected-villager details alongside Role, Life, and Trait.
+
+State labels are descriptive only. They do not affect goal selection, pathfinding, gathering, building, farming, workshops, exploration, role behavior, survival behavior, reservations, carrying capacity, traits, or lifecycle labels.
+
+## Social Memory and Familiarity
+
+Social memory records repeated shared presence.
+
+Familiarity is not friendship.
+
+Social systems should be observational before behavioral.
+
+Social Memory v1 tracks villagers who spend repeated days near one another. Familiarity grows slowly through neutral labels: Stranger, Seen, Acquainted, and Familiar.
+
+The selected-villager UI may show a compact familiarity summary such as `Knows: Bryn (Familiar)`.
+
+Stored social-memory data can support future systems such as leadership, mourning, migration, history, mysteries, and relationships, but it has no gameplay effect yet.
+
+Social memory does not affect goals, pathfinding, gathering, building, farming, workshops, exploration, survival, reservations, carrying capacity, state labels, role behavior, traits, or lifecycle labels.
+
+## Influence Foundation
+
+Influence is soft social importance.
+
+Influence is not leadership.
+
+Influence is not command authority.
+
+Influence emerges from being known, remembered, and familiar to others.
+
+v0.6 Influence Foundation computes a current Influence label from recent incoming social familiarity. Stronger familiarity counts more than weak familiarity, stale memories can stop contributing to current influence, and only the strongest few incoming relationships are counted so raw familiarity does not automatically flatten every long-lived villager to the same score.
+
+Current Influence labels are Low, Emerging, Notable, and Respected. These labels are observer-facing only and appear in the Villagers overlay details pane.
+
+Villagers also store peak influence score as future-facing metadata for history, mourning, migration, mysteries, former leaders, legends, and major events. Peak influence does not affect behavior.
+
+Influence does not affect goals, pathfinding, gathering, building, farming, exploration, role behavior, state labels, mood/morale, social familiarity growth, survival, settlement decisions, reservations, or migration.
+
+Future formal leadership should build on influence without becoming volatile. Influence should remain dynamic. Leadership should remain stable. Future leaders should generally remain leaders until death or a major exceptional event, and succession should happen primarily after death.
+
+Raw familiarity can eventually flatten if everyone knows everyone. Future systems may need recency weighting, decay or staleness, relative ranking, top-relationship weighting, and meaningful relationship caps to keep social importance differentiated over long simulations.
+
+## Death Memory and Remembrance
+
+Death should create memory and history before it creates mechanics.
+
+Deaths should feel like remembered events in village history rather than temporary status effects, morale penalties, or productivity failures.
+
+Death Memory v1 has three conceptual layers:
+- Death Record: permanent history.
+- Remembrance: temporary social memory.
+- Legacy: future system.
+
+Only Death Record and Remembrance exist currently.
+
+Death Records are permanent identity snapshots created when a villager dies. They preserve name, villager id, role, lifecycle stage, trait, appearance metadata, cause of death, day, season, year, current influence label, peak influence label, and the villagers who remembered them.
+
+Death Records do not rely on the living villager object continuing to exist.
+
+Each villager should create exactly one Death Record.
+
+Remembrance is temporary and personal. Villagers who were meaningfully familiar with the dead may show a compact line such as `Remembering: Rowan` in villager inspection. Remembrance is not a generic Mourning state.
+
+Only meaningful relationships should create remembrance. Familiar villagers can remember the dead; strangers and villagers who only saw them once should not cause colony-wide remembrance.
+
+Remembrance is flavor only. It does not affect goals, pathfinding, gathering, building, farming, exploration, role behavior, state labels, social familiarity growth, influence, survival, productivity, morale, or carrying capacity.
+
+Legacy remains future-facing. The preserved death data may later support former leaders, founders, respected elders, migration stories, remembered dead, settlement history, ruins, legends, or mysteries, but those systems are not implemented in Death Memory v1.
+
+## Settlement Identity and Belonging
+
+Settlement membership should create belonging before it creates politics.
+
+Settlement Identity v1 is informational only. It gives villagers a stable home settlement identity so character cards, death records, and Chronicle entries can refer to where a villager belongs.
+
+v0.6 implementation:
+- villagers receive `home_settlement_id` and `home_settlement_name`
+- villagers also store future-facing `birth_settlement_id` and `birth_settlement_name`
+- starting villagers belong to the starting settlement
+- villager character cards show a compact `Home` row
+- death records preserve settlement identity
+- death-history and Chronicle wording can say `Rowan of Oakvale` when the data is available
+
+Settlement identity does not affect goals, pathfinding, gathering, building, farming, exploration, role behavior, survival, social familiarity growth, remembrance rules, influence calculation, resource ownership, work groups, or movement.
+
+There are no factions, politics, migration, settlement conflict, player controls, settlement bonuses, or same-settlement social bonuses in v1.
+
+Future systems may use this identity layer for migration, splinter settlements, founders, settlement histories, multi-settlement worlds, ruins, and long-term lineage/history links.
+
+## Social Bond Labels
+
+Social bonds should describe familiarity before they imply family.
+
+Social Bond Labels v1 are display-only labels derived from existing social memory. They do not create a relationship simulation.
+
+Current labels:
+- Often Seen With
+- Trusted Neighbor
+- Close Companion
+
+These labels are non-romantic and non-family. They must not imply partners, spouses, parents, children, siblings, households, couples, ancestry, reproduction, marriage, or pair bonding.
+
+Bond labels are shown compactly on villager character cards and are capped to the strongest few known villagers. They use existing familiarity levels rather than raw familiarity scores.
+
+Social Bond Labels do not affect AI, movement, pathfinding, gathering, building, farming, state labels, death/remembrance behavior, influence calculation, settlement membership, survival, social-memory growth, or any other gameplay behavior.
+
+Family, reproduction, ancestry, children, romance, households, and pair-bond systems are deferred until migration, lifecycle, population, and long-term history systems are intentionally designed.
+
+## Overlay Framework
+
+The right panel remains compact.
+
+Detailed information moves into focused overlays.
+
+Overlays are observer tools, not command tools.
+
+Overlay Framework v1 uses pygame-gui to support reusable, closable, draggable inspection windows without adding player commands or changing simulation behavior.
+
+Villagers is the first overlay. It uses a master/detail layout with a living-villager list on the left and selected-villager details on the right. Selecting a villager from the map or overlay updates the same selected-villager state.
+
+The Villagers overlay is the primary villager inspection interface. The right panel remains focused on world identity, time, colony status, resources, active events, selection summary, history, controls, and recent events.
+
+Villager details use an RPG-style character card. The card prioritizes identity and story: portrait, name, role, lifecycle stage, trait, high-level State, Influence, and familiar villagers.
+
+Fast-changing telemetry is intentionally excluded from the character card. Raw hunger, thirst, fatigue, carried inventory counts, path data, target data, and internal counters belong in tests or future debug tools, not in the primary villager profile.
+
+Future overlays such as Settlements, History, Wildlife, Visitors, Mysteries, and Ruins should plug into the same overlay manager instead of becoming one-off windows.
+
+## History Overlay
+
+The History overlay is a read-only village chronicle.
+
+Its purpose is to make the simulation readable as a story.
+
+It is not a management tool.
+
+It is not a debug console.
+
+It is not a death viewer, graveyard UI, or memorial-management UI.
+
+History Overlay v1 uses the existing Overlay Framework and opens with `H`. It reads existing world data rather than creating separate storage for UI.
+
+Current Chronicle content includes:
+- recent world-history entries
+- active remembrance lines such as `Ari is remembering Rowan.`
+- remembered dead from permanent Death Records
+
+History entries should use readable player-facing language and season/year dates where possible, such as `Summer, Year 2`, instead of raw ticks or debug counters.
+
+Remembered dead are shown as compact story cards with name, role, lifecycle stage, influence label, cause of death, date, and remembered-by names when available.
+
+Future Chronicle content may include settlement founding, first farms, first workshops, shortages, influential villagers, visitors, mysteries, migrations, leaders, ruins, and legends. Those event types should slot into the same Chronicle structure later, but are not implemented in v1.
+
+## Appearance System
+
+Appearance System v1 adds stable identity metadata:
+- `appearance_seed`
+- `appearance_type`
+
+Villager character sprites are generated procedurally from appearance metadata. They are deterministic, lightweight, and do not require an external art pipeline.
+
+Character sprites use a simple layered architecture:
+- outline
+- base / skin
+- hair
+- eyes
+- body
+- clothing
+- accent pixels
+
+The first sprite consumer is the Villagers overlay. The selected villager shows a crisp full-body pixel-art sprite generated at low resolution and scaled up with nearest-neighbor scaling.
+
+The sprite style is inspired by compact Game Boy Color-era RPG character presentation without copying specific sprites, characters, palettes, or assets. Villagers should read as cute chibi RPG people rather than blocky icons or voxel-style figures.
+
+Sprite proportions should favor:
+- a large head, roughly half the sprite height
+- a compact body
+- short legs
+- a rounded silhouette
+
+Hair is the primary visual differentiator. Hairstyles, hair shape, and hair silhouette should help villagers feel recognizable at a glance.
+
+Sprites reflect appearance, lifecycle stage, and role color:
+- appearance controls skin tone, hair color, hair style, face shape, and eye placement
+- elders use grey / white hair
+- clothing uses the same role colors used for villagers on the map
+- clothing uses a simple highlight / midtone / shadow palette derived from the role color instead of a single flat fill
+- simple pixel shading on hair and clothing gives the sprite charm and depth without becoming realistic
+
+Sprites are identity and presentation only. They do not affect AI, roles, traits, lifecycle behavior, state labels, familiarity, influence, resources, pathfinding, romance, family, reproduction, or inheritance.
+
+Future layers may add hats, cloaks, beards, walking sticks, accessories, scars, blessings, founder markers, mystery effects, or historical markers without replacing the base appearance system.
+
+## Resource Knowledge Rendering
+
+The world is visible. Resource abundance is discovered.
+
+The player sees the village's discovered resource knowledge, not perfect resource information. Terrain remains fully visible: plains, grassland, forests, wetlands, rivers, lakes, hills, mountains, and seasonal terrain changes are not hidden or darkened.
+
+This is resource-knowledge rendering, not fog-of-war.
+
+Rendering rules:
+- Wild food markers and quantities appear only when the tile is in colony memory as known food.
+- Wild wood markers and quantities appear only when the tile is in colony memory as known wood.
+- Unknown resource tiles still render their underlying terrain.
+- Forest terrain remains visible even when harvestable wood on that forest tile is unknown.
+- Farms, stockpiles, shelters, workshops, the settlement center, villagers, and wildlife remain visible.
+- Colony memory is the source of truth for resource visibility.
+
+## Role-Based Resource Discovery
+
+Role-based discovery exists to influence colony knowledge growth.
+
+It should not become a critical survival dependency.
+
+A colony without scouts should still function. Scouts accelerate discovery rather than enabling discovery.
+
+Discovery rules:
+- Scouts discover the most across food, wood, and water.
+- Foragers are naturally better at discovering food and water.
+- Generalists remain broadly capable.
+- Builders remain locally aware, especially around wood, and should not feel blind.
+- Discovery uses simple radius checks centered on the villager.
+- There are no view cones, directional vision, line-of-sight, raycasting, BFS, or pathfinding in discovery.
+- Personal memory and colony memory sharing remain the discovery output.
+
+v0.7 migration should provide the first renewal and expansion path:
+- Food pressure can lead to farming.
+- Population pressure can lead to migration or a new settlement.
+- A small group may decide to leave, travel or abstractly depart, and found or record a new settlement.
+- Migration should not require deep family trees, diplomacy, politics, warfare, or a full economy first.
+
+Mysteries are more powerful once villagers and settlements can remember and react:
+- A wizard is more interesting when villagers can gather, fear, admire, remember, or be changed by the event.
+- Rare surprises should feel emergent, not player-triggered.
+- The user observes; the world unfolds; villagers act autonomously.
+- The player should not summon visitors or know every possible surprise.
 
 ## Roles
 

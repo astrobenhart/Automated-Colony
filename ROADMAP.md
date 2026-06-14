@@ -158,42 +158,97 @@ Notes:
 - Physical stockpiles and building clusters are prerequisites for richer settlement identity and expansion.
 - Full hauling, withdrawal logistics, job assignment, multiple settlements, migration, expansion, and deeper settlement-driven logistics remain future work.
 
-## Future Logistics / v0.6+
+## Future Systems / Backlog
 
-Goal: Add deeper resource logistics only after the village has enough production chains and destinations to justify the complexity.
+### Deeper Logistics
+
+Goal: Add full logistics only when the simulation has enough production chains and destinations to justify the complexity.
 
 Features:
 - [ ] Full hauling and job assignment system
-- [ ] Hauling chains between resource sources, stockpiles, workshops, farms, and future buildings
+- [ ] Hauling chains between resource sources, stockpiles, workshops, farms, roads, and future buildings
 - [ ] Item stacks or explicit carried-resource destinations
 - [ ] Job queues or autonomous job board
 - [ ] Inventory and resource reservations beyond simple target claims
 - [ ] Multi-step production logistics
 
 Notes:
-- Resource Reservation v1 remains the v0.5 coordination layer.
+- Resource Reservation v1 remains the current coordination layer.
 - Full hauling/logistics should remain autonomous unless a later design explicitly introduces player-visible work orders.
-- Do not add this system until farming, richer production chains, or multiple resource destinations make it worthwhile.
+- Do not add this system during v0.6.
+- Reconsider deeper logistics only after farming, roads, multiple settlements, or richer production chains make it worthwhile.
 
-## v0.6 - Social Simulation
+## v0.6 - Villager Life and Social Foundations
 
-Goal: Add relationships and social structure so stable colonies begin to feel like villages.
+Goal: Make villagers feel more like individuals and settlement members without adding fragile population churn.
 
 Features:
-- [ ] Age and lifecycle states
-- [ ] Families
-- [ ] Friendships and rivalries
-- [ ] Leadership
-- [ ] Reputation
-- [ ] Group decisions
-- [ ] Pair bonds and family relationships without scripted romance
-- [ ] Social behavior shaped by settlement membership
+- [x] Lifecycle labels without old-age death
+- [x] Simple traits
+- [x] Role-based resource discovery radius
+- [x] State labels for current villager condition
+- [x] Basic social memory or familiarity
+- [x] Overlay Framework v1 with Villagers overlay
+- [x] Influence foundation for future leadership
+- [x] Appearance System v1 with 8-bit villager portraits
+- [x] Death memory and remembrance as flavor/history
+- [x] History Overlay GUI as a read-only village chronicle
+- [x] Settlement identity and belonging
+- [x] Optional Social Bond Labels
 
 Notes:
-- Social systems should build on stable settlement centers rather than scripted story events.
-- Leadership, families, and reputation should affect how villagers organize locally before broader politics exist.
+- v0.5 created the stable settlement economy. v0.6 should make the people inside that settlement feel more individual without making the village fragile.
+- Lifecycle Labels v1 assigns each villager a static Adult or Elder label at creation. The label appears in selected-villager details and has no aging progression, old-age death, reproduction, or survival impact.
+- Simple Traits v1 assigns each villager one static display-only trait at creation. Traits include positive, neutral, and imperfect labels, appear in selected-villager details, and have no gameplay modifiers yet.
+- Role-Based Resource Discovery Radius v1 gives Scouts the broadest food/wood/water discovery, makes Foragers naturally better at finding food, and keeps Builders locally aware without making discovery dependent on any one role.
+- State Labels v1 computes a selected-villager `State` from existing needs and action fields. State describes what the villager is doing or experiencing now; Mood and morale remain future work.
+- Social Memory v1 records repeated nearby presence once per day. Villagers progress through neutral Stranger, Seen, Acquainted, and Familiar labels, store last-seen day metadata, and show a compact selected-villager `Knows` summary without adding friendships, relationships, events, or behavior effects.
+- Overlay Framework v1 adds reusable pygame-gui overlays for focused observation. Villagers is the first overlay, opened with `V`, and uses a master/detail layout for villager inspection while the right panel stays compact. Overlays are observer tools, not command tools.
+- Influence Foundation v1 computes soft social importance from recent incoming familiarity. Influence labels are Low, Emerging, Notable, and Respected, appear in the Villagers overlay, update peak influence metadata, and do not select formal leaders or affect behavior.
+- Appearance System v1 assigns stable `appearance_seed` and `appearance_type` identity metadata. The Villagers overlay uses procedural layered full-body 8-bit character sprites with outline, skin, hair, eyes, body, role-colored clothing, and accent pixels; elders render with grey hair. The selected villager pane is an RPG-style character card focused on identity, State, Influence, and familiar villagers rather than raw simulation telemetry.
+- Death Memory v1 creates permanent Death Records when villagers die, records one readable world-history entry, and gives familiar villagers a temporary personal `Remembering: Name` line. This is memory and history flavor only; it does not add morale penalties, productivity penalties, graves, funerals, ghosts, resurrection, or legacy mechanics.
+- History Overlay v1 adds a read-only Chronicle opened with `H`. It shows recent history entries, active remembrance lines, and compact remembered-dead cards using story-facing language and readable season/year dates. It is not a death viewer, graveyard UI, debug log, or management tool.
+- Settlement Identity v1 gives villagers stable home and birth settlement fields, displays Home on character cards, and lets death history / Chronicle wording use names such as `Rowan of Oakvale`. This is belonging and future migration groundwork only; it adds no behavior bonuses, same-settlement familiarity changes, politics, factions, migration, or conflict.
+- Social Bond Labels v1 replace the old pair/family-label idea with non-romantic, non-family display labels derived from existing familiarity. Character cards may show labels such as Often Seen With, Trusted Neighbor, and Close Companion. These labels do not affect behavior, remembrance, influence, settlement membership, survival, or social-memory growth.
+- Do not add old-age death yet.
+- Do not add reproduction yet.
+- Do not add children yet.
+- Do not add romance yet.
+- Do not add family, ancestry, households, couples, marriage, or pair-bond systems yet.
+- Do not add inheritance yet.
+- Do not add full family trees yet.
+- Do not let social systems override survival needs.
+- Do not create guaranteed village extinction.
+- Lifecycle states in v0.6 should be story labels and behavior flavor.
+- Example lifecycle labels: Adult and Elder.
+- Elders may move slower, work less often, influence leadership/memory/history, or be more likely to appear in notable events.
+- Elders should not automatically die of old age until a renewal system exists.
+- Age in v0.6 is identity/story, not attrition.
 
-## v0.7 - Mysteries and Wanderers
+## v0.7 - Migration and Settlement Expansion
+
+Goal: Add population renewal and expansion pressure before deep family systems or old-age death.
+
+Features:
+- [ ] Migration pressure from crowding, carrying capacity, food pressure, or settlement status
+- [ ] Departure groups
+- [ ] Arrival/newcomer events if appropriate
+- [ ] Splinter settlement foundations
+- [ ] New settlement creation from population/resource pressure
+- [ ] Basic settlement identity and founding records
+- [ ] Migration history entries
+- [ ] Simple movement/departure behavior if practical
+- [ ] No complex diplomacy, economy, politics, or warfare
+
+Notes:
+- This builds on the v0.5 carrying-capacity model.
+- Food pressure can lead to farming; population pressure can lead to migration or a new settlement.
+- Migration should start simple: a small group decides to leave, they travel or abstractly depart, and a new settlement is founded or recorded.
+- Do not require full family trees or deep relationship simulation before migration.
+- Migration is the first renewal/expansion mechanism.
+- Old-age death, reproduction, children, inheritance, and full family trees remain deferred until renewal and settlement expansion are stable.
+
+## v0.8 - Mysteries and Wanderers
 
 Goal: Let the living world occasionally surprise the observer with rare visitors, strange events, and unexplained landmarks that create stories without becoming another management layer.
 
@@ -256,57 +311,31 @@ Future Architecture Notes:
 - Possible future modules: `visitors.py`, `mysteries.py`, `magical_events.py`.
 - Possible concepts: `Visitor`, `MysteryEvent`, `MagicalEffect`, rare spawn scheduler, bounded duration, history integration, villager reaction hooks, and renderer markers.
 - The wizard should be one possible visitor, not the entire system.
+- Mysteries work better after villagers have individuality and settlements have history hooks.
+- A wizard is more interesting when villagers can react, remember, gather, fear, admire, or be changed by the event.
 
-## v0.8 - History and Emergence
+## v0.9 - Multi-Settlement History and Ruins
 
-Goal: Make the world generate stories over time through named places, movement, lineage, and ruins.
+Goal: Turn multiple settlements, migrations, failures, and major events into world history.
 
 Features:
 - [ ] Named settlements
-- [ ] Migration between settlements
-- [ ] Splinter settlements when resources become scarce
-- [ ] Lineage and ancestry tracking
+- [ ] Migration paths
+- [ ] Splinter settlement history
+- [ ] Ruins of failed or abandoned settlements
+- [ ] Lineage/ancestry if social systems support it by then
 - [ ] Major historical events
 - [ ] Timeline view
-- [ ] Disasters
-- [ ] Ruins
-- [ ] Myths or legends
+- [ ] Myths or legends generated from real events
+- [ ] Historical links between settlements, ruins, migration, and notable villagers
 
 Notes:
-- Migration should start as a recovery/expansion mechanism before full reproduction and family history are deeply modeled.
-- Splinter settlements should emerge from resource pressure, population pressure, distance, or social conditions.
+- v0.5 already implemented settlement centers, village hubs, clustered building placement, local resource radius, stockpiles, workshops, farms, and carrying-capacity reporting.
+- Those systems are completed prerequisites, not future v0.9 features.
+- v0.9 should focus on long-term history and memory.
+- Migration, memory, ruins, and notable villagers should connect into persistent world stories.
 - Ruins and lineage should connect past settlements to current play rather than appear as isolated flavor.
-
-## v0.9 - Village Formation and Historical Settlements
-
-Goal: Evolve survival colonies into recognizable villages and, eventually, multiple historical settlements with distinct identities.
-
-Roadmap Issue:
-- Issue #14: Roadmap: Settlement and Village Formation Systems
-
-Settlement Formation Stages:
-- Phase 1: Settlement Center
-- Phase 2: Settlement Radius and Local Resource Use
-- Phase 3: Physical Stockpiles and Building Clusters
-- Phase 4: Expansion and Migration
-- Phase 5: Village Identity and History
-
-Features:
-- [ ] Settlement centers as explicit anchors for colony activity
-- [ ] Village hubs that attract shelter, storage, and production buildings
-- [ ] Clustered building placement around hubs
-- [ ] Local resource use radius for routine work
-- [ ] Expansion when nearby food, wood, or water access becomes strained
-- [ ] Migration to recover population or found new settlements
-- [ ] Splinter settlements that emerge from pressure rather than scripts
-- [ ] Settlement identity, names, founding dates, notable events, and remembered residents
-- [ ] Historical links between settlements, ruins, migration, and lineage
-
-Design Notes:
-- Current behavior: villagers cluster near shelters, explore locally, and often stabilize in a small area after early die-off.
-- Desired future behavior: those clusters become recognizable villages with centers, storage, building clusters, and local work patterns.
-- Long-term behavior: worlds can contain multiple settlements with separate identities, histories, migration paths, ruins, and lineages.
-- Settlement growth should remain emergent: resource pressure, population needs, shelter capacity, social ties, and geography should drive expansion.
+- Myths and legends should be generated from real events where possible.
 
 Non-Goals For Now:
 - Warfare

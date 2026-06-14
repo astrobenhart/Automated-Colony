@@ -1,4 +1,5 @@
 import pygame
+import pygame_gui
 
 from src.config import (
     SCREEN_WIDTH,
@@ -16,24 +17,23 @@ from src.config import (
 )
 from src.environment_events import active_event_names, environmental_tile_color
 from src.farming import farm_border_edges
+from src.overlays.history import HISTORY_OVERLAY, HistoryOverlay
+from src.overlays.villagers import VILLAGERS_OVERLAY, VillagersOverlay
 from src.resource_ecology import max_food, max_wood
-from src.roles import BUILDER, FORAGER, GENERALIST, SCOUT
+from src.role_colors import color_for_role
 from src.seasons import seasonal_tile_color
 from src.agent import Agent
 from src.profiler import profiler
+from src.ui_overlays import OverlayManager
+from src.villager_inspection import compact_villager_rows
 from src.world import World
 
-
-ROLE_COLOR_KEYS = {
-    GENERALIST: "role_generalist",
-    FORAGER: "role_forager",
-    BUILDER: "role_builder",
-    SCOUT: "role_scout",
-}
+def is_food_visible_to_player(world: World, x: int, y: int) -> bool:
+    return (x, y) in world.colony_memory.known_food
 
 
-def color_for_role(role: str | None) -> tuple[int, int, int]:
-    return COLORS.get(ROLE_COLOR_KEYS.get(role, "agent"), COLORS["agent"])
+def is_wood_visible_to_player(world: World, x: int, y: int) -> bool:
+    return (x, y) in world.colony_memory.known_wood
 
 
 class PygameRenderer:
@@ -43,6 +43,9 @@ class PygameRenderer:
         self.world = world
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Automated ASCII Colony v0.1")
+        self.ui_manager = pygame_gui.UIManager((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.overlay_manager = OverlayManager()
+        self.register_overlays()
 
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont("consolas", 13)
@@ -55,10 +58,54 @@ class PygameRenderer:
         self.camera_x = 0
         self.camera_y = 0
 
+    def register_overlays(self):
+        self.overlay_manager.register_overlay(
+            VILLAGERS_OVERLAY,
+            lambda: VillagersOverlay(
+                self.world,
+                self.ui_manager,
+                self.select_agent,
+                self.selected_villager,
+            ),
+        )
+        self.overlay_manager.register_overlay(
+            HISTORY_OVERLAY,
+            lambda: HistoryOverlay(
+                self.world,
+                self.ui_manager,
+            ),
+        )
+
     def set_world(self, world: World):
         self.world = world
         self.clear_selection()
+        self.overlay_manager.close_all()
         self.clamp_camera()
+
+    def process_ui_event(self, event) -> bool:
+        overlay_consumed = self.overlay_manager.handle_event(event)
+        gui_consumed = self.ui_manager.process_events(event)
+        return overlay_consumed or gui_consumed
+
+    def update_ui(self, time_delta: float):
+        self.overlay_manager.update(time_delta)
+        self.ui_manager.update(time_delta)
+
+    def toggle_villagers_overlay(self):
+        self.overlay_manager.toggle_overlay(VILLAGERS_OVERLAY)
+
+    def toggle_history_overlay(self):
+        self.overlay_manager.toggle_overlay(HISTORY_OVERLAY)
+
+    def selected_villager(self):
+        return self.selected_agent
+
+    def select_agent(self, agent: Agent):
+        if agent not in self.world.agents:
+            self.clear_selection()
+            return
+        self.selected_agent = agent
+        self.selected_tile = None
 
     def select_tile_at_pixel(self, mouse_x: int, mouse_y: int):
         tile = self.screen_to_world_tile(mouse_x, mouse_y)
@@ -109,8 +156,7 @@ class PygameRenderer:
 
         agent = self.world.agent_at(tile_x, tile_y)
         if agent is not None:
-            self.selected_agent = agent
-            self.selected_tile = None
+            self.select_agent(agent)
             return
 
         self.selected_agent = None
@@ -137,6 +183,7 @@ class PygameRenderer:
 
             self.draw_world()
             self.draw_panel(paused, sim_speed)
+            self.ui_manager.draw_ui(self.screen)
 
             pygame.display.flip()
 
@@ -166,10 +213,10 @@ class PygameRenderer:
                     if farm.food > 0:
                         self.draw_centered_symbol("#", screen_x, screen_y, COLORS["farm_crop"])
 
-                if tile.food > 0:
+                if tile.food > 0 and is_food_visible_to_player(self.world, x, y):
                     self.draw_centered_symbol("f", screen_x, screen_y, self.resource_color("food", tile.food, max_food(tile)))
 
-                if tile.wood > 0:
+                if tile.wood > 0 and is_wood_visible_to_player(self.world, x, y):
                     self.draw_centered_symbol("w", screen_x, screen_y, self.resource_color("wood", tile.wood, max_wood(tile)))
 
                 animal = self.world.animal_at(x, y)
@@ -290,7 +337,7 @@ class PygameRenderer:
 
         y += self.panel_gap
         y = self.draw_section_header("Controls", content_x, y, content_width, bottom_y)
-        controls = "WASD pan | Space pause | Up/Down speed | R restart | Esc quit"
+        controls = "WASD pan | V villagers | H history | Space pause | Up/Down speed | R restart | Esc quit"
         y = self.draw_wrapped_text(controls, content_x, y, content_width, bottom_y, COLORS["muted"])
 
         y += self.panel_gap
@@ -395,24 +442,8 @@ class PygameRenderer:
 
         if self.selected_agent is not None:
             agent = self.selected_agent
-            target = agent.current_target if agent.current_target is not None else "None"
-            known_water = len(agent.remembered_water | self.world.colony_memory.known_water)
-            known_food = len(agent.remembered_food | self.world.colony_memory.known_food)
-            details = [
-                ("Agent", agent.name),
-                ("Role", agent.role),
-                ("Pos", f"({agent.x}, {agent.y})"),
-                ("Needs", f"H{agent.hunger} T{agent.thirst} F{agent.fatigue}"),
-                ("Carry", f"Food {agent.food}, Wood {agent.wood}"),
-                ("Goal", agent.current_goal),
-                ("Action", agent.current_action),
-                ("Target", target),
-                ("Path", len(agent.current_path)),
-                ("Idle", agent.no_progress_ticks),
-                ("Recover", agent.current_action == "Recovering"),
-                ("Known W", known_water),
-                ("Known F", known_food),
-            ]
+            details = compact_villager_rows(agent, self.world)
+            details.append(("Details", "Open Villagers overlay"))
             color = COLORS["text"] if agent.alive else COLORS["dead"]
 
         elif self.selected_tile is not None:
@@ -421,8 +452,8 @@ class PygameRenderer:
             details = [
                 ("Tile", f"({tile_x}, {tile_y})"),
                 ("Terrain", tile.kind),
-                ("Food", tile.food),
-                ("Wood", tile.wood),
+                ("Food", tile.food if is_food_visible_to_player(self.world, tile_x, tile_y) else "Unknown"),
+                ("Wood", tile.wood if is_wood_visible_to_player(self.world, tile_x, tile_y) else "Unknown"),
                 ("Walkable", tile.walkable),
             ]
             if self.is_settlement_center(tile_x, tile_y) and self.world.settlement is not None:

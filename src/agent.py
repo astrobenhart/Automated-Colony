@@ -29,7 +29,10 @@ from src.goals import (
     Goal,
 )
 from src.profiler import profiler
-from src.roles import GENERALIST, role_goal_bonus
+from src.lifecycle import ADULT
+from src.roles import FOOD, WATER, WOOD, GENERALIST, discovery_radius, role_goal_bonus
+from src.social_memory import SocialMemoryEntry
+from src.traits import CALM
 
 if TYPE_CHECKING:
     from src.world import World
@@ -52,12 +55,25 @@ class Agent:
     current_action: str = "Idle"
     current_goal: str = "Explore"
     role: str = GENERALIST
+    lifecycle_stage: str = ADULT
+    trait: str = CALM
+    agent_id: str | None = None
+    peak_influence_score: int = 0
+    appearance_seed: int | None = None
+    appearance_type: str | None = None
+    remembering: str | None = None
+    remembrance_expires_day: int = 0
+    home_settlement_id: str | None = None
+    home_settlement_name: str | None = None
+    birth_settlement_id: str | None = None
+    birth_settlement_name: str | None = None
 
     # Memory of coordinate locations
     remembered_food: set[tuple[int, int]] = field(default_factory=set, repr=False)
     remembered_water: set[tuple[int, int]] = field(default_factory=set, repr=False)
     remembered_wood: set[tuple[int, int]] = field(default_factory=set, repr=False)
     remembered_shelters: set[tuple[int, int]] = field(default_factory=set, repr=False)
+    social_memory: dict[str, SocialMemoryEntry] = field(default_factory=dict, repr=False)
 
     # Active path being followed (list of (x,y) steps, nearest first)
     current_path: list[tuple[int, int]] = field(default_factory=list, repr=False)
@@ -66,52 +82,66 @@ class Agent:
     stuck_ticks: int = 0
     no_progress_ticks: int = 0
 
+    def discovery_radius(self, resource_type: str) -> int:
+        return discovery_radius(self.role, resource_type)
+
     def update_needs(self):
         self.hunger += HUNGER_RATE
         self.thirst += THIRST_RATE
         self.fatigue += FATIGUE_RATE
 
     def scan_surroundings(self, world: World):
-        for dy in range(-5, 6):
-            for dx in range(-5, 6):
+        food_radius = self.discovery_radius(FOOD)
+        wood_radius = self.discovery_radius(WOOD)
+        water_radius = self.discovery_radius(WATER)
+        shelter_radius = 5
+        scan_radius = max(food_radius, wood_radius, water_radius, shelter_radius)
+
+        for dy in range(-scan_radius, scan_radius + 1):
+            for dx in range(-scan_radius, scan_radius + 1):
                 nx = self.x + dx
                 ny = self.y + dy
 
                 if 0 <= nx < world.width and 0 <= ny < world.height:
                     tile = world.tile_at(nx, ny)
                     pos = (nx, ny)
+                    distance = max(abs(dx), abs(dy))
 
                     # Food memory
-                    if tile.food > 0:
-                        self.remembered_food.add(pos)
-                        world.colony_memory.remember_food(pos)
-                    else:
-                        self.remembered_food.discard(pos)
-                        world.colony_memory.forget_food(pos)
+                    if distance <= food_radius:
+                        if tile.food > 0:
+                            self.remembered_food.add(pos)
+                            world.colony_memory.remember_food(pos)
+                        else:
+                            self.remembered_food.discard(pos)
+                            world.colony_memory.forget_food(pos)
 
                     # Wood memory
-                    if tile.kind == "forest" and tile.wood > 0:
-                        self.remembered_wood.add(pos)
-                        world.colony_memory.remember_wood(pos)
-                    else:
-                        self.remembered_wood.discard(pos)
-                        world.colony_memory.forget_wood(pos)
+                    if distance <= wood_radius:
+                        if tile.kind == "forest" and tile.wood > 0:
+                            self.remembered_wood.add(pos)
+                            world.colony_memory.remember_wood(pos)
+                        else:
+                            self.remembered_wood.discard(pos)
+                            world.colony_memory.forget_wood(pos)
 
                     # Water memory
-                    if tile.kind == "water":
-                        self.remembered_water.add(pos)
-                        world.colony_memory.remember_water(pos)
-                    else:
-                        self.remembered_water.discard(pos)
-                        world.colony_memory.forget_water(pos)
+                    if distance <= water_radius:
+                        if tile.kind == "water":
+                            self.remembered_water.add(pos)
+                            world.colony_memory.remember_water(pos)
+                        else:
+                            self.remembered_water.discard(pos)
+                            world.colony_memory.forget_water(pos)
 
                     # Shelter memory
-                    if tile.kind == "shelter":
-                        self.remembered_shelters.add(pos)
-                        world.colony_memory.remember_shelter(pos)
-                    else:
-                        self.remembered_shelters.discard(pos)
-                        world.colony_memory.forget_shelter(pos)
+                    if distance <= shelter_radius:
+                        if tile.kind == "shelter":
+                            self.remembered_shelters.add(pos)
+                            world.colony_memory.remember_shelter(pos)
+                        else:
+                            self.remembered_shelters.discard(pos)
+                            world.colony_memory.forget_shelter(pos)
 
     def choose_goal(self, world: World) -> Goal:
         with profiler.time("goal selection"):
@@ -230,9 +260,11 @@ class Agent:
             self.alive = False
             self.current_action = "Dead"
             self.release_reservations(world)
-            world.log(f"{self.name} died of starvation.")
+            from src.death_memory import record_death
+            record_death(world, self, "starvation")
         elif self.thirst >= THIRST_DEATH_THRESHOLD:
             self.alive = False
             self.current_action = "Dead"
             self.release_reservations(world)
-            world.log(f"{self.name} died of thirst.")
+            from src.death_memory import record_death
+            record_death(world, self, "thirst")

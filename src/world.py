@@ -2,11 +2,14 @@ import random
 from dataclasses import dataclass, field
 
 from src.building_priorities import highest_priority, needed_shelters, update_settlement_needs
+from src.appearance import appearance_seed_for, appearance_type_for_seed
 from src.carrying_capacity import carrying_capacity_report
 from src.colony_memory import ColonyMemory
 from src.colony_storage import ColonyStorage
 from src.environment_events import update_environment_events
 from src.farming import maybe_create_farm, update_farms
+from src.influence import update_influence_peaks
+from src.death_memory import DeathRecord, expire_remembrances
 from src.seasons import (
     day_of_season,
     next_season_index,
@@ -15,7 +18,10 @@ from src.seasons import (
     transition_progress,
 )
 from src.resource_ecology import apply_resource_ecology
+from src.lifecycle import lifecycle_stage_for_index
 from src.roles import role_for_index
+from src.social_memory import update_social_memory
+from src.traits import trait_for_index
 from src.settlement import (
     Settlement,
     choose_resource_target,
@@ -55,6 +61,7 @@ class World:
     active_environment_events: list = field(default_factory=list)
     animals: list = field(default_factory=list)
     history: WorldHistory = field(default_factory=WorldHistory)
+    death_records: list[DeathRecord] = field(default_factory=list)
     identity: WorldIdentity | None = None
     settlement: Settlement | None = None
     reservations: ReservationManager = field(default_factory=ReservationManager)
@@ -126,8 +133,25 @@ class World:
         ]
 
         positions = self.initial_spawn_positions(amount)
+        home_settlement_id = self.settlement.settlement_id if self.settlement is not None else None
+        home_settlement_name = self.settlement.name if self.settlement is not None else None
         for i, (x, y) in enumerate(positions):
-            self.agents.append(Agent(names[i % len(names)], x, y, role=role_for_index(i)))
+            appearance_seed = appearance_seed_for(self.seed, i, names[i % len(names)])
+            self.agents.append(Agent(
+                names[i % len(names)],
+                x,
+                y,
+                role=role_for_index(i),
+                lifecycle_stage=lifecycle_stage_for_index(i),
+                trait=trait_for_index(i),
+                agent_id=f"villager-{i}",
+                appearance_seed=appearance_seed,
+                appearance_type=appearance_type_for_seed(appearance_seed),
+                home_settlement_id=home_settlement_id,
+                home_settlement_name=home_settlement_name,
+                birth_settlement_id=home_settlement_id,
+                birth_settlement_name=home_settlement_name,
+            ))
 
         self.update_settlement_population()
         self.log(f"{amount} villagers enter the world.")
@@ -283,6 +307,9 @@ class World:
         self.update_resource_pressures()
         maybe_create_farm(self)
         self.update_carrying_capacity()
+        update_social_memory(self)
+        update_influence_peaks(self)
+        expire_remembrances(self)
         self.log(f"Day {self.day} begins.")
 
     def advance_season(self):

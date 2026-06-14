@@ -1,5 +1,7 @@
 from src.config import INITIAL_SPAWN_MAX_RADIUS, STARTING_AGENTS
+from src.lifecycle import lifecycle_stage_for_index
 from src.roles import role_for_index
+from src.traits import trait_for_index
 from src.settlement import Settlement, Stockpile, FOOD, WOOD, distance_to_settlement
 from src.tile import Tile
 from src.workshop import Workshop
@@ -69,8 +71,8 @@ def test_startup_is_deterministic_for_fixed_seed():
     second = create_world(seed=36)
 
     assert (first.settlement.x, first.settlement.y) == (second.settlement.x, second.settlement.y)
-    assert [(agent.name, agent.role, agent.x, agent.y) for agent in first.agents] == [
-        (agent.name, agent.role, agent.x, agent.y) for agent in second.agents
+    assert [(agent.name, agent.role, agent.lifecycle_stage, agent.trait, agent.x, agent.y) for agent in first.agents] == [
+        (agent.name, agent.role, agent.lifecycle_stage, agent.trait, agent.x, agent.y) for agent in second.agents
     ]
 
 
@@ -78,6 +80,22 @@ def test_role_assignment_order_is_preserved_at_startup():
     world = create_world(seed=37, agent_count=6)
 
     assert [agent.role for agent in world.agents] == [role_for_index(index) for index in range(6)]
+
+
+def test_lifecycle_assignment_order_is_preserved_at_startup():
+    world = create_world(seed=40, agent_count=10)
+
+    assert [agent.lifecycle_stage for agent in world.agents] == [
+        lifecycle_stage_for_index(index) for index in range(10)
+    ]
+
+
+def test_trait_assignment_order_is_preserved_at_startup():
+    world = create_world(seed=41, agent_count=10)
+
+    assert [agent.trait for agent in world.agents] == [
+        trait_for_index(index) for index in range(10)
+    ]
 
 
 def test_settlement_population_matches_spawned_living_villagers():
