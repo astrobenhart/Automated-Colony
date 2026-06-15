@@ -2,11 +2,17 @@
 
 ## Core Concept
 
-A world simulation where the player creates a world and watches autonomous agents survive, explore, build, cooperate, compete, and create history.
+A slow autonomous settlement screensaver where villagers live, work, age, reproduce, die, remember, inherit traits, and gradually change the land around them, while natural forces also reshape the world.
 
 The player does not directly control units.
 
-The goal is emergent storytelling through simulation.
+The goal is emergent storytelling through long-running settlement simulation.
+
+The world should feel lived in. The player should feel like they are observing a place with homes, paths, jobs, routines, households, children, elders, births, deaths, inherited traits, memories, history, land changed by people, and land changed by natural forces.
+
+The settlement should not feel like a blank map where every villager starts from scratch. The player is not founding every story. The player is arriving partway through ongoing village life.
+
+Automated Colony is not a colony manager. The observer watches the world unfold; they should not assign every job, command households, place every building, or run a work-order board.
 
 ## Core Loop
 
@@ -20,7 +26,7 @@ Need
 
 ## Current Architecture
 
-v0.5 Colony Roles and Production is complete.
+v0.6 Villager Life and Social Foundations is complete.
 
 Agents should:
 - remember resources
@@ -72,21 +78,21 @@ UI should:
 
 ## Next Focus
 
-v0.5 is the stable settlement-economy foundation.
+v0.7 should establish the lived-in settlement foundation.
 
-The next roadmap work should build from the completed v0.5 village behavior without adding player micromanagement.
+The next roadmap work should build from the completed v0.5 settlement economy and v0.6 social identity systems without adding player micromanagement.
 
-The v0.6-v0.9 progression should make villages feel alive without making them fragile, noisy, or broken:
-- v0.6 should add individuality without adding population collapse.
-- v0.7 should add migration as the first renewal/expansion mechanism.
-- v0.8 should add rare Mysteries and Wanderers after villagers and settlements can react and remember.
-- v0.9 should synthesize settlement, migration, memory, ruins, and major events into long-term history.
+The future progression is:
+- v0.7: lived-in settlement foundation.
+- v0.8: generations and household life.
+- v0.9: workplaces, professions, and delivery networks.
+- v1.0: large autonomous settlement screensaver.
 
-Future directions include deeper logistics, migration/new settlements, social simulation, roads, richer farming, and rare Mysteries and Wanderers. Do not begin the next milestone by adding politics, warfare, large-scale economy, or player work-order systems.
+Preserve compatible earlier ideas as future systems: migration, splinter settlements, ruins, mysteries, wanderers, deeper logistics, and multi-settlement history still matter, but the immediate direction is a village that already feels inhabited.
 
-Resource Reservation v1 is the current coordination layer. Full hauling and job assignment remain future logistics work and should not be tied to v0.6. Logistics should be introduced only when there are enough production chains and destinations to justify the added complexity.
+Resource Reservation v1 is the current coordination layer. Full hauling and job assignment remain future logistics work. Logistics should be introduced only when homes, workplaces, roads/paths, production chains, and destinations justify the added complexity.
 
-## Stable Living Villages
+## Lived-In Place Principle
 
 The simulation should prioritize continuity over novelty.
 
@@ -94,21 +100,209 @@ A small number of meaningful long-term events is preferable to many frequent eve
 
 Systems should build on existing history whenever possible.
 
+The world should feel like it existed before the player arrived. The default start should eventually be a village already in progress, not a bare wilderness map where all social memory, buildings, routines, and history begin at zero.
+
+Starting village fabric may include:
+- homes
+- farms
+- storage
+- workshops
+- workplace placeholders
+- paths
+- households
+- villagers with roles
+- villagers with ages/lifecycle stages
+- villagers with social bonds
+- remembered dead
+- existing Chronicle entries
+- fields and paths showing prior human activity
+
+Starting scenarios:
+- Frontier Camp: closest to the current experience, with 10-20 villagers, fewer buildings, and visible survival pressure.
+- Small Village: recommended v0.7 default, with 30-60 villagers, homes, farms, paths, workplaces, simple households, existing routines, and social bonds.
+- Old Village: future scenario with established history, remembered dead, worn paths, older buildings, and larger family networks.
+- Market Town: future scenario with 100-200 villagers, districts, more professions, and delivery networks.
+
+## Stable Living Villages
+
 Core stability principle:
 - Do not add a new death source before adding a renewal source.
 - Do not introduce old-age death before reproduction, migration, or new arrivals exist.
-- Age in v0.6 is identity/story, not attrition.
 - Villagers should feel more individual without causing guaranteed village extinction.
 - Social systems should add flavor, memory, and identity before they add churn.
 - Survival needs remain dominant over social behavior.
+- Generation systems should support continuity, not erase scarcity.
 
-v0.6 life and social foundations should focus on labels and lightweight flavor:
-- Adult and Elder can be lifecycle labels.
-- Elders may move slower, work less often, influence leadership/memory/history, or appear more often in notable events.
-- Elders should not automatically die of old age until a renewal system exists.
-- Traits, mood, morale, familiarity, influence, remembrance, settlement identity, and social bond labels should remain lightweight.
-- Reproduction, children, inheritance, full family trees, and old-age death remain deferred.
-- Lifecycle Labels v1 is intentionally static identity metadata. Villagers are assigned Adult or Elder when created, the label appears in selected-villager details, and there is no Adult-to-Elder progression or Elder-to-death rule.
+v0.6 life and social foundations remain lightweight:
+- Adult and Elder are currently lifecycle labels.
+- Traits are currently display-first.
+- Social memory, influence, remembrance, settlement identity, and social bond labels are observer-facing.
+- Lifecycle Labels v1 is static identity metadata. Villagers are assigned Adult or Elder when created, the label appears in selected-villager details, and there is no Adult-to-Elder progression or Elder-to-death rule.
+
+v0.7 should not implement reproduction casually. It should prepare the settlement model, start generation, and identity/history layers so reproduction, children, parent links, inherited traits, and aging can arrive as coherent systems later.
+
+## Daily Life Model
+
+Daily routines should become a core simulation unit.
+
+Villagers should eventually have slow, readable rhythms:
+- wake
+- eat
+- go to workplace
+- work
+- rest or socialize
+- return home
+- eat
+- household time
+- sleep
+
+A complete in-game day may eventually take several real-world hours in screensaver mode. The goal is not speed. The goal is watchable continuity.
+
+Future-facing example:
+
+A blacksmith wakes early, walks to the forge, starts the forge, receives raw materials, crafts goods, sends goods into storage or delivery networks, closes the forge, returns home, eats, spends time with household, sleeps, and wakes again the next day.
+
+This blacksmith sequence is aspirational future behavior, not a v0.7 acceptance requirement.
+
+## Paths and Lived-In Land
+
+Paths are a major design pillar because they visually communicate that people live here.
+
+v0.7 may begin with:
+- pre-generated village paths
+- simple worn-path tiles
+- paths between homes, farms, storage, and workplaces
+
+Future versions may add:
+- path wear from repeated travel
+- road improvement
+- abandoned paths fading
+- paths around ruins or old homes
+
+The screensaver experience depends on seeing the land accumulate history.
+
+The land should be changed by both villagers and natural forces.
+
+Natural forces may include:
+- seasons
+- drought
+- heavy rain
+- vegetation changes
+- wildlife movement
+- water/river changes eventually
+
+Human forces may include:
+- paths
+- farms
+- cleared woods
+- buildings
+- workshops
+- storage
+- worn ground
+- abandoned homes
+- ruins
+- expanded fields
+
+## Households and Reproduction Direction
+
+Households are the bridge between current villager identity and future reproduction.
+
+Households should eventually represent:
+- shared home
+- partners
+- children
+- elders
+- relatives or companions
+- people who eat, sleep, and live together
+
+v0.7 can begin with household foundations without full reproduction.
+
+Households are the conceptual home for reproduction, children, inherited traits, family history, births, deaths, and long-term continuity.
+
+Do not add:
+- complex inheritance law
+- family tree UI
+- romance simulation
+- detailed domestic economy
+- player household assignment
+
+Reproduction should be part of the long-term simulation direction, but it should not be a simple population counter.
+
+Future reproduction should be tied to:
+- households
+- lifecycle
+- identity
+- traits
+- Chronicle/history
+- settlement capacity/pressure
+- long-term population continuity
+
+Future systems should support:
+- partners or reproductive households
+- children
+- parent links
+- inherited traits
+- aging from child to adult to elder
+- birth events
+- family history
+- death and remembrance across generations
+
+Trait inheritance direction:
+- a child may inherit one trait from one parent
+- a child may blend tendencies from both parents
+- there may be a small chance of a new/random trait
+- traits should remain simple and display-first before deeply changing behavior
+
+## Simulation Scale and Level of Detail
+
+Target scale:
+- short-term v0.7: 30-60 villagers
+- medium-term: 100-200 villagers
+- long-term: hundreds of villagers
+
+The architecture must avoid full expensive per-tick simulation for every villager.
+
+Simulation level of detail should eventually support:
+
+Visible / nearby villagers:
+- detailed movement
+- current task/state
+- animation
+- local interactions
+- pathfinding
+
+Offscreen / less relevant villagers:
+- simplified schedule state
+- approximate location
+- work progress
+- resource consumption/production
+
+Background villagers:
+- hourly/daily summaries
+- social updates
+- births/deaths
+- work completion
+- history events
+
+This is required to support hundreds of villagers without performance collapse.
+
+## Deferred Boundaries
+
+The long-term vision may include richer work, families, logistics, and towns, but keep these out of v0.7:
+- full blacksmith production chain
+- full delivery/logistics network
+- full economy
+- full family tree UI
+- pregnancy mechanics
+- inheritance law
+- romance drama
+- politics
+- formal leaders
+- multi-settlement trade
+- hundreds of fully pathfinding villagers
+- micromanagement UI
+- player job assignment
+- work orders
 
 Traits should describe villagers before they influence villagers.
 
@@ -234,7 +428,7 @@ Bond labels are shown compactly on villager character cards and are capped to th
 
 Social Bond Labels do not affect AI, movement, pathfinding, gathering, building, farming, state labels, death/remembrance behavior, influence calculation, settlement membership, survival, social-memory growth, or any other gameplay behavior.
 
-Family, reproduction, ancestry, children, romance, households, and pair-bond systems are deferred until migration, lifecycle, population, and long-term history systems are intentionally designed.
+In v0.6 these labels remain non-family and non-romantic. Future household, reproduction, ancestry, children, and parent-link systems should be designed explicitly through the lived-in settlement and generational roadmap rather than inferred from Social Bond Labels.
 
 ## Overlay Framework
 
@@ -354,11 +548,12 @@ Discovery rules:
 - There are no view cones, directional vision, line-of-sight, raycasting, BFS, or pathfinding in discovery.
 - Personal memory and colony memory sharing remain the discovery output.
 
-v0.7 migration should provide the first renewal and expansion path:
+The lived-in settlement roadmap should eventually support renewal and expansion paths:
 - Food pressure can lead to farming.
 - Population pressure can lead to migration or a new settlement.
-- A small group may decide to leave, travel or abstractly depart, and found or record a new settlement.
-- Migration should not require deep family trees, diplomacy, politics, warfare, or a full economy first.
+- Households and lifecycle systems can support births, deaths, aging, and inherited traits.
+- A small group may later decide to leave, travel or abstractly depart, and found or record a new settlement.
+- Migration should not require diplomacy, politics, warfare, or a full economy first.
 
 Mysteries are more powerful once villagers and settlements can remember and react:
 - A wizard is more interesting when villagers can gather, fear, admire, remember, or be changed by the event.

@@ -1,5 +1,20 @@
 # Roadmap
 
+## North Star - Slow Autonomous Settlement Screensaver
+
+Automated Colony is moving from an automated survival colony toward a slow autonomous generational settlement simulation.
+
+The world should feel lived in.
+
+The player should feel like they are observing a place with homes, paths, jobs, routines, households, children, elders, births, deaths, inherited traits, memories, history, land changed by people, and land changed by natural forces.
+
+The settlement should not feel like a blank map where every villager starts from scratch. The player is not founding every story. The player is arriving partway through ongoing village life.
+
+Long-term direction:
+- A slow autonomous settlement screensaver where villagers live, work, age, reproduce, die, remember, inherit traits, and gradually change the land around them, while natural forces also reshape the world.
+- The project is not a colony manager. The observer watches the world unfold; they do not assign jobs, command households, place every building, or micromanage production.
+- Survival remains important, but the future emphasis is long-running village continuity, daily life, generational memory, and visible accumulated history.
+
 ## v0.1 - Basic Simulation
 
 Goal: Create a runnable automated Pygame colony simulation.
@@ -158,26 +173,6 @@ Notes:
 - Physical stockpiles and building clusters are prerequisites for richer settlement identity and expansion.
 - Full hauling, withdrawal logistics, job assignment, multiple settlements, migration, expansion, and deeper settlement-driven logistics remain future work.
 
-## Future Systems / Backlog
-
-### Deeper Logistics
-
-Goal: Add full logistics only when the simulation has enough production chains and destinations to justify the complexity.
-
-Features:
-- [ ] Full hauling and job assignment system
-- [ ] Hauling chains between resource sources, stockpiles, workshops, farms, roads, and future buildings
-- [ ] Item stacks or explicit carried-resource destinations
-- [ ] Job queues or autonomous job board
-- [ ] Inventory and resource reservations beyond simple target claims
-- [ ] Multi-step production logistics
-
-Notes:
-- Resource Reservation v1 remains the current coordination layer.
-- Full hauling/logistics should remain autonomous unless a later design explicitly introduces player-visible work orders.
-- Do not add this system during v0.6.
-- Reconsider deeper logistics only after farming, roads, multiple settlements, or richer production chains make it worthwhile.
-
 ## v0.6 - Villager Life and Social Foundations
 
 Goal: Make villagers feel more like individuals and settlement members without adding fragile population churn.
@@ -211,12 +206,7 @@ Notes:
 - Settlement Identity v1 gives villagers stable home and birth settlement fields, displays Home on character cards, and lets death history / Chronicle wording use names such as `Rowan of Oakvale`. This is belonging and future migration groundwork only; it adds no behavior bonuses, same-settlement familiarity changes, politics, factions, migration, or conflict.
 - Social Bond Labels v1 replace the old pair/family-label idea with non-romantic, non-family display labels derived from existing familiarity. Character cards may show labels such as Often Seen With, Trusted Neighbor, and Close Companion. These labels do not affect behavior, remembrance, influence, settlement membership, survival, or social-memory growth.
 - Do not add old-age death yet.
-- Do not add reproduction yet.
-- Do not add children yet.
-- Do not add romance yet.
-- Do not add family, ancestry, households, couples, marriage, or pair-bond systems yet.
-- Do not add inheritance yet.
-- Do not add full family trees yet.
+- Do not add reproduction, children, romance, households, inheritance, or full family trees in v0.6. These are now explicit future architecture targets, starting with lived-in village and household foundations.
 - Do not let social systems override survival needs.
 - Do not create guaranteed village extinction.
 - Lifecycle states in v0.6 should be story labels and behavior flavor.
@@ -225,30 +215,145 @@ Notes:
 - Elders should not automatically die of old age until a renewal system exists.
 - Age in v0.6 is identity/story, not attrition.
 
-## v0.7 - Migration and Settlement Expansion
+## v0.7 - Lived-In Settlement Foundation
 
-Goal: Add population renewal and expansion pressure before deep family systems or old-age death.
+Goal: Make the default experience feel like arriving at an existing village already in progress, not watching blank-slate survivors found every story from scratch.
+
+Features:
+- [ ] Pre-seeded village start
+- [ ] Homes as village anchors
+- [ ] Workplace placeholders for farms, storage, workshops, and future professions
+- [ ] Daily schedule foundation
+- [ ] Household foundations without full reproduction yet
+- [ ] Pre-generated village paths or simple worn-path tiles
+- [ ] Mixed lifecycle starting population
+- [ ] Pre-existing roles, routines, relationships, social bonds, and memories
+- [ ] Starting village history / Chronicle seed entries
+- [ ] Architecture support for future reproduction, children, parents, inherited traits, aging progression, household membership, family history, births, and deaths
+- [ ] Scenario framing for different starting settlement maturity levels
+- [ ] Simulation level-of-detail planning for 30-60 villagers
+
+Starting Scenarios:
+- Frontier Camp: closest to the current experience, with 10-20 villagers, early shelters, fewer buildings, and visible survival pressure.
+- Small Village: recommended v0.7 default, with 30-60 villagers, homes, farms, paths, storage, workplace placeholders, simple households, roles, routines, social bonds, and seed Chronicle entries.
+- Old Village: future scenario with established history, remembered dead, worn paths, older buildings, and a larger family network.
+- Market Town: future scenario with 100-200 villagers, districts, more professions, and delivery/resource networks.
+
+Notes:
+- The starting world generator should create an initial social fabric, not just terrain and resources.
+- The player should feel like the village existed before observation began.
+- Paths are high priority because they visually communicate that people live here.
+- v0.7 can begin with generated paths between homes, farms, storage, and workplaces before adding dynamic path wear.
+- Daily routines should be slow and readable: wake, eat, go to workplace, work, rest or socialize, return home, eat, household time, sleep.
+- A complete in-game day may eventually take several real-world hours in screensaver mode.
+- v0.7 should prepare for reproduction and inheritance without implementing them casually as population counters.
+- No micromanagement UI, job assignment, work orders, household controls, romance drama, politics, or formal leaders are added.
+
+## v0.8 - Generations and Household Life
+
+Goal: Turn households and lifecycle labels into long-term population continuity, family memory, and generational history.
+
+Features:
+- [ ] Reproduction tied to households, identity, settlement capacity, and long-term continuity
+- [ ] Children
+- [ ] Parent links
+- [ ] Trait inheritance with variation
+- [ ] Aging from child to adult to elder
+- [ ] Birth events in the Chronicle
+- [ ] Death and remembrance across generations
+- [ ] Household continuity after births, deaths, and aging
+- [ ] Family history data without requiring a full family-tree UI
+
+Notes:
+- Reproduction should not be a simple population counter.
+- Children should inherit traits from parents, with room for variation.
+- A future inheritance model may let a child inherit one trait from one parent, blend tendencies from both parents, or rarely receive a new/random trait.
+- Traits should remain simple and display-first before they become deep behavior modifiers.
+- Old-age death should remain tied to renewal systems so villages do not collapse automatically.
+- Avoid pregnancy mechanics, inheritance law, romance drama, detailed domestic economy, and full family-tree UI unless a later design explicitly needs them.
+
+## v0.9 - Workplaces, Professions, and Delivery Networks
+
+Goal: Make daily work legible and useful without turning the project into a colony-management job board.
+
+Features:
+- [ ] Deeper professions
+- [ ] Workplace routines
+- [ ] Workshop routines such as opening, working, closing, and returning home
+- [ ] Production chains
+- [ ] Delivery/resource movement between homes, farms, storage, workshops, and future workplaces
+- [ ] Role-specific daily work
+- [ ] More visible job identity without player job assignment
+
+Future-facing example:
+- A blacksmith wakes early, walks to the forge, starts the forge, receives raw materials, crafts goods, sends goods into storage or delivery networks, closes the forge, returns home, eats, spends time with household, sleeps, and wakes again the next day.
+
+Notes:
+- The blacksmith example is aspirational behavior, not a v0.7 acceptance requirement.
+- Resource Reservation v1 remains the current coordination layer until richer production chains justify deeper logistics.
+- Full delivery/logistics should stay autonomous and should not become player work orders.
+
+## v1.0 - Large Autonomous Settlement Screensaver
+
+Goal: Support long-running observation of a large settlement whose people, land, buildings, paths, households, and history change over years.
+
+Features:
+- [ ] Hundreds of villagers through simulation level of detail
+- [ ] Visible / nearby villagers with detailed movement, current task/state, animation, local interactions, and pathfinding
+- [ ] Offscreen / less relevant villagers with simplified schedule state, approximate location, work progress, and resource consumption/production
+- [ ] Background villagers with hourly/daily summaries, social updates, births/deaths, work completion, and history events
+- [ ] Long-term history across births, deaths, households, work, settlement change, land change, and major events
+- [ ] Land transformed over years by paths, farms, cleared woods, buildings, workshops, storage, worn ground, abandoned homes, and ruins
+- [ ] Natural forces that continue reshaping the world through seasons, drought, heavy rain, vegetation changes, wildlife movement, and eventual water/river changes
+- [ ] Stable screensaver mode for slow, readable, long-running observation
+
+Scale Targets:
+- Short-term v0.7 target: 30-60 villagers.
+- Medium-term target: 100-200 villagers.
+- Long-term target: hundreds of villagers.
+
+Performance Notes:
+- Hundreds of fully pathfinding villagers every tick is not a requirement and should be avoided.
+- Simulation LOD is required before large populations become a default target.
+- The player-facing goal is believable continuity, not perfect per-tick simulation for every person.
+
+## Future Systems / Backlog
+
+### Paths and Lived-In Land
+
+Goal: Make paths, worn ground, fields, buildings, and abandoned places show that people have lived here for a long time.
+
+Features:
+- [ ] Pre-generated paths between homes, farms, storage, and workplaces
+- [ ] Path wear from repeated travel
+- [ ] Road improvement
+- [ ] Abandoned paths fading
+- [ ] Paths around ruins, old homes, or former workplaces
+- [ ] Cleared woods, expanded fields, worn ground, and visible village expansion
+
+### Migration, Multi-Settlement History, and Ruins
+
+Goal: Preserve the earlier migration and ruins vision as long-term history work under the lived-in settlement direction.
 
 Features:
 - [ ] Migration pressure from crowding, carrying capacity, food pressure, or settlement status
 - [ ] Departure groups
 - [ ] Arrival/newcomer events if appropriate
 - [ ] Splinter settlement foundations
-- [ ] New settlement creation from population/resource pressure
-- [ ] Basic settlement identity and founding records
-- [ ] Migration history entries
-- [ ] Simple movement/departure behavior if practical
-- [ ] No complex diplomacy, economy, politics, or warfare
+- [ ] Named settlements and founding records
+- [ ] Migration paths
+- [ ] Splinter settlement history
+- [ ] Ruins of failed or abandoned settlements
+- [ ] Timeline view
+- [ ] Myths or legends generated from real events
+- [ ] Historical links between settlements, ruins, migration, households, and notable villagers
 
 Notes:
-- This builds on the v0.5 carrying-capacity model.
-- Food pressure can lead to farming; population pressure can lead to migration or a new settlement.
-- Migration should start simple: a small group decides to leave, they travel or abstractly depart, and a new settlement is founded or recorded.
-- Do not require full family trees or deep relationship simulation before migration.
-- Migration is the first renewal/expansion mechanism.
-- Old-age death, reproduction, children, inheritance, and full family trees remain deferred until renewal and settlement expansion are stable.
+- Migration remains a future renewal/expansion mechanism.
+- Multiple settlements should emerge from pressure and history, not player placement.
+- Ruins and lineage should connect past settlement stories to current play.
 
-## v0.8 - Mysteries and Wanderers
+### Mysteries and Wanderers
 
 Goal: Let the living world occasionally surprise the observer with rare visitors, strange events, and unexplained landmarks that create stories without becoming another management layer.
 
@@ -261,89 +366,43 @@ Features:
 - [ ] Villager reactions to wonders, visitors, and omens
 - [ ] History entries for mysteries, arrivals, departures, and strange outcomes
 
-Design Goal:
-- The colony simulation should occasionally produce rare and memorable events that surprise the observer.
-- The player does not directly control these events.
-- They emerge from the world and create stories.
-- The goal is wonder, mystery, and unpredictability, not power progression.
-- These systems should deepen the screensaver / ant-farm quality of watching the world unfold.
-
-Rare Visitors:
-- Visitors are not normal villagers.
-- Visitors are autonomous.
-- Visitors arrive and leave.
-- Visitors should feel unusual.
-- Visitors should not become another colony role.
-- Example visitors include a Wandering Wizard, Strange Hermit, Lost Knight, Travelling Merchant, Dreaming Pilgrim, and Golden Stag.
-
-Strange Events:
-- Examples include Meteor Strike, Falling Star, Aurora, Ghost Lights, Singing Forest, Sudden Mist, and animals gathering silently at night.
-- These are examples only; the exact final list should remain open so the world can still surprise the player.
-- Events should be bounded, rare, and integrated with history.
-
-Mysteries and Landmarks:
-- Examples include Ancient Standing Stone, Hidden Ruin, Crystal Spring, Sleeping Giant Tree, Marked Grove, and Forgotten Shrine.
-- Landmarks may appear through world generation, rare events, or visitor interactions.
-- Some landmarks should remain partly unexplained.
-
-Example:
-- Day 217: A wizard appears at the edge of the map.
-- Villagers begin gathering around him.
-- Nobody knows why.
-- Several days later the wizard leaves.
-- Possible outcomes include temporary crop growth, a revealed water source, one villager becoming a Dreamer, a standing stone appearing, or a blessing/curse affecting a small area.
-- The exact effect should remain somewhat mysterious.
-
-Screensaver Principle:
-- The project is partly a simulation and partly a living screensaver.
-- Rare events should occasionally create moments that make the observer stop and watch.
-- The simulation should be capable of surprising the player even after many hours.
-
-Non-Goals:
+Notes:
 - Rare means rare; mysteries should not happen constantly.
-- The user should not summon visitors or command them.
-- Effects should not dominate survival systems.
-- This should not become a spell system, RPG quest system, or another colony management layer.
-- Some mystery should remain unexplained.
-
-Future Architecture Notes:
-- Prefer generic systems over a hardcoded wizard.
-- Possible future modules: `visitors.py`, `mysteries.py`, `magical_events.py`.
-- Possible concepts: `Visitor`, `MysteryEvent`, `MagicalEffect`, rare spawn scheduler, bounded duration, history integration, villager reaction hooks, and renderer markers.
+- The player does not summon visitors or command them.
+- Visitors are autonomous and should not become another colony role.
 - The wizard should be one possible visitor, not the entire system.
-- Mysteries work better after villagers have individuality and settlements have history hooks.
-- A wizard is more interesting when villagers can react, remember, gather, fear, admire, or be changed by the event.
+- Mysteries become stronger once households, paths, memories, and long-term history can react to them.
 
-## v0.9 - Multi-Settlement History and Ruins
+### Deeper Logistics
 
-Goal: Turn multiple settlements, migrations, failures, and major events into world history.
+Goal: Add full logistics only when the simulation has enough production chains and destinations to justify the complexity.
 
 Features:
-- [ ] Named settlements
-- [ ] Migration paths
-- [ ] Splinter settlement history
-- [ ] Ruins of failed or abandoned settlements
-- [ ] Lineage/ancestry if social systems support it by then
-- [ ] Major historical events
-- [ ] Timeline view
-- [ ] Myths or legends generated from real events
-- [ ] Historical links between settlements, ruins, migration, and notable villagers
+- [ ] Full hauling and autonomous task claiming system
+- [ ] Hauling chains between resource sources, stockpiles, workshops, farms, roads, homes, and future buildings
+- [ ] Item stacks or explicit carried-resource destinations
+- [ ] Autonomous job board if needed internally
+- [ ] Inventory and resource reservations beyond simple target claims
+- [ ] Multi-step production logistics
 
 Notes:
-- v0.5 already implemented settlement centers, village hubs, clustered building placement, local resource radius, stockpiles, workshops, farms, and carrying-capacity reporting.
-- Those systems are completed prerequisites, not future v0.9 features.
-- v0.9 should focus on long-term history and memory.
-- Migration, memory, ruins, and notable villagers should connect into persistent world stories.
-- Ruins and lineage should connect past settlements to current play rather than appear as isolated flavor.
-- Myths and legends should be generated from real events where possible.
+- Do not add player job assignment, player work orders, or micromanagement UI.
+- Reconsider deeper logistics only after roads, workplaces, professions, and richer production chains make it worthwhile.
 
-Non-Goals For Now:
-- Warfare
-- Diplomacy
-- Economy
-- Politics
-- Kingdoms
+### Deferred Non-Goals
 
-Notes:
-- These are future possibilities, not scheduled systems.
-- The near-term path should stay grounded in survival, settlement centers, local work, and village identity before scaling up to larger institutions.
+Keep these out of v0.7:
+- full blacksmith production chain
+- full delivery/logistics network
+- full economy
+- full family tree UI
+- pregnancy mechanics
+- inheritance law
+- romance drama
+- politics
+- formal leaders
+- multi-settlement trade
+- hundreds of fully pathfinding villagers
+- micromanagement UI
+- player job assignment
+- player work orders
