@@ -34,10 +34,10 @@ FARM_PLACEMENT_RADIUS_MARGIN = 4
 FARM_GROWTH_THRESHOLD = 100
 FARM_FOOD_CAP = 6
 FARM_SEASON_GROWTH = {
-    "Spring": 42,
-    "Summer": 30,
-    "Autumn": 26,
-    "Winter": 4,
+    "Spring": 42, # default 42
+    "Summer": 30, # default 30
+    "Autumn": 26, # default 26
+    "Winter": 4, # default 4
 }
 FARM_MAX_PLOTS_SMALL = 1
 FARM_MAX_PLOTS_MEDIUM = 2
@@ -62,10 +62,10 @@ WILDLIFE_MAX_ANIMALS = 45
 WILDLIFE_WANDER_CHANCE = 0.02
 SEASONS = ["Spring", "Summer", "Autumn", "Winter"]
 SEASON_FOOD_GROWTH_MODIFIERS = {
-    "Spring": 1.45,
-    "Summer": 0.95,
-    "Autumn": 1.20,
-    "Winter": 0.25,
+    "Spring": 1, # default 1.45
+    "Summer": 0.6, # default 0.95
+    "Autumn": 0.3, # default 1.20
+    "Winter": 0.05, # default 0.25
 }
 SEASON_WOOD_GROWTH_MODIFIERS = {
     "Spring": 1.10,
@@ -84,7 +84,7 @@ SCREEN_WIDTH = VIEWPORT_WIDTH * TILE_SIZE + PANEL_WIDTH
 SCREEN_HEIGHT = VIEWPORT_HEIGHT * TILE_SIZE
 
 FPS = 30
-SIM_TICKS_PER_SECOND = 8
+SIM_TICKS_PER_SECOND = 10
 
 COLORS = {
     "grass": (75, 145, 75),
