@@ -80,6 +80,7 @@ class Settlement:
     carrying_capacity_report: object | None = None
     planned_demands: dict[str, int] = field(default_factory=dict)
     work_assignments: dict[str, str] = field(default_factory=dict)
+    construction_progress: dict[tuple[int, int], int] = field(default_factory=dict)
     last_planned_day: int | None = None
 
     def record_activity(self, x: int, y: int):

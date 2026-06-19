@@ -41,6 +41,14 @@ class BuildingPriority:
         return self.missing_count * self.wood_cost
 
 
+def housing_structures(world: World) -> int:
+    return world.count_tiles(SHELTER) + world.count_tiles("home")
+
+
+def housing_capacity(world: World) -> int:
+    return housing_structures(world) * SHELTER_CAPACITY
+
+
 def needed_shelters(world: World) -> int:
     living_count = len(world.living_agents())
     if living_count == 0:
@@ -51,7 +59,7 @@ def needed_shelters(world: World) -> int:
 def highest_priority(world: World) -> BuildingPriority | None:
     update_settlement_needs(world)
 
-    existing_shelters = world.count_tiles(SHELTER)
+    existing_shelters = housing_structures(world)
     required_shelters = needed_shelters(world)
 
     if existing_shelters < required_shelters:
@@ -115,8 +123,8 @@ def settlement_need_scores(world: World) -> dict[str, float]:
 
 def shelter_need_score(world: World) -> float:
     living = len(world.living_agents())
-    existing_shelters = world.count_tiles(SHELTER)
-    capacity = existing_shelters * SHELTER_CAPACITY
+    existing_shelters = housing_structures(world)
+    capacity = housing_capacity(world)
     required_shelters = needed_shelters(world)
     missing_shelters = max(0, required_shelters - existing_shelters)
 
@@ -135,7 +143,7 @@ def shelter_need_score(world: World) -> float:
 def wood_need_score(world: World) -> float:
     stored_wood = world.colony_storage.wood
     stored_materials = world.colony_storage.building_materials
-    existing_shelters = world.count_tiles(SHELTER)
+    existing_shelters = housing_structures(world)
     missing_shelters = max(0, needed_shelters(world) - existing_shelters)
     workshop_exists = world.workshop_at_anywhere()
 
@@ -160,7 +168,7 @@ def materials_need_score(world: World) -> float:
     if stored_materials >= DESIRED_BUILDING_MATERIALS or stored_wood <= 0:
         return 0.0
 
-    existing_shelters = world.count_tiles(SHELTER)
+    existing_shelters = housing_structures(world)
     missing_shelters = max(0, needed_shelters(world) - existing_shelters)
     score = (DESIRED_BUILDING_MATERIALS - stored_materials) * 10
     score += 25 if missing_shelters > 0 else 10

@@ -785,6 +785,31 @@ def test_colony_summary_excludes_debug_fields():
     assert "Settle" not in summary
 
 
+def test_colony_summary_includes_settlement_priorities_and_planner():
+    world = make_world(width=8, height=8)
+    world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")
+    world.agents = [Agent(f"A{i}", i, 1) for i in range(6)]
+    world.tile_at(0, 2).kind = "home"
+    world.colony_storage.deposit_food(3)
+    world.colony_storage.deposit_water(2)
+    world.colony_storage.deposit_wood(4)
+    world.settlement.planned_demands = {
+        "house_construction": 80,
+        "wood_gathering": 40,
+        "food_production": 20,
+    }
+    renderer = make_renderer(world)
+
+    summary = "\n".join(renderer.colony_summary_lines())
+
+    assert "Priorities:" in summary
+    assert "Food     3 / 12" in summary
+    assert "Water    2 / 6" in summary
+    assert "Wood     4 /" in summary
+    assert "Housing  3 / 6" in summary
+    assert "Planner: House Construction 80" in summary
+
+
 def test_colony_reason_lines_are_capped_and_hidden_when_stable():
     world = make_world(width=8, height=8)
     world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")

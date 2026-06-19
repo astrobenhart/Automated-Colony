@@ -59,6 +59,22 @@ def test_role_based_assignments_follow_planner_demands():
     assert assignments["gala"] in {WORK_FOOD, WORK_WATER, WORK_WOOD, WORK_CONSTRUCTION}
 
 
+def test_construction_assignment_waits_for_usable_wood():
+    world = make_world()
+    builder = Agent("Bryn", 5, 6, role=BUILDER, agent_id="bryn")
+    world.agents.append(builder)
+
+    assignments = plan_settlement_work(world)
+
+    assert world.needs_more_shelters()
+    assert assignments["bryn"] == WORK_WOOD
+
+    world.colony_storage.deposit_wood(3)
+    assignments = plan_settlement_work(world)
+
+    assert assignments["bryn"] == WORK_CONSTRUCTION
+
+
 def test_water_demand_rises_when_water_storage_and_access_are_low():
     world = make_world()
     world.agents.extend(Agent(f"A{i}", 5, 5, role=FORAGER) for i in range(6))

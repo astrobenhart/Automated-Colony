@@ -82,7 +82,7 @@ def assignment_for_agent(agent, world, demands: dict[str, int], role_counts: Cou
         return WORK_EXPLORATION
 
     if agent.role == BUILDER:
-        if demands.get(WORK_CONSTRUCTION, 0) > 0 and _construction_materials_available(world):
+        if demands.get(WORK_CONSTRUCTION, 0) > 0 and _construction_materials_available(world, agent):
             return WORK_CONSTRUCTION
         if demands.get(WORK_WOOD, 0) > 0:
             return WORK_WOOD
@@ -96,11 +96,10 @@ def assignment_for_agent(agent, world, demands: dict[str, int], role_counts: Cou
         )
 
     if agent.role == GENERALIST:
-        return _balanced_choice(
-            (WORK_FOOD, WORK_WATER, WORK_WOOD, WORK_CONSTRUCTION),
-            demands,
-            role_counts,
-        )
+        options = [WORK_FOOD, WORK_WATER, WORK_WOOD]
+        if _construction_materials_available(world, agent):
+            options.append(WORK_CONSTRUCTION)
+        return _balanced_choice(tuple(options), demands, role_counts)
 
     return WORK_SUPPORT
 
@@ -116,11 +115,12 @@ def _balanced_choice(options: tuple[str, ...], demands: dict[str, int], role_cou
     return max(options, key=lambda work: (demands.get(work, 0) - role_counts[work] * 12, demands.get(work, 0)))
 
 
-def _construction_materials_available(world) -> bool:
+def _construction_materials_available(world, agent=None) -> bool:
     priority = world.building_priority()
     if priority is None:
         return False
-    return world.colony_storage.wood >= priority.wood_cost or world.colony_storage.building_materials > 0
+    carried_wood = getattr(agent, "wood", 0) if agent is not None else 0
+    return carried_wood + world.colony_storage.wood >= priority.wood_cost or world.colony_storage.building_materials > 0
 
 
 def _agent_key(agent) -> str:

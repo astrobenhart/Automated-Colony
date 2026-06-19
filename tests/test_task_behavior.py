@@ -205,6 +205,17 @@ def test_wood_assignment_uses_chopping_state():
     assert agent.task_state == STATE_MOVING_TO_STORAGE
 
 
+def test_wood_worker_delivers_carried_wood_before_gathering_more():
+    world = make_world()
+    agent = Agent("Ari", 6, 6, wood=1, home_x=5, home_y=5)
+    agent.daily_role = WORK_WOOD
+    agent.task_state = STATE_IDLE
+
+    assert run_villager_task(agent, world)
+
+    assert agent.task_state in {STATE_MOVING_TO_STORAGE, STATE_DEPOSITING}
+
+
 def test_night_phase_returns_villager_home():
     world = make_world()
     world.tick = 49
@@ -214,6 +225,46 @@ def test_night_phase_returns_villager_home():
     assert village_phase(world) == PHASE_NIGHT
     assert run_villager_task(agent, world)
     assert agent.task_state == STATE_RETURNING_HOME
+
+
+def test_failed_build_attempt_returns_withdrawn_storage_wood():
+    world = make_world()
+    world.colony_storage.deposit_wood(2)
+    agent = Agent("Bryn", 5, 5)
+    agent.daily_role = "house_construction"
+    agent.task_state = "building"
+    agent.task_target = (5, 5)
+    agent.task_timer = 1
+
+    assert not run_villager_task(agent, world)
+
+    assert world.colony_storage.wood == 2
+    assert agent.wood == 0
+    assert world.tile_at(5, 5).kind == "grass"
+
+
+def test_build_progress_persists_on_settlement_site():
+    world = make_world()
+    world.colony_storage.deposit_wood(3)
+    agent = Agent("Bryn", 5, 5)
+    agent.daily_role = "house_construction"
+    agent.task_state = "building"
+    agent.task_target = (5, 5)
+    agent.task_timer = 20
+    world.agents.append(agent)
+
+    assert run_villager_task(agent, world)
+    assert world.settlement.construction_progress[(5, 5)] == 1
+
+    agent.task_state = STATE_RETURNING_HOME
+    agent.task_state = "building"
+    agent.task_target = (5, 5)
+    world.settlement.construction_progress[(5, 5)] = 19
+
+    assert run_villager_task(agent, world)
+
+    assert world.tile_at(5, 5).kind == "shelter"
+    assert (5, 5) not in world.settlement.construction_progress
 
 
 def test_morning_resets_return_home_state_to_daily_work():

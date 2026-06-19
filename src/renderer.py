@@ -18,6 +18,8 @@ from src.config import (
     PERFORMANCE_LOGGING,
     PERFORMANCE_LOG_INTERVAL_FRAMES,
     VILLAGER_RENDER_TILES_PER_SECOND,
+    DESIRED_WOOD_RESERVE,
+    SHELTER_CAPACITY,
 )
 from src.environment_events import active_event_names, environmental_tile_color
 from src.farming import farm_border_edges
@@ -38,6 +40,10 @@ def is_food_visible_to_player(world: World, x: int, y: int) -> bool:
 
 def is_wood_visible_to_player(world: World, x: int, y: int) -> bool:
     return (x, y) in world.colony_memory.known_wood
+
+
+def _planner_label(name: str) -> str:
+    return name.replace("_", " ").title()
 
 
 VILLAGER_TILE_OFFSETS = (
@@ -517,6 +523,33 @@ class PygameRenderer:
         if reasons:
             lines.append("Reason:")
             lines.extend(reasons)
+        lines.extend(self.settlement_priority_lines())
+        return lines
+
+    def settlement_priority_lines(self) -> list[str]:
+        settlement = self.world.settlement
+        if settlement is None:
+            return []
+
+        population = len(self.world.living_agents())
+        priority = self.world.building_priority()
+        housing_structures = self.world.count_tiles("shelter") + self.world.count_tiles("home")
+        housing_current = housing_structures * SHELTER_CAPACITY
+        housing_target = self.world.needed_shelters() * SHELTER_CAPACITY
+        wood_target = DESIRED_WOOD_RESERVE + (priority.wood_needed if priority is not None else 0)
+
+        lines = [
+            "Priorities:",
+            f"Food     {self.world.colony_storage.food} / {population * 2}",
+            f"Water    {self.world.colony_storage.water} / {population}",
+            f"Wood     {self.world.colony_storage.wood} / {wood_target}",
+            f"Housing  {housing_current} / {housing_target}",
+        ]
+
+        if settlement.planned_demands:
+            priorities = sorted(settlement.planned_demands.items(), key=lambda item: item[1], reverse=True)
+            label = ", ".join(f"{_planner_label(name)} {score}" for name, score in priorities[:3])
+            lines.append(f"Planner: {label}")
         return lines
 
     def colony_reason_lines(self, max_lines: int = 3) -> list[str]:

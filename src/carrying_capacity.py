@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from src.building_priorities import housing_capacity, housing_structures
 from src.config import SHELTER_CAPACITY
 
 
@@ -64,6 +65,7 @@ def carrying_capacity_report(world) -> CarryingCapacityReport:
         farm_plots=len([farm for farm in settlement.farm_plots if farm.active]),
         local_water=len(settlement.local_water),
         shelters=world.count_tiles("shelter"),
+        homes=world.count_tiles("home"),
     )
 
     return CarryingCapacityReport(
@@ -79,7 +81,7 @@ def carrying_capacity_report(world) -> CarryingCapacityReport:
 
 
 def _shelter_capacity(world) -> int:
-    return world.count_tiles("shelter") * SHELTER_CAPACITY
+    return housing_capacity(world)
 
 
 def _food_capacity(world) -> int:
@@ -129,11 +131,16 @@ def _reason_lines(
     farm_plots: int,
     local_water: int,
     shelters: int,
+    homes: int,
 ) -> list[str]:
     return [
         f"Population: {population}",
-        f"Shelter: {shelter_capacity} capacity from {shelters} shelters",
+        f"Shelter: {shelter_capacity} capacity from {housing_structures_from_counts(shelters, homes)} housing structures ({shelters} shelters, {homes} homes)",
         f"Food: {food_capacity} capacity from {stored_food} stored, {local_food} local, {ready_farm_food} farm-ready",
         f"Water: {water_capacity} capacity from {local_water} local water sources",
         f"Farms: {farm_plots} active plots",
     ]
+
+
+def housing_structures_from_counts(shelters: int, homes: int) -> int:
+    return shelters + homes

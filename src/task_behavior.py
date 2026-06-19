@@ -297,6 +297,11 @@ def _run_resource_task(
     collect_ticks: int,
 ) -> bool:
     if agent.task_state == STATE_IDLE:
+        if _carried_amount(agent, resource_type) > 0:
+            agent.task_state = STATE_MOVING_TO_STORAGE
+            agent.task_timer = 0
+            return _move_to_storage(agent, world, resource_type)
+
         target = _choose_resource_target(agent, world, resource_type)
         if target is None:
             return False
@@ -426,6 +431,8 @@ def _run_construction_task(agent: Agent, world: World) -> bool:
         return False
 
     if agent.task_state == STATE_IDLE:
+        if not _construction_materials_available(agent, world):
+            return False
         target = find_build_site_near_settlement(world, SHELTER, agent)
         if target is None:
             return False
@@ -455,11 +462,21 @@ def _build_shelter(agent: Agent, world: World) -> bool:
     if target is None or (agent.x, agent.y) != target:
         agent.task_state = STATE_IDLE
         return False
+    if world.settlement is None:
+        agent.task_state = STATE_IDLE
+        return False
+    if world.tile_at(*target).kind == SHELTER:
+        world.settlement.construction_progress.pop(target, None)
+        agent.task_target = None
+        agent.task_state = STATE_IDLE
+        return True
 
     agent.current_action = "Building"
     agent.current_goal = "Build shelter"
-    agent.task_timer -= 1
-    if agent.task_timer > 0:
+    progress = world.settlement.construction_progress.get(target, 0) + 1
+    world.settlement.construction_progress[target] = progress
+    agent.task_timer = max(0, TASK_BUILD_TICKS - progress)
+    if progress < TASK_BUILD_TICKS:
         return True
 
     cost = shelter_wood_cost_for_agent(agent, world)
@@ -470,6 +487,9 @@ def _build_shelter(agent: Agent, world: World) -> bool:
     withdraw_from_stockpile(world, WOOD, withdrawn)
     if carried + withdrawn < cost:
         agent.wood += carried
+        if withdrawn > 0:
+            returned = world.colony_storage.deposit_wood(withdrawn)
+            deposit_to_stockpile(world, WOOD, returned)
         agent.task_state = STATE_IDLE
         agent.task_timer = 0
         return False
@@ -478,6 +498,7 @@ def _build_shelter(agent: Agent, world: World) -> bool:
         world.colony_storage.withdraw_building_materials(1)
 
     world.tile_at(*target).kind = SHELTER
+    world.settlement.construction_progress.pop(target, None)
     agent.task_target = None
     agent.current_target = None
     agent.current_path = []
@@ -486,6 +507,14 @@ def _build_shelter(agent: Agent, world: World) -> bool:
     agent.reset_stuck()
     world.log(f"{agent.name} builds a shelter.")
     return True
+
+
+def _construction_materials_available(agent: Agent, world: World) -> bool:
+    priority = world.building_priority()
+    if priority is None:
+        return False
+    cost = shelter_wood_cost_for_agent(agent, world)
+    return agent.wood + world.colony_storage.wood >= cost or world.colony_storage.building_materials > 0
 
 
 def _run_exploration_task(agent: Agent, world: World) -> bool:
