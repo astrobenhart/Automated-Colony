@@ -9,7 +9,6 @@ from src.settlement import (
     deposit_to_stockpile,
     is_adjacent_to_stockpile,
     is_near_settlement,
-    random_tile_near_settlement,
     stockpile_access_tile,
     stockpile_for,
     valid_build_tile_near_settlement,
@@ -433,29 +432,84 @@ class WanderAction(Action):
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)
 
+        if agent.idle_until_tick > world.tick:
+            agent.current_action = "Idle"
+            return
+
         if _can_use_settlement_bias(agent):
             target = agent.current_target
             if target is None or target == (agent.x, agent.y):
-                target = random_tile_near_settlement(world, random, agent.role)
+                target = random_tile_near_home(world, agent, random)
             if target is not None and target != (agent.x, agent.y):
                 if _step_along_path(agent, world, target):
+                    if (agent.x, agent.y) == target:
+                        begin_idle_pause(agent, world, random)
                     return
             elif target == (agent.x, agent.y):
                 agent.current_target = None
                 agent.current_path = []
-
-        directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-        random.shuffle(directions)
-
-        for dx, dy in directions:
-            nx = agent.x + dx
-            ny = agent.y + dy
-
-            if world.can_move_to(nx, ny):
-                agent.x = nx
-                agent.y = ny
-                agent.reset_stuck()
+                begin_idle_pause(agent, world, random)
                 return
+
+        target = random_tile_near_home(world, agent, random)
+        if target is not None and target != (agent.x, agent.y):
+            if _step_along_path(agent, world, target):
+                if (agent.x, agent.y) == target:
+                    begin_idle_pause(agent, world, random)
+                return
+
+        begin_idle_pause(agent, world, random)
+
+
+def begin_idle_pause(agent: Agent, world: World, rng=random):
+    from src.config import IDLE_MAX_TICKS, IDLE_MIN_TICKS
+
+    agent.current_action = "Idle"
+    agent.current_target = None
+    agent.current_path = []
+    agent.idle_until_tick = world.tick + rng.randint(IDLE_MIN_TICKS, IDLE_MAX_TICKS)
+
+
+def random_tile_near_home(world: World, agent: Agent, rng=random) -> tuple[int, int] | None:
+    home = home_anchor(agent, world)
+    if home is None:
+        return None
+
+    home_x, home_y = home
+    radius = max(1, getattr(agent, "home_wander_radius", 4))
+    candidates = []
+    for y in range(max(0, home_y - radius), min(world.height, home_y + radius + 1)):
+        for x in range(max(0, home_x - radius), min(world.width, home_x + radius + 1)):
+            if (x, y) == (agent.x, agent.y):
+                continue
+            if max(abs(x - home_x), abs(y - home_y)) > radius:
+                continue
+            if not world.is_valid_spawn_tile(x, y):
+                continue
+            candidates.append((x, y))
+
+    if not candidates:
+        return None
+    return rng.choice(candidates)
+
+
+def home_anchor(agent: Agent, world: World) -> tuple[int, int] | None:
+    if agent.home_x is not None and agent.home_y is not None:
+        return agent.home_x, agent.home_y
+    settlement = world.settlement
+    if settlement is not None and settlement.homes:
+        nearest_home = min(
+            settlement.homes,
+            key=lambda home: (max(abs(home.x - agent.x), abs(home.y - agent.y)), home.y, home.x),
+        )
+        agent.home_x = nearest_home.x
+        agent.home_y = nearest_home.y
+        return agent.home_x, agent.home_y
+    if settlement is not None:
+        return settlement.x, settlement.y
+    agent.home_x = agent.x
+    agent.home_y = agent.y
+    return agent.home_x, agent.home_y
 
 
 def _can_use_settlement_bias(agent: Agent) -> bool:
@@ -593,8 +647,12 @@ def _step_along_path(agent: Agent, world: World, target: tuple[int, int]) -> boo
         agent.current_target = target
         agent.failed_path_target = None
         agent.current_path = find_path(world, start, target, avoid_occupied=False)
+        if agent.current_path:
+            agent.begin_render_path([start] + agent.current_path)
     elif not agent.current_path and agent.failed_path_target != target:
         agent.current_path = find_path(world, start, target, avoid_occupied=False)
+        if agent.current_path:
+            agent.begin_render_path([start] + agent.current_path)
 
     if not agent.current_path:
         agent.failed_path_target = target

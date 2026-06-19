@@ -5,6 +5,7 @@ from dataclasses import dataclass
 @dataclass
 class ColonyStorage:
     food: int = 0
+    water: int = 0
     wood: int = 0
     building_materials: int = 0
 
@@ -16,6 +17,16 @@ class ColonyStorage:
     def withdraw_food(self, amount: int) -> int:
         withdrawn = min(max(0, amount), self.food)
         self.food -= withdrawn
+        return withdrawn
+
+    def deposit_water(self, amount: int) -> int:
+        deposited = max(0, amount)
+        self.water += deposited
+        return deposited
+
+    def withdraw_water(self, amount: int) -> int:
+        withdrawn = min(max(0, amount), self.water)
+        self.water -= withdrawn
         return withdrawn
 
     def deposit_wood(self, amount: int) -> int:

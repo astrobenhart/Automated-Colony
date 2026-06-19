@@ -29,6 +29,8 @@ def find_path(
     If avoid_occupied is True, paths avoid occupied tiles except the start
     tile occupied by the moving agent.
     """
+    if hasattr(world, "pathfinding_calls"):
+        world.pathfinding_calls += 1
     with profiler.time("pathfinding"):
         return _find_path(world, start, destination, avoid_occupied)
 

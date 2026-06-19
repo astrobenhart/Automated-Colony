@@ -23,6 +23,8 @@ from src.lifecycle import lifecycle_stage_for_index
 from src.roles import role_for_index
 from src.social_memory import update_social_memory
 from src.traits import trait_for_index
+from src.task_behavior import assign_daily_role, run_villager_task
+from src.settlement_planner import plan_settlement_work
 from src.settlement import (
     Settlement,
     choose_resource_target,
@@ -71,6 +73,11 @@ class World:
     tick: int = 0
     season_index: int = 0
     villager_update_cursor: int = 0
+    last_tick_ms: float = 0.0
+    last_villager_ms: float = 0.0
+    last_settlement_ms: float = 0.0
+    last_updated_villagers: int = 0
+    pathfinding_calls: int = 0
 
     @property
     def season(self) -> str:
@@ -129,17 +136,22 @@ class World:
         if self.settlement is None:
             self.establish_settlement()
 
+        from src.config import HOME_WANDER_MAX_RADIUS, HOME_WANDER_MIN_RADIUS
+
         names = [
             "Ari", "Bryn", "Cato", "Dara", "Eli",
             "Fenn", "Gala", "Hale", "Ira", "Juno",
         ]
 
         positions = self.initial_spawn_positions(amount)
+        home_assignments = self.initial_home_assignments(amount)
         home_settlement_id = self.settlement.settlement_id if self.settlement is not None else None
         home_settlement_name = self.settlement.name if self.settlement is not None else None
         for i, (x, y) in enumerate(positions):
             appearance_seed = appearance_seed_for(self.seed, i, names[i % len(names)])
-            self.agents.append(Agent(
+            home_x, home_y = home_assignments[i] if i < len(home_assignments) else (None, None)
+            rng = random.Random(f"{self.seed}|villager-idle|{i}")
+            agent = Agent(
                 names[i % len(names)],
                 x,
                 y,
@@ -151,12 +163,27 @@ class World:
                 appearance_type=appearance_type_for_seed(appearance_seed),
                 home_settlement_id=home_settlement_id,
                 home_settlement_name=home_settlement_name,
+                home_x=home_x,
+                home_y=home_y,
                 birth_settlement_id=home_settlement_id,
                 birth_settlement_name=home_settlement_name,
-            ))
+                idle_until_tick=rng.randint(0, 3),
+                home_wander_radius=rng.randint(HOME_WANDER_MIN_RADIUS, HOME_WANDER_MAX_RADIUS),
+            )
+            assign_daily_role(agent, self)
+            self.agents.append(agent)
 
         self.update_settlement_population()
         self.log(f"{amount} villagers enter the world.")
+
+    def initial_home_assignments(self, amount):
+        settlement = self.settlement
+        if amount <= 0 or settlement is None or not settlement.homes:
+            return []
+
+        rng = random.Random(f"{self.seed}|{settlement.settlement_id}|home-assignment|{amount}")
+        homes = [(home.x, home.y) for home in settlement.homes]
+        return [rng.choice(homes) for _ in range(amount)]
 
     def establish_settlement(self):
         self.settlement = found_settlement(self)
@@ -340,6 +367,10 @@ class World:
 
     def update_villager(self, agent: Agent):
         agent.update_needs()
+        if run_villager_task(agent, self):
+            agent.die_if_needed(self)
+            return
+
         progress_before = agent.progress_snapshot(self)
         action = agent.action_for_tick(self)
         action.execute(agent, self)
@@ -356,20 +387,10 @@ class World:
         settlement_seconds: float,
         updated_count: int,
     ):
-        from src.config import PERFORMANCE_LOGGING
-        if not PERFORMANCE_LOGGING:
-            return
-
-        total_ms = (time.perf_counter() - tick_start) * 1000
-        villager_ms = villager_seconds * 1000
-        settlement_ms = settlement_seconds * 1000
-        print(
-            f"perf tick={self.tick} day={self.day} "
-            f"villagers={updated_count}/{len(self.living_agents())} "
-            f"villager_ms={villager_ms:.2f} "
-            f"settlement_ms={settlement_ms:.2f} "
-            f"total_ms={total_ms:.2f}"
-        )
+        self.last_tick_ms = (time.perf_counter() - tick_start) * 1000
+        self.last_villager_ms = villager_seconds * 1000
+        self.last_settlement_ms = settlement_seconds * 1000
+        self.last_updated_villagers = updated_count
 
     def run_hourly_updates(self):
         update_wildlife(self, random)
@@ -384,12 +405,11 @@ class World:
         self.log_settlement_performance(time.perf_counter() - settlement_start)
 
     def log_settlement_performance(self, seconds: float):
-        from src.config import PERFORMANCE_LOGGING
-        if PERFORMANCE_LOGGING:
-            print(f"perf settlement day={self.day} settlement_ms={seconds * 1000:.2f}")
+        self.last_settlement_ms = seconds * 1000
 
     def run_startup_settlement_updates(self):
         self.run_daily_settlement_updates()
+        self.plan_settlement_work()
 
     def run_daily_updates(self):
         update_environment_events(self, random)
@@ -398,10 +418,18 @@ class World:
         self.run_daily_settlement_updates()
         maybe_create_farm(self)
         self.update_carrying_capacity()
+        self.plan_settlement_work()
         update_social_memory(self)
         update_influence_peaks(self)
         expire_remembrances(self)
         update_wildlife(self, random)
+
+    def assign_daily_roles(self):
+        for agent in self.living_agents():
+            assign_daily_role(agent, self)
+
+    def plan_settlement_work(self):
+        plan_settlement_work(self)
 
     def advance_day(self):
         self.day += 1

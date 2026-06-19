@@ -1,6 +1,13 @@
 import pygame
+import time
 
-from src.config import CAMERA_STEP, SIM_TICKS_PER_SECOND
+from src.config import (
+    CAMERA_STEP,
+    PERFORMANCE_LOGGING,
+    PERFORMANCE_LOG_INTERVAL_FRAMES,
+    SIMULATION_SPEED_SCALAR,
+    SIM_TICKS_PER_SECOND,
+)
 from src.world import create_world
 from src.renderer import PygameRenderer
 
@@ -12,12 +19,20 @@ def main():
     running = True
     paused = False
     sim_speed = SIM_TICKS_PER_SECOND
+    simulation_speed_scalar = SIMULATION_SPEED_SCALAR
 
     accumulator = 0
+    frame_count = 0
+    last_sim_ms = 0.0
+    sim_ticks_this_frame = 0
 
     while running:
         dt = renderer.clock.get_time() / 1000
-        accumulator += dt
+        frame_start = time.perf_counter()
+        if not paused:
+            accumulator += dt * simulation_speed_scalar
+        sim_ticks_this_frame = 0
+        sim_start = time.perf_counter()
 
         for event in pygame.event.get():
             ui_consumed = renderer.process_ui_event(event)
@@ -70,10 +85,22 @@ def main():
             while accumulator >= step_time:
                 world.update()
                 accumulator -= step_time
+                sim_ticks_this_frame += 1
+
+        last_sim_ms = (time.perf_counter() - sim_start) * 1000
 
         renderer.update_ui(dt)
-        renderer.draw(paused, sim_speed)
+        renderer.draw(paused, sim_speed, last_sim_ms=last_sim_ms, sim_ticks=sim_ticks_this_frame)
         renderer.limit_fps()
+        frame_count += 1
+
+        if PERFORMANCE_LOGGING and frame_count % PERFORMANCE_LOG_INTERVAL_FRAMES == 0:
+            frame_ms = (time.perf_counter() - frame_start) * 1000
+            print(
+                f"perf frame={frame_count} frame_ms={frame_ms:.2f} "
+                f"sim_ms={last_sim_ms:.2f} sim_ticks={sim_ticks_this_frame} "
+                f"sim_scalar={simulation_speed_scalar:.2f}"
+            )
 
     pygame.quit()
 

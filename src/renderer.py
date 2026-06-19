@@ -16,6 +16,8 @@ from src.config import (
     SYMBOL_LABELS,
     FPS,
     PERFORMANCE_LOGGING,
+    PERFORMANCE_LOG_INTERVAL_FRAMES,
+    VILLAGER_RENDER_TILES_PER_SECOND,
 )
 from src.environment_events import active_event_names, environmental_tile_color
 from src.farming import farm_border_edges
@@ -36,6 +38,19 @@ def is_food_visible_to_player(world: World, x: int, y: int) -> bool:
 
 def is_wood_visible_to_player(world: World, x: int, y: int) -> bool:
     return (x, y) in world.colony_memory.known_wood
+
+
+VILLAGER_TILE_OFFSETS = (
+    (0, 0),
+    (-4, -4),
+    (4, -4),
+    (-4, 4),
+    (4, 4),
+    (0, -5),
+    (-5, 0),
+    (5, 0),
+    (0, 5),
+)
 
 
 class PygameRenderer:
@@ -59,6 +74,12 @@ class PygameRenderer:
         self.panel_gap = 8
         self.camera_x = 0
         self.camera_y = 0
+        self.map_surface = pygame.Surface((VIEWPORT_WIDTH * TILE_SIZE, VIEWPORT_HEIGHT * TILE_SIZE)).convert()
+        self.map_cache_key = None
+        self._draw_target = self.screen
+        self._agent_tile_counts: dict[tuple[int, int], int] = {}
+        self._agent_tile_drawn: dict[tuple[int, int], int] = {}
+        self.frame_count = 0
 
     def register_overlays(self):
         self.overlay_manager.register_overlay(
@@ -83,6 +104,10 @@ class PygameRenderer:
         self.clear_selection()
         self.overlay_manager.close_all()
         self.clamp_camera()
+        self.invalidate_map_cache()
+
+    def invalidate_map_cache(self):
+        self.map_cache_key = None
 
     def process_ui_event(self, event) -> bool:
         overlay_consumed = self.overlay_manager.handle_event(event)
@@ -90,8 +115,14 @@ class PygameRenderer:
         return overlay_consumed or gui_consumed
 
     def update_ui(self, time_delta: float):
+        self.update_agent_render_motion(time_delta)
         self.overlay_manager.update(time_delta)
         self.ui_manager.update(time_delta)
+
+    def update_agent_render_motion(self, time_delta: float):
+        for agent in self.world.agents:
+            if agent.alive:
+                agent.advance_render_motion(time_delta, VILLAGER_RENDER_TILES_PER_SECOND)
 
     def toggle_villagers_overlay(self):
         self.overlay_manager.toggle_overlay(VILLAGERS_OVERLAY)
@@ -136,6 +167,7 @@ class PygameRenderer:
         self.camera_x += dx
         self.camera_y += dy
         self.clamp_camera()
+        self.invalidate_map_cache()
 
     def clamp_camera(self):
         max_x = max(0, self.world.width - VIEWPORT_WIDTH)
@@ -177,7 +209,7 @@ class PygameRenderer:
             if not (0 <= x < self.world.width and 0 <= y < self.world.height):
                 self.clear_selection()
 
-    def draw(self, paused: bool, sim_speed: int):
+    def draw(self, paused: bool, sim_speed: int, last_sim_ms: float = 0.0, sim_ticks: int = 0):
         with profiler.time("renderer update"):
             render_start = time.perf_counter()
             self.validate_selection()
@@ -189,13 +221,54 @@ class PygameRenderer:
             self.ui_manager.draw_ui(self.screen)
 
             pygame.display.flip()
-            if PERFORMANCE_LOGGING:
+            self.frame_count += 1
+            if PERFORMANCE_LOGGING and self.frame_count % PERFORMANCE_LOG_INTERVAL_FRAMES == 0:
                 elapsed_ms = (time.perf_counter() - render_start) * 1000
-                print(f"perf render paused={paused} speed={sim_speed} render_ms={elapsed_ms:.2f}")
+                print(
+                    f"perf render frame={self.frame_count} paused={paused} speed={sim_speed} "
+                    f"render_ms={elapsed_ms:.2f} sim_ms={last_sim_ms:.2f} sim_ticks={sim_ticks} "
+                    f"world_tick_ms={self.world.last_tick_ms:.2f} "
+                    f"villager_ms={self.world.last_villager_ms:.2f} "
+                    f"path_calls={self.world.pathfinding_calls}"
+                )
 
     def draw_world(self):
         start_x, start_y, end_x, end_y = self.visible_tile_bounds()
+        self.draw_cached_map(start_x, start_y, end_x, end_y)
+        self.draw_agents(start_x, start_y, end_x, end_y)
+        self.draw_selection_highlight()
 
+    def map_cache_state(self, start_x: int, start_y: int, end_x: int, end_y: int):
+        settlement = self.world.settlement
+        return (
+            start_x,
+            start_y,
+            end_x,
+            end_y,
+            self.world.tick,
+            self.world.season,
+            self.world.next_season,
+            round(self.world.transition_progress, 3),
+            len(self.world.active_environment_events),
+            len(self.world.colony_memory.known_food),
+            len(self.world.colony_memory.known_wood),
+            len(settlement.farm_plots) if settlement is not None else 0,
+            len(settlement.stockpiles) if settlement is not None else 0,
+            len(settlement.workshops) if settlement is not None else 0,
+            len(settlement.homes) if settlement is not None else 0,
+        )
+
+    def draw_cached_map(self, start_x: int, start_y: int, end_x: int, end_y: int):
+        cache_key = self.map_cache_state(start_x, start_y, end_x, end_y)
+        if cache_key != self.map_cache_key:
+            self.rebuild_map_surface(start_x, start_y, end_x, end_y)
+            self.map_cache_key = cache_key
+        self.screen.blit(self.map_surface, (0, 0))
+
+    def rebuild_map_surface(self, start_x: int, start_y: int, end_x: int, end_y: int):
+        previous_target = self._draw_target
+        self._draw_target = self.map_surface
+        self.map_surface.fill((0, 0, 0))
         for y in range(start_y, end_y):
             for x in range(start_x, end_x):
                 tile = self.world.tile_at(x, y)
@@ -209,9 +282,9 @@ class PygameRenderer:
                     TILE_SIZE,
                 )
 
-                pygame.draw.rect(self.screen, self.tile_color(tile.kind), rect)
+                pygame.draw.rect(self._draw_target, self.tile_color(tile.kind), rect)
                 if DEBUG_DRAW_GRID:
-                    pygame.draw.rect(self.screen, COLORS["grid"], rect, 1)
+                    pygame.draw.rect(self._draw_target, COLORS["grid"], rect, 1)
 
                 farm = self.world.farm_at(x, y)
                 if farm is not None:
@@ -244,12 +317,47 @@ class PygameRenderer:
                 workshop = self.world.workshop_at(x, y)
                 if workshop:
                     self.draw_centered_symbol("T", screen_x, screen_y, COLORS["workshop"])
+        self._draw_target = previous_target
 
-                agent = self.world.agent_at(x, y)
-                if agent:
-                    self.draw_centered_symbol("@", screen_x, screen_y, color_for_role(agent.role))
+    def draw_agents(self, start_x: int, start_y: int, end_x: int, end_y: int):
+        self._agent_tile_counts.clear()
+        self._agent_tile_drawn.clear()
+        for agent in self.world.agents:
+            if not agent.alive:
+                continue
+            key = (agent.x, agent.y)
+            self._agent_tile_counts[key] = self._agent_tile_counts.get(key, 0) + 1
 
-        self.draw_selection_highlight()
+        for agent in self.world.agents:
+            if not agent.alive:
+                continue
+            render_x, render_y = agent.render_position()
+            if not (start_x - 1 <= render_x < end_x + 1 and start_y - 1 <= render_y < end_y + 1):
+                continue
+            key = (agent.x, agent.y)
+            index = self._agent_tile_drawn.get(key, 0)
+            self._agent_tile_drawn[key] = index + 1
+            offset = VILLAGER_TILE_OFFSETS[index % len(VILLAGER_TILE_OFFSETS)]
+            self.draw_agent_symbol(
+                agent,
+                render_x - start_x,
+                render_y - start_y,
+                offset,
+            )
+
+    def draw_agent_symbol(
+        self,
+        agent: Agent,
+        screen_tile_x: float,
+        screen_tile_y: float,
+        pixel_offset: tuple[int, int] = (0, 0),
+    ):
+        self.draw_centered_symbol_at_pixels(
+            "@",
+            screen_tile_x * TILE_SIZE + TILE_SIZE // 2 + pixel_offset[0],
+            screen_tile_y * TILE_SIZE + TILE_SIZE // 2 + pixel_offset[1],
+            color_for_role(agent.role),
+        )
 
     def draw_selection_highlight(self):
         if self.selected_agent is not None:
@@ -278,14 +386,17 @@ class PygameRenderer:
         pygame.draw.rect(self.screen, color, rect, 2)
 
     def draw_centered_symbol(self, symbol: str, x: int, y: int, color: tuple):
-        surface = self.font.render(symbol, True, color)
-        rect = surface.get_rect(
-            center=(
-                x * TILE_SIZE + TILE_SIZE // 2,
-                y * TILE_SIZE + TILE_SIZE // 2,
-            )
+        self.draw_centered_symbol_at_pixels(
+            symbol,
+            x * TILE_SIZE + TILE_SIZE // 2,
+            y * TILE_SIZE + TILE_SIZE // 2,
+            color,
         )
-        self.screen.blit(surface, rect)
+
+    def draw_centered_symbol_at_pixels(self, symbol: str, center_x: float, center_y: float, color: tuple):
+        surface = self.font.render(symbol, True, color)
+        rect = surface.get_rect(center=(round(center_x), round(center_y)))
+        self._draw_target.blit(surface, rect)
 
     def draw_farm_border(self, farm, screen_x: int, screen_y: int, tile_x: int, tile_y: int):
         rect = pygame.Rect(
@@ -297,13 +408,13 @@ class PygameRenderer:
         color = COLORS["farm_border"]
         edges = farm_border_edges(farm, tile_x, tile_y)
         if edges["north"]:
-            pygame.draw.line(self.screen, color, rect.topleft, rect.topright, 2)
+            pygame.draw.line(self._draw_target, color, rect.topleft, rect.topright, 2)
         if edges["south"]:
-            pygame.draw.line(self.screen, color, rect.bottomleft, rect.bottomright, 2)
+            pygame.draw.line(self._draw_target, color, rect.bottomleft, rect.bottomright, 2)
         if edges["west"]:
-            pygame.draw.line(self.screen, color, rect.topleft, rect.bottomleft, 2)
+            pygame.draw.line(self._draw_target, color, rect.topleft, rect.bottomleft, 2)
         if edges["east"]:
-            pygame.draw.line(self.screen, color, rect.topright, rect.bottomright, 2)
+            pygame.draw.line(self._draw_target, color, rect.topright, rect.bottomright, 2)
 
     def draw_panel(self, paused: bool, sim_speed: int):
         panel_x = VIEWPORT_WIDTH * TILE_SIZE
@@ -399,7 +510,7 @@ class PygameRenderer:
         lines = [
             f"{len(self.world.living_agents())} Villagers",
             status,
-            f"Food {self.world.colony_storage.food} | Wood {self.world.colony_storage.wood}",
+            f"Food {self.world.colony_storage.food} | Water {self.world.colony_storage.water} | Wood {self.world.colony_storage.wood}",
             f"Farms {farm_count} | Mats {self.world.colony_storage.building_materials}",
         ]
         reasons = self.colony_reason_lines(max_lines=3)

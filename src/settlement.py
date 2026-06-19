@@ -78,6 +78,9 @@ class Settlement:
     top_need: str | None = None
     need_updated_day: int | None = None
     carrying_capacity_report: object | None = None
+    planned_demands: dict[str, int] = field(default_factory=dict)
+    work_assignments: dict[str, str] = field(default_factory=dict)
+    last_planned_day: int | None = None
 
     def record_activity(self, x: int, y: int):
         pos = (x, y)

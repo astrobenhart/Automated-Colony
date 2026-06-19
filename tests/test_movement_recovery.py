@@ -68,3 +68,17 @@ def test_successful_movement_resets_stuck_ticks():
     assert moved
     assert agent.stuck_ticks == 0
     assert (agent.x, agent.y) == (1, 0)
+
+
+def test_path_step_seeds_full_render_path_for_continuous_visual_travel():
+    world = make_world(4, 1)
+    agent = Agent("Walker", 0, 0)
+    world.agents.append(agent)
+
+    moved = _step_along_path(agent, world, (3, 0))
+
+    assert moved
+    assert (agent.x, agent.y) == (1, 0)
+    assert agent.current_path == [(2, 0), (3, 0)]
+    assert agent.render_path == [(0.0, 0.0), (1.0, 0.0), (2.0, 0.0), (3.0, 0.0)]
+    assert agent.render_path_index == 0

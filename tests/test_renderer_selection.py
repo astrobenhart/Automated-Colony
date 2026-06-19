@@ -16,7 +16,7 @@ from src.config import (
     VIEWPORT_HEIGHT,
     VIEWPORT_WIDTH,
 )
-from src.renderer import PygameRenderer
+from src.renderer import PygameRenderer, VILLAGER_TILE_OFFSETS
 from src.renderer import color_for_role
 from src.renderer import is_food_visible_to_player
 from src.renderer import is_wood_visible_to_player
@@ -530,14 +530,105 @@ def test_renderer_draws_agent_using_role_color(monkeypatch):
     renderer = make_renderer(world)
     calls = []
 
-    def spy_draw_centered_symbol(symbol, x, y, color):
-        calls.append((symbol, x, y, color))
+    def spy_draw_agent_symbol(agent, x, y, offset=(0, 0)):
+        calls.append((agent, x, y, offset))
 
-    monkeypatch.setattr(renderer, "draw_centered_symbol", spy_draw_centered_symbol)
+    monkeypatch.setattr(renderer, "draw_agent_symbol", spy_draw_agent_symbol)
 
     renderer.draw_world()
 
-    assert ("@", 1, 1, color_for_role(BUILDER)) in calls
+    assert (agent, 1, 1, VILLAGER_TILE_OFFSETS[0]) in calls
+    assert color_for_role(BUILDER)
+
+
+def test_renderer_offsets_agents_that_share_a_tile(monkeypatch):
+    world = make_world(width=3, height=3)
+    agents = [
+        Agent("Ari", 1, 1, agent_id="a"),
+        Agent("Bryn", 1, 1, agent_id="b"),
+        Agent("Cato", 1, 1, agent_id="c"),
+    ]
+    world.agents.extend(agents)
+    renderer = make_renderer(world)
+    calls = []
+
+    def spy_draw_agent_symbol(agent, x, y, offset=(0, 0)):
+        calls.append((agent.agent_id, x, y, offset))
+
+    monkeypatch.setattr(renderer, "draw_agent_symbol", spy_draw_agent_symbol)
+
+    renderer.draw_world()
+
+    assert calls == [
+        ("a", 1, 1, VILLAGER_TILE_OFFSETS[0]),
+        ("b", 1, 1, VILLAGER_TILE_OFFSETS[1]),
+        ("c", 1, 1, VILLAGER_TILE_OFFSETS[2]),
+    ]
+
+
+def test_renderer_advances_agent_interpolation_without_world_update():
+    world = make_world(width=3, height=3)
+    agent = Agent("Ari", 0, 0)
+    agent.begin_render_move(0, 0, 1, 0)
+    world.agents.append(agent)
+    renderer = make_renderer(world)
+
+    renderer.update_agent_render_motion(0.05)
+
+    render_x, render_y = agent.render_position()
+    assert 0 < render_x < 1
+    assert render_y == 0
+
+
+def test_renderer_advances_agent_across_multiple_path_nodes_without_logic_update():
+    world = make_world(width=4, height=3)
+    agent = Agent("Ari", 0, 1)
+    agent.begin_render_path([(0, 1), (1, 1), (2, 1), (3, 1)])
+    world.agents.append(agent)
+    renderer = make_renderer(world)
+
+    renderer.update_agent_render_motion(0.15)
+
+    render_x, render_y = agent.render_position()
+    assert 1 < render_x < 2
+    assert render_y == 1
+
+
+def test_renderer_reuses_cached_map_surface_between_world_ticks(monkeypatch):
+    world = make_world(width=3, height=3)
+    renderer = make_renderer(world)
+    rebuilds = []
+    original_rebuild = renderer.rebuild_map_surface
+
+    def spy_rebuild(start_x, start_y, end_x, end_y):
+        rebuilds.append((start_x, start_y, end_x, end_y))
+        original_rebuild(start_x, start_y, end_x, end_y)
+
+    monkeypatch.setattr(renderer, "rebuild_map_surface", spy_rebuild)
+
+    renderer.draw_world()
+    renderer.draw_world()
+
+    assert len(rebuilds) == 1
+
+
+def test_renderer_invalidates_cached_map_surface_when_world_tick_changes(monkeypatch):
+    world = make_world(width=3, height=3)
+    renderer = make_renderer(world)
+    rebuilds = []
+    original_rebuild = renderer.rebuild_map_surface
+
+    def spy_rebuild(start_x, start_y, end_x, end_y):
+        rebuilds.append(world.tick)
+        original_rebuild(start_x, start_y, end_x, end_y)
+
+    monkeypatch.setattr(renderer, "rebuild_map_surface", spy_rebuild)
+
+    renderer.draw_world()
+    world.tick += 1
+    renderer.draw_world()
+
+    assert rebuilds == [0, 1]
 
 
 def test_role_colors_are_bright_for_screensaver_readability():
