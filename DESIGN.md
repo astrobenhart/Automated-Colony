@@ -123,6 +123,13 @@ Starting scenarios:
 - Old Village: future scenario with established history, remembered dead, worn paths, older buildings, and larger family networks.
 - Market Town: future scenario with 100-200 villagers, districts, more professions, and delivery networks.
 
+Current v0.7 Phase 1 implementation:
+- The default start uses the existing central settlement founding logic, then places 8-15 visible home tiles in a loose cluster inside the village radius.
+- The default population is 45 villagers, within the short-term 30-60 villager target.
+- Villagers spawn on a randomly assigned home tile or an adjacent valid tile after homes are created.
+- Multiple villagers can share a tile. Spawning and core movement do not enforce one-agent-per-tile occupancy.
+- This phase does not seed paths, farms, storage expansion, history, social familiarity, schedules, households, reproduction, or delivery systems.
+
 ## Stable Living Villages
 
 Core stability principle:
@@ -423,6 +430,8 @@ Current labels:
 - Close Companion
 
 These labels are non-romantic and non-family. They must not imply partners, spouses, parents, children, siblings, households, couples, ancestry, reproduction, marriage, or pair bonding.
+
+Family, reproduction, ancestry, children, romance, households, and pair-bond systems are deferred until they are explicitly designed as lifecycle and generation systems.
 
 Bond labels are shown compactly on villager character cards and are capped to the strongest few known villagers. They use existing familiarity levels rather than raw familiarity scores.
 

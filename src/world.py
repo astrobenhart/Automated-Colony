@@ -1,4 +1,5 @@
 import random
+import time
 from dataclasses import dataclass, field
 
 from src.building_priorities import highest_priority, needed_shelters, update_settlement_needs
@@ -69,6 +70,7 @@ class World:
     day: int = 1
     tick: int = 0
     season_index: int = 0
+    villager_update_cursor: int = 0
 
     @property
     def season(self) -> str:
@@ -166,6 +168,10 @@ class World:
             return []
         if self.settlement is None:
             return self._fallback_spawn_positions(amount)
+        if self.settlement.homes:
+            positions = self._home_spawn_positions(amount)
+            if len(positions) == amount:
+                return positions
 
         positions = []
         reserved = set()
@@ -183,6 +189,35 @@ class World:
                 return positions
 
         return positions
+
+    def _home_spawn_positions(self, amount):
+        settlement = self.settlement
+        if settlement is None or not settlement.homes:
+            return []
+
+        rng = random.Random(f"{self.seed}|{settlement.settlement_id}|home-spawn|{amount}")
+        home_positions = [(home.x, home.y) for home in settlement.homes]
+        positions = []
+
+        for _ in range(amount):
+            home_x, home_y = rng.choice(home_positions)
+            candidates = self._home_spawn_candidates(home_x, home_y)
+            if candidates:
+                positions.append(rng.choice(candidates))
+
+        return positions
+
+    def _home_spawn_candidates(self, home_x, home_y):
+        candidates = []
+        for dy in (0, 1, -1):
+            for dx in (0, 1, -1):
+                x = home_x + dx
+                y = home_y + dy
+                if self.is_valid_spawn_tile(x, y):
+                    distance = max(abs(dx), abs(dy))
+                    candidates.append((distance, y, x))
+
+        return [(x, y) for _, y, x in sorted(candidates)]
 
     def _spawn_candidates_in_radius(self, radius, reserved):
         settlement = self.settlement
@@ -222,8 +257,6 @@ class World:
             return False
         tile = self.tile_at(x, y)
         if not tile.walkable or tile.kind in ("water", "mountain"):
-            return False
-        if self.agent_at(x, y) is not None:
             return False
         if self.settlement is not None and (x, y) == (self.settlement.x, self.settlement.y):
             return False
@@ -270,46 +303,112 @@ class World:
 
     def update(self):
         with profiler.time("world update"):
+            tick_start = time.perf_counter()
             self.tick += 1
             self.reservations.cleanup(self)
 
-            from src.config import TICKS_PER_DAY
+            settlement_seconds = 0.0
+            from src.config import TICKS_PER_DAY, TICKS_PER_HOUR
             if self.tick % TICKS_PER_DAY == 0:
+                scheduled_start = time.perf_counter()
                 self.advance_day()
+                settlement_seconds += time.perf_counter() - scheduled_start
+            elif self.tick % TICKS_PER_HOUR == 0:
+                self.run_hourly_updates()
 
-            for agent in self.living_agents():
-                agent.update_needs()
-                agent.scan_surroundings(self)
-                progress_before = agent.progress_snapshot(self)
-                action = agent.choose_action(self)
-                action.execute(agent, self)
-                agent.die_if_needed(self)
-                if agent.alive:
-                    agent.update_progress_tracking(self, progress_before)
-                    if agent.current_action == "Recovering":
-                        agent.release_reservations(self)
+            villager_start = time.perf_counter()
+            updated_count = self.update_villagers_for_tick()
+            villager_seconds = time.perf_counter() - villager_start
+            self.log_performance_tick(tick_start, villager_seconds, settlement_seconds, updated_count)
 
-            self.update_settlement_population()
-            self.update_settlement_needs(force=True)
-            self.update_resource_pressures()
-            self.update_carrying_capacity()
-            self.record_settlement_activity()
-            update_wildlife(self, random)
+    def update_villagers_for_tick(self) -> int:
+        living = self.living_agents()
+        if not living:
+            self.villager_update_cursor = 0
+            return 0
+
+        from src.config import MAX_UPDATES_PER_TICK
+        updates = min(MAX_UPDATES_PER_TICK, len(living))
+        start_index = self.villager_update_cursor % len(living)
+
+        for offset in range(updates):
+            agent = living[(start_index + offset) % len(living)]
+            self.update_villager(agent)
+
+        self.villager_update_cursor = (start_index + updates) % len(living)
+        return updates
+
+    def update_villager(self, agent: Agent):
+        agent.update_needs()
+        progress_before = agent.progress_snapshot(self)
+        action = agent.action_for_tick(self)
+        action.execute(agent, self)
+        agent.die_if_needed(self)
+        if agent.alive:
+            agent.update_progress_tracking(self, progress_before)
+            if agent.current_action == "Recovering":
+                agent.release_reservations(self)
+
+    def log_performance_tick(
+        self,
+        tick_start: float,
+        villager_seconds: float,
+        settlement_seconds: float,
+        updated_count: int,
+    ):
+        from src.config import PERFORMANCE_LOGGING
+        if not PERFORMANCE_LOGGING:
+            return
+
+        total_ms = (time.perf_counter() - tick_start) * 1000
+        villager_ms = villager_seconds * 1000
+        settlement_ms = settlement_seconds * 1000
+        print(
+            f"perf tick={self.tick} day={self.day} "
+            f"villagers={updated_count}/{len(self.living_agents())} "
+            f"villager_ms={villager_ms:.2f} "
+            f"settlement_ms={settlement_ms:.2f} "
+            f"total_ms={total_ms:.2f}"
+        )
+
+    def run_hourly_updates(self):
+        update_wildlife(self, random)
+
+    def run_daily_settlement_updates(self):
+        settlement_start = time.perf_counter()
+        self.update_settlement_population()
+        self.update_settlement_needs(force=True)
+        self.update_resource_pressures()
+        self.update_carrying_capacity()
+        self.record_settlement_activity()
+        self.log_settlement_performance(time.perf_counter() - settlement_start)
+
+    def log_settlement_performance(self, seconds: float):
+        from src.config import PERFORMANCE_LOGGING
+        if PERFORMANCE_LOGGING:
+            print(f"perf settlement day={self.day} settlement_ms={seconds * 1000:.2f}")
+
+    def run_startup_settlement_updates(self):
+        self.run_daily_settlement_updates()
+
+    def run_daily_updates(self):
+        update_environment_events(self, random)
+        self.regrow_resources()
+        update_farms(self)
+        self.run_daily_settlement_updates()
+        maybe_create_farm(self)
+        self.update_carrying_capacity()
+        update_social_memory(self)
+        update_influence_peaks(self)
+        expire_remembrances(self)
+        update_wildlife(self, random)
 
     def advance_day(self):
         self.day += 1
         if should_advance_season(self.day):
             self.advance_season()
 
-        update_environment_events(self, random)
-        self.regrow_resources()
-        update_farms(self)
-        self.update_resource_pressures()
-        maybe_create_farm(self)
-        self.update_carrying_capacity()
-        update_social_memory(self)
-        update_influence_peaks(self)
-        expire_remembrances(self)
+        self.run_daily_updates()
         self.log(f"Day {self.day} begins.")
 
     def advance_season(self):
@@ -334,7 +433,7 @@ class World:
         if not self.tile_at(x, y).walkable:
             return False
 
-        return self.agent_at(x, y) is None
+        return True
 
     def agent_at(self, x, y):
         for agent in self.living_agents():
@@ -364,6 +463,14 @@ class World:
         for workshop in self.settlement.workshops:
             if workshop.x == x and workshop.y == y:
                 return workshop
+        return None
+
+    def home_at(self, x, y):
+        if self.settlement is None:
+            return None
+        for home in self.settlement.homes:
+            if home.x == x and home.y == y:
+                return home
         return None
 
     def workshop_at_anywhere(self):
@@ -467,7 +574,5 @@ def create_world(
     world.generate()
     world.establish_settlement()
     world.spawn_agents(agent_count if agent_count is not None else STARTING_AGENTS)
-    world.update_settlement_needs(force=True)
-    world.update_resource_pressures()
-    world.update_carrying_capacity()
+    world.run_startup_settlement_updates()
     return world

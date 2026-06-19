@@ -39,6 +39,7 @@ def create_workshops(world, settlement) -> list[Workshop]:
 
 def _nearest_workshop_tile(world, settlement) -> tuple[int, int] | None:
     blocked = {(settlement.x, settlement.y)}
+    blocked.update((home.x, home.y) for home in settlement.homes)
     blocked.update((stockpile.x, stockpile.y) for stockpile in settlement.stockpiles)
 
     for radius in range(1, settlement.radius + 1):

@@ -25,6 +25,12 @@ SETTLEMENT_NEEDS = (NEED_SHELTER, NEED_WOOD, NEED_MATERIALS)
 
 
 @dataclass
+class Home:
+    x: int
+    y: int
+
+
+@dataclass
 class Stockpile:
     x: int
     y: int
@@ -59,6 +65,7 @@ class Settlement:
     wood_pressure: str = LOW
     water_pressure: str = LOW
     population: int = 0
+    homes: list[Home] = field(default_factory=list)
     stockpiles: list[Stockpile] = field(default_factory=list)
     workshops: list[Workshop] = field(default_factory=list)
     farm_plots: list[FarmPlot] = field(default_factory=list)
@@ -90,6 +97,7 @@ class Settlement:
 def found_settlement(world) -> Settlement:
     x, y = central_founding_site(world)
     name = settlement_name(world)
+    radius = SETTLEMENT_RADIUS
     settlement = Settlement(
         name=name,
         x=x,
@@ -97,11 +105,65 @@ def found_settlement(world) -> Settlement:
         founded_day=world.day,
         founded_season=world.season,
         settlement_id=settlement_id_for(name, world.seed),
+        radius=radius,
         population=len(world.living_agents()),
     )
+    settlement.homes = create_homes(world, settlement)
     settlement.stockpiles = create_stockpiles(world, settlement)
     settlement.workshops = create_workshops(world, settlement)
     return settlement
+
+
+def create_homes(world, settlement: Settlement, rng: random.Random | None = None) -> list[Home]:
+    if rng is None:
+        rng = random.Random(f"{world.seed}|{settlement.settlement_id}|homes")
+
+    target_count = rng.randint(8, 15)
+    candidates = _home_candidates(world, settlement, rng)
+    homes: list[Home] = []
+
+    for x, y in candidates:
+        if any(max(abs(x - home.x), abs(y - home.y)) < 3 for home in homes):
+            continue
+
+        tile = world.tile_at(x, y)
+        tile.kind = "home"
+        tile.food = 0
+        tile.wood = 0
+        homes.append(Home(x, y))
+
+        if len(homes) >= target_count:
+            return homes
+
+    return homes
+
+
+def _home_candidates(world, settlement: Settlement, rng: random.Random) -> list[tuple[int, int]]:
+    candidates: list[tuple[float, int, int, tuple[int, int]]] = []
+    for y in range(max(0, settlement.y - settlement.radius), min(world.height, settlement.y + settlement.radius + 1)):
+        for x in range(max(0, settlement.x - settlement.radius), min(world.width, settlement.x + settlement.radius + 1)):
+            distance = max(abs(x - settlement.x), abs(y - settlement.y))
+            if distance == 0 or distance > settlement.radius:
+                continue
+            if not is_valid_home_site(world, settlement, x, y):
+                continue
+            inner_bias = abs(distance - max(3, settlement.radius * 0.6))
+            candidates.append((inner_bias + rng.random() * 3.0, rng.randint(0, 9999), y, (x, y)))
+
+    return [pos for _, _, _, pos in sorted(candidates)]
+
+
+def is_valid_home_site(world, settlement: Settlement, x: int, y: int) -> bool:
+    if not (0 <= x < world.width and 0 <= y < world.height):
+        return False
+    if (x, y) == (settlement.x, settlement.y):
+        return False
+    tile = world.tile_at(x, y)
+    if not tile.walkable:
+        return False
+    if tile.kind in ("water", "mountain", "shelter"):
+        return False
+    return True
 
 
 def central_founding_site(world) -> tuple[int, int]:
@@ -184,6 +246,7 @@ def settlement_site_score(world, x: int, y: int, center_x: int | None = None, ce
 
 def create_stockpiles(world, settlement: Settlement) -> list[Stockpile]:
     used = {(settlement.x, settlement.y)}
+    used.update((home.x, home.y) for home in settlement.homes)
     stockpiles = []
     for stockpile_type in (FOOD, WOOD):
         pos = _nearest_stockpile_tile(world, settlement, used)
@@ -572,6 +635,13 @@ def is_stockpile_tile(world, x: int, y: int) -> bool:
         if settlement is None:
             return False
         return any(stockpile.x == x and stockpile.y == y for stockpile in settlement.stockpiles)
+
+
+def is_home_tile(world, x: int, y: int) -> bool:
+    settlement = world.settlement
+    if settlement is None:
+        return False
+    return any(home.x == x and home.y == y for home in settlement.homes)
 
 
 def is_adjacent_to_stockpile(world, x: int, y: int, stockpile_type: str) -> bool:

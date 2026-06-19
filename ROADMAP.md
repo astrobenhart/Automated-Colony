@@ -220,8 +220,8 @@ Notes:
 Goal: Make the default experience feel like arriving at an existing village already in progress, not watching blank-slate survivors found every story from scratch.
 
 Features:
-- [ ] Pre-seeded village start
-- [ ] Homes as village anchors
+- [x] Pre-seeded village start Phase 1: central village location, visible homes, and home-distributed villagers
+- [x] Homes as village anchors
 - [ ] Workplace placeholders for farms, storage, workshops, and future professions
 - [ ] Daily schedule foundation
 - [ ] Household foundations without full reproduction yet
@@ -242,6 +242,9 @@ Starting Scenarios:
 Notes:
 - The starting world generator should create an initial social fabric, not just terrain and resources.
 - The player should feel like the village existed before observation began.
+- Phase 1 of the pre-seeded village start creates 8-15 visible homes around the founded settlement center, then spawns the default 30-60 villager population on or beside those homes.
+- Multiple villagers may occupy the same tile, including at startup homes. Occupancy must not block spawning or core movement, which keeps future households from creating pathfinding deadlocks.
+- Paths, farms, storage expansion, social familiarity seeding, history seeding, schedules, households, reproduction, and delivery systems remain outside Phase 1.
 - Paths are high priority because they visually communicate that people live here.
 - v0.7 can begin with generated paths between homes, farms, storage, and workplaces before adding dynamic path wear.
 - Daily routines should be slow and readable: wake, eat, go to workplace, work, rest or socialize, return home, eat, household time, sleep.

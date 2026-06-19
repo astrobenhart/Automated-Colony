@@ -8,7 +8,7 @@ DEBUG_DRAW_GRID = False
 PANEL_WIDTH = 400
 PANEL_HEIGHT = 160
 PANEL_HEIGTH = PANEL_HEIGHT
-STARTING_AGENTS = 10
+STARTING_AGENTS = 45
 INITIAL_SPAWN_RADIUS = 3
 INITIAL_SPAWN_MAX_RADIUS = 10
 WORLD_SEED = None
@@ -47,11 +47,16 @@ NEED_SCORE_LOW_THRESHOLD = 15
 NEED_SCORE_SWITCH_MARGIN = 10
 STUCK_TICK_LIMIT = 3
 NO_PROGRESS_TICK_LIMIT = 5
+DECISION_INTERVAL_TICKS = 5
+MAX_UPDATES_PER_TICK = 5
+PERFORMANCE_LOGGING = True
+SOCIAL_MEMORY_MAX_OBSERVATIONS_PER_AGENT = 8
 RIVER_COUNT = 3
 RIVER_MIN_LENGTH = 8
 RIVER_SOURCE_ELEVATION = 0.70
 RIVER_WIDEN_CHANCE = 0.06
 DAYS_PER_SEASON = 20
+TICKS_PER_HOUR = 5
 TICKS_PER_DAY = 50
 ENV_EVENT_CHANCE_PER_DAY = 0.06
 ENV_EVENT_MIN_DURATION_DAYS = 3
@@ -96,6 +101,7 @@ COLORS = {
     "water": (45, 95, 170),
     "mountain": (110, 110, 110),
     "shelter": (145, 95, 45),
+    "home": (164, 104, 58),
     "food": (230, 80, 80),
     "wood": (130, 80, 35),
     "wildlife": (220, 205, 150),
@@ -131,6 +137,7 @@ SEASONAL_TERRAIN_COLORS = {
         "water": (54, 116, 188),
         "mountain": (120, 124, 118),
         "shelter": (145, 95, 45),
+        "home": (164, 104, 58),
     },
     "Summer": {
         "grass": (94, 142, 66),
@@ -142,6 +149,7 @@ SEASONAL_TERRAIN_COLORS = {
         "water": (38, 82, 150),
         "mountain": (106, 104, 98),
         "shelter": (145, 95, 45),
+        "home": (156, 96, 52),
     },
     "Autumn": {
         "grass": (112, 138, 66),
@@ -153,6 +161,7 @@ SEASONAL_TERRAIN_COLORS = {
         "water": (44, 92, 158),
         "mountain": (112, 104, 96),
         "shelter": (145, 95, 45),
+        "home": (170, 106, 56),
     },
     "Winter": {
         "grass": (142, 154, 138),
@@ -164,6 +173,7 @@ SEASONAL_TERRAIN_COLORS = {
         "water": (74, 102, 150),
         "mountain": (172, 174, 168),
         "shelter": (135, 105, 76),
+        "home": (148, 112, 82),
     },
 }
 
@@ -177,6 +187,7 @@ TERRAIN_LABELS = {
     "dry": "Dry",
     "grass": "Grass",
     "shelter": "Shelter",
+    "home": "Home",
 }
 
 SYMBOL_LABELS = {
@@ -192,4 +203,5 @@ SYMBOL_LABELS = {
     "W": "Wood Pile",
     "T": "Workshop",
     "#": "Farm Plot",
+    "H": "Home",
 }

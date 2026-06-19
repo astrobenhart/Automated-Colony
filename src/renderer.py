@@ -1,5 +1,6 @@
 import pygame
 import pygame_gui
+import time
 
 from src.config import (
     SCREEN_WIDTH,
@@ -14,6 +15,7 @@ from src.config import (
     TERRAIN_LABELS,
     SYMBOL_LABELS,
     FPS,
+    PERFORMANCE_LOGGING,
 )
 from src.environment_events import active_event_names, environmental_tile_color
 from src.farming import farm_border_edges
@@ -177,6 +179,7 @@ class PygameRenderer:
 
     def draw(self, paused: bool, sim_speed: int):
         with profiler.time("renderer update"):
+            render_start = time.perf_counter()
             self.validate_selection()
             self.clamp_camera()
             self.screen.fill((0, 0, 0))
@@ -186,6 +189,9 @@ class PygameRenderer:
             self.ui_manager.draw_ui(self.screen)
 
             pygame.display.flip()
+            if PERFORMANCE_LOGGING:
+                elapsed_ms = (time.perf_counter() - render_start) * 1000
+                print(f"perf render paused={paused} speed={sim_speed} render_ms={elapsed_ms:.2f}")
 
     def draw_world(self):
         start_x, start_y, end_x, end_y = self.visible_tile_bounds()
@@ -225,6 +231,9 @@ class PygameRenderer:
 
                 if self.is_settlement_center(x, y):
                     self.draw_centered_symbol("+", screen_x, screen_y, COLORS["settlement"])
+
+                if self.world.home_at(x, y):
+                    self.draw_centered_symbol("H", screen_x, screen_y, COLORS["text"])
 
                 stockpile = self.world.stockpile_at(x, y)
                 if stockpile:

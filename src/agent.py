@@ -78,7 +78,10 @@ class Agent:
     # Active path being followed (list of (x,y) steps, nearest first)
     current_path: list[tuple[int, int]] = field(default_factory=list, repr=False)
     current_target: tuple[int, int] | None = field(default=None, repr=False)
+    failed_path_target: tuple[int, int] | None = field(default=None, repr=False)
     current_reservation_keys: set[tuple[str, tuple[int, int]]] = field(default_factory=set, repr=False)
+    active_action: Action | None = field(default=None, repr=False)
+    last_decision_tick: int = -1
     stuck_ticks: int = 0
     no_progress_ticks: int = 0
 
@@ -199,6 +202,25 @@ class Agent:
         goal = self.choose_goal(world)
         return goal.choose_action(self, world)
 
+    def update_decision(self, world: World) -> Action:
+        self.scan_surroundings(world)
+        self.active_action = self.choose_action(world)
+        self.last_decision_tick = world.tick
+        return self.active_action
+
+    def action_for_tick(self, world: World) -> Action:
+        from src.config import DECISION_INTERVAL_TICKS
+
+        if (
+            self.active_action is None
+            or self.last_decision_tick < 0
+            or world.tick - self.last_decision_tick >= DECISION_INTERVAL_TICKS
+            or not self.active_action.can_do(self, world)
+        ):
+            return self.update_decision(world)
+
+        return self.active_action
+
     def reset_stuck(self):
         self.stuck_ticks = 0
         self.no_progress_ticks = 0
@@ -209,6 +231,7 @@ class Agent:
 
         if self.stuck_ticks >= STUCK_TICK_LIMIT:
             self.current_target = None
+            self.failed_path_target = None
 
     def progress_snapshot(self, world: World):
         return {
@@ -236,6 +259,8 @@ class Agent:
         if self.no_progress_ticks >= NO_PROGRESS_TICK_LIMIT:
             self.current_path = []
             self.current_target = None
+            self.failed_path_target = None
+            self.active_action = None
             self.current_action = "Recovering"
 
     def release_reservations(self, world: World):
@@ -259,12 +284,14 @@ class Agent:
         if self.hunger >= HUNGER_DEATH_THRESHOLD:
             self.alive = False
             self.current_action = "Dead"
+            self.active_action = None
             self.release_reservations(world)
             from src.death_memory import record_death
             record_death(world, self, "starvation")
         elif self.thirst >= THIRST_DEATH_THRESHOLD:
             self.alive = False
             self.current_action = "Dead"
+            self.active_action = None
             self.release_reservations(world)
             from src.death_memory import record_death
             record_death(world, self, "thirst")

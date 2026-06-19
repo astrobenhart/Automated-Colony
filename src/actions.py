@@ -434,10 +434,15 @@ class WanderAction(Action):
         super().execute(agent, world)
 
         if _can_use_settlement_bias(agent):
-            target = random_tile_near_settlement(world, random, agent.role)
+            target = agent.current_target
+            if target is None or target == (agent.x, agent.y):
+                target = random_tile_near_settlement(world, random, agent.role)
             if target is not None and target != (agent.x, agent.y):
                 if _step_along_path(agent, world, target):
                     return
+            elif target == (agent.x, agent.y):
+                agent.current_target = None
+                agent.current_path = []
 
         directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
         random.shuffle(directions)
@@ -584,11 +589,15 @@ def _step_along_path(agent: Agent, world: World, target: tuple[int, int]) -> boo
     start = (agent.x, agent.y)
 
     # Recompute path if target changed or path is exhausted.
-    if agent.current_target != target or not agent.current_path:
+    if agent.current_target != target:
         agent.current_target = target
-        agent.current_path = find_path(world, start, target, avoid_occupied=True)
+        agent.failed_path_target = None
+        agent.current_path = find_path(world, start, target, avoid_occupied=False)
+    elif not agent.current_path and agent.failed_path_target != target:
+        agent.current_path = find_path(world, start, target, avoid_occupied=False)
 
     if not agent.current_path:
+        agent.failed_path_target = target
         agent.record_path_blocked()
         return False  # Unreachable.
 
@@ -597,6 +606,7 @@ def _step_along_path(agent: Agent, world: World, target: tuple[int, int]) -> boo
 
     if world.can_move_to(nx, ny):
         agent.current_path.pop(0)
+        agent.failed_path_target = None
         agent.x = nx
         agent.y = ny
         agent.reset_stuck()

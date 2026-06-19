@@ -1295,7 +1295,8 @@ Acceptance Criteria:
 - Settlement founding starts near the map center but does not force the exact center.
 - Founding site selection uses bounded cheap suitability scoring.
 - Villagers spawn near the settlement center on valid tiles.
-- Villagers never spawn on water, mountains, non-walkable terrain, occupied tiles, stockpiles, workshops, or the settlement center.
+- Villagers never spawn on water, mountains, non-walkable terrain, stockpiles, workshops, or the settlement center.
+- Later v0.7 village-start work intentionally allows multiple villagers to share a tile, including startup home tiles.
 - Spawn positions are deterministic for fixed seed/settings.
 - Settlement population matches living villagers after spawn.
 - Stockpiles, workshop, clustered building placement, local resource radius, roles, and no-progress recovery remain stable.
@@ -1311,6 +1312,38 @@ Dependencies:
 
 Notes:
 - This is startup polish and reliability only. No player placement, setup screen, migration, multiple settlements, roads, hauling, task claiming, or worldgen rewrite was added.
+- Superseded for Issue #59 Phase 1 by TASK-44, which adds pre-seeded homes and home-distributed villagers while preserving shared-tile occupancy.
+
+---
+
+### TASK-44
+Title: Pre-Seeded Lived-In Village Start Phase 1
+
+Owner: Planner Agent / Architect Agent / World Generation Agent / Gameplay Agent / Tester Agent
+
+Status: Completed
+
+Description:
+Implement GitHub Issue #59 Phase 1 by creating the foundational village skeleton only: village location, home placement, and villager spawning/distribution.
+
+Expected Output:
+A default start that immediately shows a visible home cluster with villagers already distributed across the village.
+
+Acceptance Criteria:
+- The existing central settlement founding logic chooses a valid walkable village center.
+- The village places 8-15 visible home tiles inside the settlement radius.
+- Homes are not grid-aligned, do not overlap, keep minimum spacing, and stay on valid walkable terrain.
+- The default start creates 30-60 villagers after homes are placed.
+- Each villager keeps the existing role, lifecycle label, and trait initialization.
+- Villagers spawn on a home tile or adjacent valid tile.
+- Multiple villagers can occupy the same tile; spawning and core movement do not enforce one-agent-per-tile occupancy.
+- Existing tests pass.
+
+Dependencies:
+- TASK-43
+
+Notes:
+- Phase 1 does not add paths, farms, storage expansion, workshops, social familiarity seeding, history seeding, schedules, households, reproduction, or delivery systems.
 
 ---
 

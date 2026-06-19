@@ -2,7 +2,7 @@ from src.config import INITIAL_SPAWN_MAX_RADIUS, STARTING_AGENTS
 from src.lifecycle import lifecycle_stage_for_index
 from src.roles import role_for_index
 from src.traits import trait_for_index
-from src.settlement import Settlement, Stockpile, FOOD, WOOD, distance_to_settlement
+from src.settlement import Home, Settlement, Stockpile, FOOD, WOOD, distance_to_settlement
 from src.tile import Tile
 from src.workshop import Workshop
 from src.world import World, create_world
@@ -25,21 +25,19 @@ def test_villagers_spawn_near_settlement_center_on_valid_tiles():
         assert tile.kind not in ("water", "mountain")
 
 
-def test_villager_spawn_positions_are_unique_and_in_bounds():
+def test_villager_spawn_positions_are_in_bounds_and_may_be_shared():
     world = create_world(seed=34)
-    positions = {(agent.x, agent.y) for agent in world.agents}
 
-    assert len(positions) == len(world.agents)
-    for x, y in positions:
-        assert 0 <= x < world.width
-        assert 0 <= y < world.height
+    assert len({(agent.x, agent.y) for agent in world.agents}) <= len(world.agents)
+    for agent in world.agents:
+        assert 0 <= agent.x < world.width
+        assert 0 <= agent.y < world.height
 
 
 def test_villagers_do_not_spawn_on_water_mountains_or_special_tiles():
     world = create_world(seed=35)
     settlement = world.settlement
-    special = {(settlement.x, settlement.y)}
-    special.update((stockpile.x, stockpile.y) for stockpile in settlement.stockpiles)
+    special = {(stockpile.x, stockpile.y) for stockpile in settlement.stockpiles}
     special.update((workshop.x, workshop.y) for workshop in settlement.workshops)
 
     for agent in world.agents:
@@ -133,3 +131,26 @@ def test_spawn_avoids_preexisting_stockpile_and_workshop_tiles():
     assert (4, 5) not in positions
     assert (5, 4) not in positions
     assert (3, 4) not in positions
+
+
+def test_villagers_spawn_on_or_next_to_starting_homes():
+    world = create_world(seed=42)
+    homes = {(home.x, home.y) for home in world.settlement.homes}
+
+    assert homes
+    for agent in world.agents:
+        assert any(max(abs(agent.x - hx), abs(agent.y - hy)) <= 1 for hx, hy in homes)
+
+
+def test_multiple_villagers_can_spawn_on_same_tile_without_errors():
+    world = make_world(width=9, height=9)
+    world.settlement = Settlement("Willowhold", 4, 4, 1, "Spring")
+    world.tile_at(3, 4).kind = "home"
+    world.settlement.homes.append(Home(3, 4))
+
+    positions = world.initial_spawn_positions(5)
+
+    assert len(positions) == 5
+    assert len(set(positions)) < len(positions)
+    for x, y in positions:
+        assert world.is_valid_spawn_tile(x, y)

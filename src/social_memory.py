@@ -57,12 +57,40 @@ def record_observation(observer: Agent, other: Agent, day: int):
 
 
 def update_social_memory(world: World, radius: int = SOCIAL_MEMORY_RADIUS):
+    from src.config import SOCIAL_MEMORY_MAX_OBSERVATIONS_PER_AGENT
+
     living_agents = world.living_agents()
-    for index, observer in enumerate(living_agents):
-        for other in living_agents[index + 1:]:
-            if chebyshev_distance(observer.x, observer.y, other.x, other.y) <= radius:
-                record_observation(observer, other, world.day)
-                record_observation(other, observer, world.day)
+    by_tile = {(agent.x, agent.y): [] for agent in living_agents}
+    for agent in living_agents:
+        by_tile[(agent.x, agent.y)].append(agent)
+
+    for observer in living_agents:
+        observed = 0
+        for other in nearby_agents(observer, by_tile, radius):
+            if other is observer:
+                continue
+            record_observation(observer, other, world.day)
+            observed += 1
+            if observed >= SOCIAL_MEMORY_MAX_OBSERVATIONS_PER_AGENT:
+                break
+
+
+def nearby_agents(
+    observer: Agent,
+    by_tile: dict[tuple[int, int], list[Agent]],
+    radius: int,
+) -> list[Agent]:
+    nearby: list[tuple[int, str, Agent]] = []
+    for y in range(observer.y - radius, observer.y + radius + 1):
+        for x in range(observer.x - radius, observer.x + radius + 1):
+            distance = chebyshev_distance(observer.x, observer.y, x, y)
+            if distance > radius:
+                continue
+            for agent in by_tile.get((x, y), []):
+                nearby.append((distance, villager_key(agent), agent))
+
+    nearby.sort(key=lambda item: (item[0], item[1]))
+    return [agent for _, _, agent in nearby]
 
 
 def familiarity_summary(agent: Agent, limit: int = 3) -> list[str]:
