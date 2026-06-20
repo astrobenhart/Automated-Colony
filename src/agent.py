@@ -322,8 +322,8 @@ class Agent:
         return {
             "position": (self.x, self.y),
             "needs": (self.hunger, self.thirst, self.fatigue),
-            "inventory": (self.food, self.wood),
-            "storage": (world.colony_storage.food, world.colony_storage.wood),
+            "inventory": (self.food, self.water, self.wood),
+            "storage": (world.colony_storage.food, world.colony_storage.water, world.colony_storage.wood),
             "shelters": world.count_tiles("shelter"),
             "target": self.current_target,
         }

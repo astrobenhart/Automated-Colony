@@ -3,7 +3,7 @@ from heapq import heappop, heappush
 from typing import TYPE_CHECKING
 
 from src.profiler import profiler
-from src.village_paths import PATH
+from src.village_paths import DIRT_PATH, PATH, TRAMPLED_GRASS, WORN_GRASS
 
 if TYPE_CHECKING:
     from src.world import World
@@ -100,6 +100,9 @@ def _find_path(
 def movement_cost(kind: str) -> int:
     costs = {
         PATH: 4,
+        DIRT_PATH: 5,
+        WORN_GRASS: 7,
+        TRAMPLED_GRASS: 9,
         "grass": 10,
         "home": 10,
         "shelter": 10,

@@ -25,6 +25,7 @@ from src.social_memory import update_social_memory
 from src.traits import trait_for_index
 from src.task_behavior import assign_daily_role, run_villager_task
 from src.settlement_planner import plan_settlement_work
+from src.village_paths import decay_foot_traffic
 from src.settlement import (
     Settlement,
     choose_resource_target,
@@ -443,6 +444,7 @@ class World:
 
     def run_daily_updates(self):
         update_environment_events(self, random)
+        decay_foot_traffic(self)
         self.regrow_resources()
         update_farms(self)
         self.run_daily_settlement_updates()

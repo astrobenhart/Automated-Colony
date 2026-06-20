@@ -20,6 +20,8 @@ from src.config import (
     VILLAGER_RENDER_TILES_PER_SECOND,
     DESIRED_WOOD_RESERVE,
     SHELTER_CAPACITY,
+    SETTLEMENT_FOOD_TARGET_DAYS,
+    SETTLEMENT_WATER_TARGET_DAYS,
 )
 from src.environment_events import active_event_names, environmental_tile_color
 from src.farming import farm_border_edges
@@ -31,7 +33,7 @@ from src.seasons import seasonal_tile_color
 from src.agent import Agent
 from src.profiler import profiler
 from src.ui_overlays import OverlayManager
-from src.village_paths import PATH, path_border_edges
+from src.village_paths import is_path_like, path_border_edges
 from src.villager_inspection import compact_villager_rows
 from src.world import World
 
@@ -298,7 +300,7 @@ class PygameRenderer:
                 )
 
                 pygame.draw.rect(self._draw_target, self.tile_color(tile.kind), rect)
-                if tile.kind == PATH:
+                if is_path_like(tile.kind):
                     self.draw_path_border(screen_x, screen_y, x, y)
                 if DEBUG_DRAW_GRID:
                     pygame.draw.rect(self._draw_target, COLORS["grid"], rect, 1)
@@ -569,8 +571,8 @@ class PygameRenderer:
 
         lines = [
             "Priorities:",
-            f"Food     {self.world.colony_storage.food} / {population * 2}",
-            f"Water    {self.world.colony_storage.water} / {population}",
+            f"Food     {self.world.colony_storage.food} / {population * SETTLEMENT_FOOD_TARGET_DAYS}",
+            f"Water    {self.world.colony_storage.water} / {population * SETTLEMENT_WATER_TARGET_DAYS}",
             f"Wood     {self.world.colony_storage.wood} / {wood_target}",
             f"Housing  {housing_current} / {housing_target}",
         ]

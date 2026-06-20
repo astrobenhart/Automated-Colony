@@ -2,12 +2,14 @@ from src.agent import Agent
 from src.roles import BUILDER, FORAGER, GENERALIST, SCOUT
 from src.settlement import Settlement
 from src.settlement_planner import (
+    CRISIS_FOOD,
     WORK_CONSTRUCTION,
     WORK_EXPLORATION,
     WORK_FOOD,
     WORK_WATER,
     WORK_WOOD,
     plan_settlement_work,
+    settlement_crisis_state,
     settlement_work_demands,
 )
 from src.tile import Tile
@@ -61,6 +63,8 @@ def test_role_based_assignments_follow_planner_demands():
 
 def test_construction_assignment_waits_for_usable_wood():
     world = make_world()
+    world.colony_storage.deposit_food(20)
+    world.colony_storage.deposit_water(20)
     builder = Agent("Bryn", 5, 6, role=BUILDER, agent_id="bryn")
     world.agents.append(builder)
 
@@ -73,6 +77,22 @@ def test_construction_assignment_waits_for_usable_wood():
     assignments = plan_settlement_work(world)
 
     assert assignments["bryn"] == WORK_CONSTRUCTION
+
+
+def test_food_crisis_redirects_builders_and_generalists_to_food():
+    world = make_world()
+    world.colony_storage.deposit_water(20)
+    world.tile_at(5, 5).food = 3
+    world.settlement.local_food = {(5, 5)}
+    builder = Agent("Bryn", 5, 6, role=BUILDER, agent_id="bryn")
+    generalist = Agent("Gala", 6, 5, role=GENERALIST, agent_id="gala")
+    world.agents.extend([builder, generalist])
+
+    assignments = plan_settlement_work(world)
+
+    assert settlement_crisis_state(world) == CRISIS_FOOD
+    assert assignments["bryn"] == WORK_FOOD
+    assert assignments["gala"] == WORK_FOOD
 
 
 def test_water_demand_rises_when_water_storage_and_access_are_low():

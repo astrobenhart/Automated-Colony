@@ -61,15 +61,29 @@ IDLE_MAX_TICKS = 10
 TASK_HUNGER_INTERRUPT_THRESHOLD = 70
 TASK_THIRST_INTERRUPT_THRESHOLD = 70
 TASK_FATIGUE_INTERRUPT_THRESHOLD = 80
-TASK_HARVEST_TICKS = 3
-TASK_COLLECT_WATER_TICKS = 3
-TASK_CHOP_WOOD_TICKS = 8
-TASK_DEPOSIT_TICKS = 2
+TASK_HARVEST_TICKS = 2
+TASK_COLLECT_WATER_TICKS = 2
+TASK_CHOP_WOOD_TICKS = 6
+TASK_DEPOSIT_TICKS = 1
 TASK_EAT_TICKS = 1
 TASK_DRINK_TICKS = 1
 TASK_SLEEP_TICKS = 5
-TASK_BUILD_TICKS = 20
+TASK_BUILD_TICKS = 15
 TASK_EXPLORE_TICKS = 4
+AGENT_FOOD_CARRY_CAPACITY = 3
+AGENT_WATER_CARRY_CAPACITY = 3
+AGENT_WOOD_CARRY_CAPACITY = 2
+SETTLEMENT_FOOD_TARGET_DAYS = 3
+SETTLEMENT_WATER_TARGET_DAYS = 2
+SETTLEMENT_FOOD_CRISIS_DAYS = 1
+SETTLEMENT_WATER_CRISIS_DAYS = 1
+PATH_TRAFFIC_INCREMENT = 1
+PATH_TRAFFIC_DAILY_DECAY = 1
+PATH_TRAFFIC_TRAMPLED_THRESHOLD = 6
+PATH_TRAFFIC_WORN_THRESHOLD = 18
+PATH_TRAFFIC_DIRT_THRESHOLD = 36
+PATH_TRAFFIC_ESTABLISHED_THRESHOLD = 72
+PATH_TRAFFIC_PRESEEDED = 90
 RIVER_COUNT = 3
 RIVER_MIN_LENGTH = 8
 RIVER_SOURCE_ELEVATION = 0.70
@@ -117,6 +131,9 @@ COLORS = {
     "hill": (126, 136, 86),
     "wetland": (55, 118, 104),
     "dry": (150, 132, 82),
+    "trampled_grass": (104, 136, 72),
+    "worn_grass": (126, 124, 70),
+    "dirt_path": (132, 104, 62),
     "path": (118, 108, 70),
     "path_border": (82, 74, 48),
     "water": (45, 95, 170),
@@ -155,6 +172,9 @@ SEASONAL_TERRAIN_COLORS = {
         "hill": (138, 150, 92),
         "wetland": (60, 140, 116),
         "dry": (162, 146, 90),
+        "trampled_grass": (112, 148, 76),
+        "worn_grass": (132, 130, 72),
+        "dirt_path": (138, 112, 66),
         "path": (124, 118, 76),
         "water": (54, 116, 188),
         "mountain": (120, 124, 118),
@@ -168,6 +188,9 @@ SEASONAL_TERRAIN_COLORS = {
         "hill": (142, 126, 78),
         "wetland": (74, 118, 86),
         "dry": (176, 140, 68),
+        "trampled_grass": (112, 128, 62),
+        "worn_grass": (132, 116, 62),
+        "dirt_path": (142, 104, 56),
         "path": (128, 112, 64),
         "water": (38, 82, 150),
         "mountain": (106, 104, 98),
@@ -181,6 +204,9 @@ SEASONAL_TERRAIN_COLORS = {
         "hill": (136, 108, 72),
         "wetland": (83, 110, 82),
         "dry": (150, 118, 72),
+        "trampled_grass": (116, 126, 62),
+        "worn_grass": (128, 108, 58),
+        "dirt_path": (132, 94, 54),
         "path": (120, 98, 58),
         "water": (44, 92, 158),
         "mountain": (112, 104, 96),
@@ -194,6 +220,9 @@ SEASONAL_TERRAIN_COLORS = {
         "hill": (152, 152, 138),
         "wetland": (112, 140, 148),
         "dry": (156, 148, 126),
+        "trampled_grass": (132, 142, 126),
+        "worn_grass": (138, 134, 112),
+        "dirt_path": (138, 122, 96),
         "path": (134, 128, 106),
         "water": (74, 102, 150),
         "mountain": (172, 174, 168),
@@ -210,6 +239,9 @@ TERRAIN_LABELS = {
     "plain": "Plain",
     "wetland": "Wetland",
     "dry": "Dry",
+    "trampled_grass": "Trampled",
+    "worn_grass": "Worn",
+    "dirt_path": "Dirt Path",
     "path": "Path",
     "grass": "Grass",
     "shelter": "Shelter",

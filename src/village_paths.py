@@ -2,13 +2,40 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from src.config import (
+    PATH_TRAFFIC_DAILY_DECAY,
+    PATH_TRAFFIC_DIRT_THRESHOLD,
+    PATH_TRAFFIC_ESTABLISHED_THRESHOLD,
+    PATH_TRAFFIC_INCREMENT,
+    PATH_TRAFFIC_PRESEEDED,
+    PATH_TRAFFIC_TRAMPLED_THRESHOLD,
+    PATH_TRAFFIC_WORN_THRESHOLD,
+)
+
 if TYPE_CHECKING:
     from src.settlement import Settlement
+    from src.tile import Tile
     from src.world import World
 
 
+TRAMPLED_GRASS = "trampled_grass"
+WORN_GRASS = "worn_grass"
+DIRT_PATH = "dirt_path"
 PATH = "path"
 PATH_BORDER_EDGES = ("north", "south", "west", "east")
+PATH_WEAR_KINDS = (TRAMPLED_GRASS, WORN_GRASS, DIRT_PATH, PATH)
+PATH_WEARABLE_BASE_KINDS = (
+    "grass",
+    "plain",
+    "dry",
+    "forest",
+    "hill",
+    "wetland",
+    TRAMPLED_GRASS,
+    WORN_GRASS,
+    DIRT_PATH,
+    PATH,
+)
 
 
 def seed_village_paths(world: World, settlement: Settlement):
@@ -25,6 +52,7 @@ def seed_village_paths(world: World, settlement: Settlement):
             continue
         for x, y in route:
             mark_path_tile(world, settlement, x, y)
+        mark_path_tile(world, settlement, *endpoint)
 
 
 def mark_path_tile(world: World, settlement: Settlement, x: int, y: int) -> bool:
@@ -37,10 +65,68 @@ def mark_path_tile(world: World, settlement: Settlement, x: int, y: int) -> bool
     if not tile.walkable or tile.kind in ("water", "mountain", "shelter", "home"):
         return False
 
-    tile.kind = PATH
+    tile.foot_traffic = max(tile.foot_traffic, PATH_TRAFFIC_PRESEEDED)
+    apply_path_wear(tile)
     tile.food = 0
     tile.wood = 0
     return True
+
+
+def record_foot_traffic(world: World, x: int, y: int, amount: int = PATH_TRAFFIC_INCREMENT) -> bool:
+    if not (0 <= x < world.width and 0 <= y < world.height):
+        return False
+
+    tile = world.tile_at(x, y)
+    if not tile.walkable:
+        return False
+
+    tile.foot_traffic = max(0, tile.foot_traffic + amount)
+    return apply_path_wear(tile)
+
+
+def decay_foot_traffic(world: World, amount: int = PATH_TRAFFIC_DAILY_DECAY) -> int:
+    changed = 0
+    if amount <= 0:
+        return changed
+
+    for row in world.tiles:
+        for tile in row:
+            if tile.foot_traffic <= 0:
+                continue
+            tile.foot_traffic = max(0, tile.foot_traffic - amount)
+            if apply_path_wear(tile):
+                changed += 1
+    return changed
+
+
+def apply_path_wear(tile: Tile) -> bool:
+    if not is_wearable_path_terrain(tile.kind):
+        return False
+
+    previous = tile.kind
+    if tile.foot_traffic >= PATH_TRAFFIC_ESTABLISHED_THRESHOLD:
+        tile.kind = PATH
+    elif tile.foot_traffic >= PATH_TRAFFIC_DIRT_THRESHOLD:
+        tile.kind = DIRT_PATH
+    elif tile.foot_traffic >= PATH_TRAFFIC_WORN_THRESHOLD:
+        tile.kind = WORN_GRASS
+    elif tile.foot_traffic >= PATH_TRAFFIC_TRAMPLED_THRESHOLD:
+        tile.kind = TRAMPLED_GRASS
+    elif tile.kind in PATH_WEAR_KINDS:
+        tile.kind = "grass"
+
+    if tile.kind in PATH_WEAR_KINDS:
+        tile.food = 0
+        tile.wood = 0
+    return tile.kind != previous
+
+
+def is_wearable_path_terrain(kind: str) -> bool:
+    return kind in PATH_WEARABLE_BASE_KINDS
+
+
+def is_path_like(kind: str) -> bool:
+    return kind in PATH_WEAR_KINDS
 
 
 def path_border_edges(world: World, x: int, y: int) -> dict[str, bool]:
@@ -55,7 +141,7 @@ def path_border_edges(world: World, x: int, y: int) -> dict[str, bool]:
 def _is_path_tile(world: World, x: int, y: int) -> bool:
     if not (0 <= x < world.width and 0 <= y < world.height):
         return False
-    return world.tile_at(x, y).kind == PATH
+    return is_path_like(world.tile_at(x, y).kind)
 
 
 def _path_endpoints(world: World, settlement: Settlement, hub: tuple[int, int]) -> list[tuple[int, int]]:

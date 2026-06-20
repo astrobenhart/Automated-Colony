@@ -68,6 +68,7 @@ def test_successful_movement_resets_stuck_ticks():
     assert moved
     assert agent.stuck_ticks == 0
     assert (agent.x, agent.y) == (1, 0)
+    assert world.tile_at(1, 0).foot_traffic == 1
 
 
 def test_path_step_seeds_full_render_path_for_continuous_visual_travel():

@@ -803,8 +803,8 @@ def test_colony_summary_includes_settlement_priorities_and_planner():
     summary = "\n".join(renderer.colony_summary_lines())
 
     assert "Priorities:" in summary
-    assert "Food     3 / 12" in summary
-    assert "Water    2 / 6" in summary
+    assert "Food     3 / 18" in summary
+    assert "Water    2 / 12" in summary
     assert "Wood     4 /" in summary
     assert "Housing  3 / 6" in summary
     assert "Current Priorities:" in summary

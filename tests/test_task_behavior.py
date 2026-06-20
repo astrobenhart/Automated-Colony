@@ -42,7 +42,8 @@ def test_spawned_villagers_receive_settlement_work_assignments():
     assignments = {agent.daily_role for agent in world.agents}
     assert world.settlement.last_planned_day == world.day
     assert all(agent.daily_role for agent in world.agents)
-    assert WORK_EXPLORATION in assignments
+    assert assignments <= {WORK_FOOD, WORK_WATER, WORK_EXPLORATION}
+    assert {WORK_FOOD, WORK_WATER} <= assignments
     assert len(assignments) > 1
 
 
@@ -67,10 +68,12 @@ def test_forager_can_receive_water_collection_from_settlement_planner():
 
 def test_food_task_selects_target_without_old_decision_loop():
     world = make_world()
+    world.colony_storage.deposit_food(20)
+    world.colony_storage.deposit_water(20)
     world.tile_at(7, 5).food = 2
     agent = Agent("Ari", 5, 5, home_x=5, home_y=5, home_wander_radius=3)
     world.agents.append(agent)
-    assign_daily_role(agent, world)
+    agent.daily_role = WORK_FOOD
 
     assert run_villager_task(agent, world)
 
@@ -147,6 +150,24 @@ def test_hunger_interrupt_eats_then_resumes_previous_task():
     assert agent.task_state == STATE_MOVING_TO_TARGET
 
 
+def test_critical_hunger_without_stored_food_interrupts_to_seek_food():
+    world = make_world()
+    world.tile_at(8, 5).food = 2
+    agent = Agent("Ari", 5, 5, hunger=80, home_x=5, home_y=5)
+    agent.daily_role = WORK_WOOD
+    agent.task_state = STATE_CHOPPING_WOOD
+    agent.task_target = (5, 5)
+    agent.task_timer = 4
+    world.agents.append(agent)
+
+    assert run_villager_task(agent, world)
+
+    assert agent.current_goal == "Handle hunger"
+    assert agent.current_action == "Seeking food"
+    assert agent.task_resume_state == STATE_CHOPPING_WOOD
+    assert agent.task_target == (8, 5)
+
+
 def test_moderate_thirst_does_not_cancel_daily_work():
     world = make_world()
     world.tile_at(7, 5).food = 2
@@ -202,7 +223,12 @@ def test_wood_assignment_uses_chopping_state():
 
     assert run_villager_task(agent, world)
     assert agent.wood == 1
-    assert agent.task_state == STATE_MOVING_TO_STORAGE
+    assert agent.task_state == STATE_CHOPPING_WOOD
+
+    while agent.task_state != STATE_MOVING_TO_STORAGE:
+        assert run_villager_task(agent, world)
+
+    assert agent.wood == 2
 
 
 def test_wood_worker_delivers_carried_wood_before_gathering_more():
@@ -214,6 +240,25 @@ def test_wood_worker_delivers_carried_wood_before_gathering_more():
     assert run_villager_task(agent, world)
 
     assert agent.task_state in {STATE_MOVING_TO_STORAGE, STATE_DEPOSITING}
+
+
+def test_food_worker_batches_harvest_until_carry_capacity():
+    world = make_world()
+    world.tile_at(5, 5).food = 5
+    agent = Agent("Ari", 5, 5, home_x=5, home_y=5)
+    agent.daily_role = WORK_FOOD
+    agent.task_state = STATE_HARVESTING
+    agent.task_target = (5, 5)
+    agent.task_timer = 1
+
+    for _ in range(6):
+        assert run_villager_task(agent, world)
+        if agent.task_state == STATE_MOVING_TO_STORAGE:
+            break
+
+    assert agent.food == 3
+    assert world.tile_at(5, 5).food == 2
+    assert agent.task_state == STATE_MOVING_TO_STORAGE
 
 
 def test_night_phase_returns_villager_home():
@@ -245,6 +290,8 @@ def test_failed_build_attempt_returns_withdrawn_storage_wood():
 
 def test_build_progress_persists_on_settlement_site():
     world = make_world()
+    world.colony_storage.deposit_food(20)
+    world.colony_storage.deposit_water(20)
     world.colony_storage.deposit_wood(3)
     agent = Agent("Bryn", 5, 5)
     agent.daily_role = "house_construction"

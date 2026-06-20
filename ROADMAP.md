@@ -271,8 +271,8 @@ Goal: Village Structure. Make the settlement legible as a living village with vi
 
 ### Paths
 - [x] Pre-seeded village paths
-- [ ] Path wear system
-- [ ] Path traffic tracking
+- [x] Path wear system
+- [x] Path traffic tracking
 - [x] Path-preferred pathfinding
 
 ### Households

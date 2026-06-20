@@ -726,6 +726,26 @@ Design boundaries:
 
 Thresholds are intentionally conservative and tunable. This is the first step toward settlement-level decision making, not a logistics system.
 
+## Survival Economy Balance v1
+
+Survival work has priority over expansion when the village is under pressure.
+
+Implemented behavior:
+- critical hunger interrupts current work and seeks food if no carried or stored food is available
+- critical thirst interrupts current work and seeks water if no carried or stored water is available
+- food and water crises redirect routine labor away from construction and wood gathering
+- simultaneous food and water crises split villagers between food and water work instead of sending the whole village to one resource
+- food, water, and wood workers carry small batches before returning to storage
+- food and water actions are intentionally shorter than wood chopping and construction
+
+Design boundaries:
+- this is a prioritization and throughput balance pass, not arbitrary resource generation
+- local resource preferences remain soft, and urgent survival can still use any reachable known resource
+- construction should resume once survival buffers recover
+- long-running construction remains incremental so villagers can be interrupted between progress ticks
+
+Current balance constants favor a small survival buffer: food targets roughly three days of population needs, and water targets roughly two days.
+
 ## Resource Reservation v1
 
 Reservations are soft coordination, not a job system.

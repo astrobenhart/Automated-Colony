@@ -6,6 +6,9 @@ from typing import TYPE_CHECKING
 from src.building_placement import find_build_site_near_settlement
 from src.building_priorities import SHELTER, shelter_wood_cost_for_agent
 from src.config import (
+    AGENT_FOOD_CARRY_CAPACITY,
+    AGENT_WATER_CARRY_CAPACITY,
+    AGENT_WOOD_CARRY_CAPACITY,
     TASK_BUILD_TICKS,
     TASK_CHOP_WOOD_TICKS,
     TASK_COLLECT_WATER_TICKS,
@@ -131,6 +134,8 @@ def _handle_needs(agent: Agent, world: World) -> bool:
         agent.current_action = "Eating"
         agent.current_goal = "Handle hunger"
         return True
+    if agent.hunger >= TASK_HUNGER_INTERRUPT_THRESHOLD:
+        return _seek_food_to_eat(agent, world)
 
     if agent.thirst >= TASK_THIRST_INTERRUPT_THRESHOLD:
         if agent.water > 0 or world.colony_storage.water > 0:
@@ -229,6 +234,29 @@ def _seek_water_to_drink(agent: Agent, world: World) -> bool:
         _interrupt(agent, STATE_DRINKING, TASK_DRINK_TICKS)
         return True
     return False
+
+
+def _seek_food_to_eat(agent: Agent, world: World) -> bool:
+    target = _choose_resource_target(agent, world, FOOD)
+    if target is None:
+        return False
+
+    if agent.task_resume_state is None:
+        agent.task_resume_state = agent.task_state if agent.task_state not in (STATE_IDLE, STATE_HANDLING_NEED) else STATE_IDLE
+
+    agent.task_target = target
+    if (agent.x, agent.y) == target:
+        if agent.task_state != STATE_HARVESTING:
+            agent.task_state = STATE_HARVESTING
+            agent.task_timer = TASK_HARVEST_TICKS
+            agent.current_target = None
+            agent.current_path = []
+        agent.current_action = "Harvesting"
+        agent.current_goal = "Handle hunger"
+        return _collect_resource(agent, world, FOOD, "Harvesting")
+
+    agent.task_state = STATE_MOVING_TO_TARGET
+    return _move_to_target(agent, world, target, "Seeking food", "Handle hunger")
 
 
 def _return_home_or_sleep(agent: Agent, world: World, urgent: bool) -> bool:
@@ -362,11 +390,15 @@ def _collect_resource(agent: Agent, world: World, resource_type: str, action_nam
     if not _resource_available(world, target, resource_type):
         _forget_resource_target(agent, world, target, resource_type)
 
-    agent.task_target = None
-    agent.current_target = None
-    agent.current_path = []
-    agent.task_state = STATE_MOVING_TO_STORAGE
-    agent.task_timer = 0
+    if _should_continue_collecting(agent, world, target, resource_type):
+        agent.task_state = _collect_state_for_resource(resource_type)
+        agent.task_timer = _collect_ticks_for_resource(resource_type)
+    else:
+        agent.task_target = None
+        agent.current_target = None
+        agent.current_path = []
+        agent.task_state = STATE_MOVING_TO_STORAGE
+        agent.task_timer = 0
     agent.reset_stuck()
     return True
 
@@ -566,7 +598,8 @@ def _move_to_target(agent: Agent, world: World, target: tuple[int, int], action:
 
 
 def _interrupt(agent: Agent, state: str, timer: int):
-    agent.task_resume_state = agent.task_state if agent.task_state not in (state, STATE_IDLE) else STATE_IDLE
+    if agent.task_resume_state is None:
+        agent.task_resume_state = agent.task_state if agent.task_state not in (state, STATE_IDLE) else STATE_IDLE
     agent.task_state = state
     agent.task_timer = timer
     agent.current_target = None
@@ -646,6 +679,46 @@ def _carried_amount(agent: Agent, resource_type: str) -> int:
     if resource_type == WOOD:
         return agent.wood
     return 0
+
+
+def _carry_capacity(resource_type: str) -> int:
+    if resource_type == FOOD:
+        return AGENT_FOOD_CARRY_CAPACITY
+    if resource_type == WATER:
+        return AGENT_WATER_CARRY_CAPACITY
+    if resource_type == WOOD:
+        return AGENT_WOOD_CARRY_CAPACITY
+    return 1
+
+
+def _should_continue_collecting(agent: Agent, world: World, target: tuple[int, int], resource_type: str) -> bool:
+    if _carried_amount(agent, resource_type) >= _carry_capacity(resource_type):
+        return False
+    if resource_type == FOOD and agent.hunger >= TASK_HUNGER_INTERRUPT_THRESHOLD:
+        return False
+    if resource_type == WATER and agent.thirst >= TASK_THIRST_INTERRUPT_THRESHOLD:
+        return False
+    return _resource_available(world, target, resource_type)
+
+
+def _collect_state_for_resource(resource_type: str) -> str:
+    if resource_type == FOOD:
+        return STATE_HARVESTING
+    if resource_type == WATER:
+        return STATE_COLLECTING_WATER
+    if resource_type == WOOD:
+        return STATE_CHOPPING_WOOD
+    return STATE_IDLE
+
+
+def _collect_ticks_for_resource(resource_type: str) -> int:
+    if resource_type == FOOD:
+        return TASK_HARVEST_TICKS
+    if resource_type == WATER:
+        return TASK_COLLECT_WATER_TICKS
+    if resource_type == WOOD:
+        return TASK_CHOP_WOOD_TICKS
+    return 1
 
 
 def _goal_for_resource(resource_type: str) -> str:

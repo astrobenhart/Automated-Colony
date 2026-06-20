@@ -663,10 +663,13 @@ def _step_along_path(agent: Agent, world: World, target: tuple[int, int]) -> boo
     nx, ny = next_step
 
     if world.can_move_to(nx, ny):
+        from src.village_paths import record_foot_traffic
+
         agent.current_path.pop(0)
         agent.failed_path_target = None
         agent.x = nx
         agent.y = ny
+        record_foot_traffic(world, nx, ny)
         agent.reset_stuck()
         return True
 
