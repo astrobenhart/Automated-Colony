@@ -12,6 +12,8 @@ STRANGER = "Stranger"
 SEEN = "Seen"
 ACQUAINTED = "Acquainted"
 FAMILIAR = "Familiar"
+KNOWN = "Known"
+FRIEND = "Friend"
 
 SEEN_THRESHOLD = 2
 ACQUAINTED_THRESHOLD = 10
@@ -38,6 +40,16 @@ def familiarity_level(score: int) -> str:
         return ACQUAINTED
     if score >= SEEN_THRESHOLD:
         return SEEN
+    return STRANGER
+
+
+def relationship_category(score: int) -> str:
+    if score >= FAMILIAR_THRESHOLD:
+        return FRIEND
+    if score >= ACQUAINTED_THRESHOLD:
+        return FAMILIAR
+    if score >= SEEN_THRESHOLD:
+        return KNOWN
     return STRANGER
 
 
@@ -102,6 +114,23 @@ def familiarity_summary(agent: Agent, limit: int = 3) -> list[str]:
     entries.sort(key=lambda entry: (-entry.familiarity_score, entry.display_name))
     return [
         f"{entry.display_name} ({familiarity_level(entry.familiarity_score)})"
+        for entry in entries[:limit]
+    ]
+
+
+def relationship_summary(agent: Agent, limit: int = 3) -> list[tuple[str, str]]:
+    memory = getattr(agent, "social_memory", None)
+    if not memory:
+        return []
+
+    entries = [
+        entry
+        for entry in memory.values()
+        if relationship_category(entry.familiarity_score) != STRANGER
+    ]
+    entries.sort(key=lambda entry: (-entry.familiarity_score, entry.display_name))
+    return [
+        (relationship_category(entry.familiarity_score), entry.display_name)
         for entry in entries[:limit]
     ]
 

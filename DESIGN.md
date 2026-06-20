@@ -429,15 +429,35 @@ Current labels:
 - Trusted Neighbor
 - Close Companion
 
-These labels are non-romantic and non-family. They must not imply partners, spouses, parents, children, siblings, households, couples, ancestry, reproduction, marriage, or pair bonding.
+These labels are non-romantic and non-family. They must not imply partners, spouses, parents, children, siblings, couples, ancestry, reproduction, marriage, or pair bonding.
 
-Family, reproduction, ancestry, children, romance, households, and pair-bond systems are deferred until they are explicitly designed as lifecycle and generation systems.
+Family, reproduction, ancestry, children, romance, inheritance, and pair-bond systems are deferred until they are explicitly designed as lifecycle and generation systems. Household foundations now exist as village-unit membership, not family simulation.
 
 Bond labels are shown compactly on villager character cards and are capped to the strongest few known villagers. They use existing familiarity levels rather than raw familiarity scores.
 
 Social Bond Labels do not affect AI, movement, pathfinding, gathering, building, farming, state labels, death/remembrance behavior, influence calculation, settlement membership, survival, social-memory growth, or any other gameplay behavior.
 
-In v0.6 these labels remain non-family and non-romantic. Future household, reproduction, ancestry, children, and parent-link systems should be designed explicitly through the lived-in settlement and generational roadmap rather than inferred from Social Bond Labels.
+In v0.6 these labels remain non-family and non-romantic. Household foundations, reproduction, ancestry, children, and parent-link systems should be designed explicitly through the lived-in settlement and generational roadmap rather than inferred from Social Bond Labels.
+
+## Household Foundations
+
+Households are village-unit membership records used to make the starting settlement legible and to prepare for future generations.
+
+Each household has:
+- household ID
+- household name
+- home ID
+- member IDs
+- founder IDs
+
+Each villager has:
+- household ID
+- home ID
+- parent IDs
+- child IDs
+- generation
+
+Households do not implement marriage, childbirth, inheritance, romance, family trees, dynasties, politics, or household controls. They are community context and future data architecture only.
 
 ## Overlay Framework
 

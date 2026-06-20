@@ -66,10 +66,15 @@ class Agent:
     remembrance_expires_day: int = 0
     home_settlement_id: str | None = None
     home_settlement_name: str | None = None
+    household_id: str | None = None
+    home_id: str | None = None
     home_x: int | None = None
     home_y: int | None = None
     birth_settlement_id: str | None = None
     birth_settlement_name: str | None = None
+    parent_ids: list[str] = field(default_factory=list)
+    child_ids: list[str] = field(default_factory=list)
+    generation: int = 0
     render_from_x: float | None = field(default=None, repr=False)
     render_from_y: float | None = field(default=None, repr=False)
     render_target_x: float | None = field(default=None, repr=False)

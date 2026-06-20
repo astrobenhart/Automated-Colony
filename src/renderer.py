@@ -43,7 +43,15 @@ def is_wood_visible_to_player(world: World, x: int, y: int) -> bool:
 
 
 def _planner_label(name: str) -> str:
-    return name.replace("_", " ").title()
+    labels = {
+        "food_production": "Food",
+        "water_collection": "Water",
+        "wood_gathering": "Wood",
+        "house_construction": "Housing",
+        "exploration": "Exploration",
+        "village_support": "Support",
+    }
+    return labels.get(name, name.replace("_", " ").title())
 
 
 VILLAGER_TILE_OFFSETS = (
@@ -548,8 +556,9 @@ class PygameRenderer:
 
         if settlement.planned_demands:
             priorities = sorted(settlement.planned_demands.items(), key=lambda item: item[1], reverse=True)
-            label = ", ".join(f"{_planner_label(name)} {score}" for name, score in priorities[:3])
-            lines.append(f"Planner: {label}")
+            lines.append("Current Priorities:")
+            for index, (name, _) in enumerate(priorities[:3], start=1):
+                lines.append(f"{index}. {_planner_label(name)}")
         return lines
 
     def colony_reason_lines(self, max_lines: int = 3) -> list[str]:

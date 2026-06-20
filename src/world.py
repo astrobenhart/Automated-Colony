@@ -149,7 +149,9 @@ class World:
         home_settlement_name = self.settlement.name if self.settlement is not None else None
         for i, (x, y) in enumerate(positions):
             appearance_seed = appearance_seed_for(self.seed, i, names[i % len(names)])
-            home_x, home_y = home_assignments[i] if i < len(home_assignments) else (None, None)
+            home = home_assignments[i] if i < len(home_assignments) else None
+            home_x, home_y = (home.x, home.y) if home is not None else (None, None)
+            household = self.household_for_home(home.home_id if home is not None else None)
             rng = random.Random(f"{self.seed}|villager-idle|{i}")
             agent = Agent(
                 names[i % len(names)],
@@ -163,6 +165,8 @@ class World:
                 appearance_type=appearance_type_for_seed(appearance_seed),
                 home_settlement_id=home_settlement_id,
                 home_settlement_name=home_settlement_name,
+                household_id=household.household_id if household is not None else None,
+                home_id=home.home_id if home is not None else None,
                 home_x=home_x,
                 home_y=home_y,
                 birth_settlement_id=home_settlement_id,
@@ -170,6 +174,7 @@ class World:
                 idle_until_tick=rng.randint(0, 3),
                 home_wander_radius=rng.randint(HOME_WANDER_MIN_RADIUS, HOME_WANDER_MAX_RADIUS),
             )
+            self.add_agent_to_household(agent, household)
             assign_daily_role(agent, self)
             self.agents.append(agent)
 
@@ -182,8 +187,14 @@ class World:
             return []
 
         rng = random.Random(f"{self.seed}|{settlement.settlement_id}|home-assignment|{amount}")
-        homes = [(home.x, home.y) for home in settlement.homes]
-        return [rng.choice(homes) for _ in range(amount)]
+        assignments = []
+        homes = list(settlement.homes)
+        rng.shuffle(homes)
+        assignments.extend(homes[:amount])
+        while len(assignments) < amount:
+            assignments.append(rng.choice(settlement.homes))
+        rng.shuffle(assignments)
+        return assignments
 
     def establish_settlement(self):
         self.settlement = found_settlement(self)
@@ -245,6 +256,25 @@ class World:
                     candidates.append((distance, y, x))
 
         return [(x, y) for _, y, x in sorted(candidates)]
+
+    def household_for_home(self, home_id):
+        if self.settlement is None:
+            return None
+        return self.settlement.household_for_home(home_id)
+
+    def household_for_agent(self, agent):
+        if self.settlement is None:
+            return None
+        return self.settlement.household_for(getattr(agent, "household_id", None))
+
+    def add_agent_to_household(self, agent, household):
+        if household is None:
+            return
+        agent_id = agent.agent_id or agent.name
+        if agent_id not in household.member_ids:
+            household.member_ids.append(agent_id)
+        if not household.founder_ids:
+            household.founder_ids.append(agent_id)
 
     def _spawn_candidates_in_radius(self, radius, reserved):
         settlement = self.settlement

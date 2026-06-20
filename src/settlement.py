@@ -28,6 +28,16 @@ SETTLEMENT_NEEDS = (NEED_SHELTER, NEED_WOOD, NEED_MATERIALS)
 class Home:
     x: int
     y: int
+    home_id: str | None = None
+
+
+@dataclass
+class Household:
+    household_id: str
+    household_name: str
+    home_id: str | None = None
+    member_ids: list[str] = field(default_factory=list)
+    founder_ids: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -66,6 +76,7 @@ class Settlement:
     water_pressure: str = LOW
     population: int = 0
     homes: list[Home] = field(default_factory=list)
+    households: list[Household] = field(default_factory=list)
     stockpiles: list[Stockpile] = field(default_factory=list)
     workshops: list[Workshop] = field(default_factory=list)
     farm_plots: list[FarmPlot] = field(default_factory=list)
@@ -97,6 +108,30 @@ class Settlement:
                     return stockpile
             return None
 
+    def household_for(self, household_id: str | None) -> Household | None:
+        if household_id is None:
+            return None
+        for household in self.households:
+            if household.household_id == household_id:
+                return household
+        return None
+
+    def household_for_home(self, home_id: str | None) -> Household | None:
+        if home_id is None:
+            return None
+        for household in self.households:
+            if household.home_id == home_id:
+                return household
+        return None
+
+    def home_for_id(self, home_id: str | None) -> Home | None:
+        if home_id is None:
+            return None
+        for home in self.homes:
+            if home.home_id == home_id:
+                return home
+        return None
+
 
 def found_settlement(world) -> Settlement:
     x, y = central_founding_site(world)
@@ -113,6 +148,7 @@ def found_settlement(world) -> Settlement:
         population=len(world.living_agents()),
     )
     settlement.homes = create_homes(world, settlement)
+    settlement.households = create_households(world, settlement)
     settlement.stockpiles = create_stockpiles(world, settlement)
     settlement.workshops = create_workshops(world, settlement)
     return settlement
@@ -134,12 +170,36 @@ def create_homes(world, settlement: Settlement, rng: random.Random | None = None
         tile.kind = "home"
         tile.food = 0
         tile.wood = 0
-        homes.append(Home(x, y))
+        homes.append(Home(x, y, home_id=f"home-{len(homes)}"))
 
         if len(homes) >= target_count:
             return homes
 
     return homes
+
+
+def create_households(world, settlement: Settlement, rng: random.Random | None = None) -> list[Household]:
+    if rng is None:
+        rng = random.Random(f"{world.seed}|{settlement.settlement_id}|households")
+
+    households = []
+    for index, home in enumerate(settlement.homes):
+        household_id = f"household-{index}"
+        households.append(Household(
+            household_id=household_id,
+            household_name=household_name(rng, index),
+            home_id=home.home_id,
+        ))
+    return households
+
+
+def household_name(rng: random.Random, index: int) -> str:
+    roots = (
+        "Oak", "Rowan", "Willow", "Ash", "Moss", "Stone",
+        "Fern", "Hearth", "Brook", "Dawn", "Ember", "Wren",
+    )
+    suffixes = ("Hearth", "House", "Nook", "Hall", "Cottage", "Roost")
+    return f"{rng.choice(roots)} {rng.choice(suffixes)}"
 
 
 def _home_candidates(world, settlement: Settlement, rng: random.Random) -> list[tuple[int, int]]:

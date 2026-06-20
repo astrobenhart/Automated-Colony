@@ -807,7 +807,8 @@ def test_colony_summary_includes_settlement_priorities_and_planner():
     assert "Water    2 / 6" in summary
     assert "Wood     4 /" in summary
     assert "Housing  3 / 6" in summary
-    assert "Planner: House Construction 80" in summary
+    assert "Current Priorities:" in summary
+    assert "1. Housing" in summary
 
 
 def test_colony_reason_lines_are_capped_and_hidden_when_stable():

@@ -1,8 +1,8 @@
 # Roadmap
 
-## North Star - Slow Autonomous Settlement Screensaver
+## North Star - Slow Autonomous Village Simulation
 
-Automated Colony is moving from an automated survival colony toward a slow autonomous generational settlement simulation.
+Automated Colony is moving from an automated survival colony toward a slow autonomous generational village simulation.
 
 The world should feel lived in.
 
@@ -11,7 +11,7 @@ The player should feel like they are observing a place with homes, paths, jobs, 
 The settlement should not feel like a blank map where every villager starts from scratch. The player is not founding every story. The player is arriving partway through ongoing village life.
 
 Long-term direction:
-- A slow autonomous settlement screensaver where villagers live, work, age, reproduce, die, remember, inherit traits, and gradually change the land around them, while natural forces also reshape the world.
+- A slow autonomous village simulation where generations of villagers live, work, form households, reproduce, inherit traits, reshape the land, and create emergent stories over long periods of time.
 - The project is not a colony manager. The observer watches the world unfold; they do not assign jobs, command households, place every building, or micromanage production.
 - Survival remains important, but the future emphasis is long-running village continuity, daily life, generational memory, and visible accumulated history.
 
@@ -252,26 +252,102 @@ Notes:
 - v0.7 should prepare for reproduction and inheritance without implementing them casually as population counters.
 - No micromanagement UI, job assignment, work orders, household controls, romance drama, politics, or formal leaders are added.
 
-## v0.8 - Generations and Household Life
+## v0.7.1 - Living Village
 
-Goal: Turn households and lifecycle labels into long-term population continuity, family memory, and generational history.
+Goal: Village Structure. Make the settlement legible as a living village with visible priorities, working housing construction, paths, households, relationships, and readable daily rhythms.
 
-Features:
-- [ ] Reproduction tied to households, identity, settlement capacity, and long-term continuity
-- [ ] Children
-- [ ] Parent links
-- [ ] Trait inheritance with variation
-- [ ] Aging from child to adult to elder
-- [ ] Birth events in the Chronicle
-- [ ] Death and remembrance across generations
-- [ ] Household continuity after births, deaths, and aging
-- [ ] Family history data without requiring a full family-tree UI
+### Settlement Visibility
+- [x] Settlement priorities panel
+- [x] Food current/target display
+- [x] Water current/target display
+- [x] Wood current/target display
+- [x] Housing current/target display
+
+### Housing & Construction
+- [x] Housing demand generation
+- [x] Builder assignment
+- [x] Construction site creation
+- [x] House completion increases capacity
+
+### Paths
+- [ ] Pre-seeded village paths
+- [ ] Path wear system
+- [ ] Path traffic tracking
+- [ ] Path-preferred pathfinding
+
+### Households
+- [x] Household data model
+- [x] Household assignment
+- [x] Household display in villager UI
+- [x] Household member display
+
+### Relationships
+- [x] Stranger relationship state
+- [x] Known relationship state
+- [x] Familiar relationship state
+- [x] Friend relationship state
+- [x] Relationship display in villager UI
+
+### Daily Rhythms
+- [x] Morning phase
+- [x] Day phase
+- [x] Evening phase
+- [x] Night phase
+- [x] Return-home behavior
+
+### Generational Foundations
+- [x] parent_ids support
+- [x] child_ids support
+- [x] generation support
+- [x] household_id support
+- [x] life stage architecture
 
 Notes:
+- v0.7.1 is the focused bridge from settlement simulation to village simulation.
+- Paths are the main remaining structural gap for Living Village.
+- Households remain village units at this milestone, not marriage, romance, reproduction, inheritance, family trees, or legal family membership.
+- Relationship states describe familiarity only and do not drive romance, reproduction, labor assignment, politics, or inheritance.
+- Reproduction, inheritance, children, family continuity, and generational history remain upcoming priorities for v0.8.
+
+## v0.8 - Generational Village
+
+Goal: Generational Systems. Add the smallest complete loop for children, reproduction, inherited traits, family tracking, and generational history.
+
+### Life Stages
+- [ ] Infant stage
+- [ ] Child stage
+- [ ] Adult stage
+- [ ] Elder stage
+- [ ] Age progression
+
+### Reproduction
+- [ ] Reproduction eligibility rules
+- [ ] Household-based reproduction
+- [ ] Child creation
+- [ ] Population balancing
+
+### Trait Inheritance
+- [ ] Parent trait selection
+- [ ] Trait inheritance system
+- [ ] Trait mutation/variation
+- [ ] Inherited personality traits
+
+### Family Tracking
+- [ ] Parent relationships
+- [ ] Child relationships
+- [ ] Family display in villager UI
+- [ ] Generation tracking
+
+### History
+- [ ] Birth events
+- [ ] Family history events
+- [ ] Generational history records
+- [ ] Household history records
+
+Notes:
+- v0.8 should stay intentionally small: prove the first generational loop before expanding it.
 - Reproduction should not be a simple population counter.
-- Children should inherit traits from parents, with room for variation.
-- A future inheritance model may let a child inherit one trait from one parent, blend tendencies from both parents, or rarely receive a new/random trait.
-- Traits should remain simple and display-first before they become deep behavior modifiers.
+- Children should inherit traits from parents with room for variation.
 - Old-age death should remain tied to renewal systems so villages do not collapse automatically.
 - Avoid pregnancy mechanics, inheritance law, romance drama, detailed domestic economy, and full family-tree UI unless a later design explicitly needs them.
 

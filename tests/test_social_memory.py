@@ -2,12 +2,16 @@ from src.agent import Agent
 from src.social_memory import (
     ACQUAINTED,
     FAMILIAR,
+    FRIEND,
+    KNOWN,
     SEEN,
     STRANGER,
     SocialMemoryEntry,
     familiarity_level,
     familiarity_summary,
     record_observation,
+    relationship_category,
+    relationship_summary,
     update_social_memory,
 )
 from src.tile import Tile
@@ -79,6 +83,13 @@ def test_familiarity_thresholds_are_neutral_and_slow():
     assert familiarity_level(30) == FAMILIAR
 
 
+def test_relationship_categories_use_community_language():
+    assert relationship_category(0) == STRANGER
+    assert relationship_category(2) == KNOWN
+    assert relationship_category(10) == FAMILIAR
+    assert relationship_category(30) == FRIEND
+
+
 def test_familiarity_summary_shows_top_three_non_strangers():
     ari = Agent("Ari", 1, 1)
     ari.social_memory = {
@@ -93,6 +104,22 @@ def test_familiarity_summary_shows_top_three_non_strangers():
         "Bryn (Familiar)",
         "Fenn (Acquainted)",
         "Cato (Acquainted)",
+    ]
+
+
+def test_relationship_summary_shows_top_relationship_categories():
+    ari = Agent("Ari", 1, 1)
+    ari.social_memory = {
+        "bryn": SocialMemoryEntry("bryn", "Bryn", familiarity_score=30, last_seen_day=30),
+        "cato": SocialMemoryEntry("cato", "Cato", familiarity_score=10, last_seen_day=30),
+        "dara": SocialMemoryEntry("dara", "Dara", familiarity_score=2, last_seen_day=30),
+        "eli": SocialMemoryEntry("eli", "Eli", familiarity_score=1, last_seen_day=30),
+    }
+
+    assert relationship_summary(ari) == [
+        ("Friend", "Bryn"),
+        ("Familiar", "Cato"),
+        ("Known", "Dara"),
     ]
 
 
