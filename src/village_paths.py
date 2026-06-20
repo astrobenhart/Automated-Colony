@@ -163,6 +163,11 @@ def _path_endpoints(world: World, settlement: Settlement, hub: tuple[int, int]) 
         if endpoint is not None:
             endpoints.append(endpoint)
 
+    for workplace in settlement.workplaces:
+        endpoint = _access_tile(world, workplace.x, workplace.y, hub, blocked)
+        if endpoint is not None:
+            endpoints.append(endpoint)
+
     endpoints.extend(_water_access_tiles(world, settlement, hub, blocked, limit=2))
     return _unique_positions(endpoints)
 
@@ -222,6 +227,7 @@ def _reserved_village_positions(settlement: Settlement) -> set[tuple[int, int]]:
     positions = {(home.x, home.y) for home in settlement.homes}
     positions.update((stockpile.x, stockpile.y) for stockpile in settlement.stockpiles)
     positions.update((workshop.x, workshop.y) for workshop in settlement.workshops)
+    positions.update(tile for workplace in settlement.workplaces for tile in workplace.tiles)
     return positions
 
 

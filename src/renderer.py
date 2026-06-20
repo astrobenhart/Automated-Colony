@@ -35,6 +35,7 @@ from src.profiler import profiler
 from src.ui_overlays import OverlayManager
 from src.village_paths import is_path_like, path_border_edges
 from src.villager_inspection import compact_villager_rows
+from src.workplace import FARM, STORAGE, VILLAGE_CENTER, WORKSHOP
 from src.world import World
 
 def is_food_visible_to_player(world: World, x: int, y: int) -> bool:
@@ -273,6 +274,7 @@ class PygameRenderer:
             len(settlement.stockpiles) if settlement is not None else 0,
             len(settlement.workshops) if settlement is not None else 0,
             len(settlement.homes) if settlement is not None else 0,
+            len(settlement.workplaces) if settlement is not None else 0,
         )
 
     def draw_cached_map(self, start_x: int, start_y: int, end_x: int, end_y: int):
@@ -304,6 +306,10 @@ class PygameRenderer:
                     self.draw_path_border(screen_x, screen_y, x, y)
                 if DEBUG_DRAW_GRID:
                     pygame.draw.rect(self._draw_target, COLORS["grid"], rect, 1)
+
+                workplace = self.world.workplace_at(x, y)
+                if workplace is not None:
+                    self.draw_workplace_placeholder(workplace, screen_x, screen_y, x, y)
 
                 farm = self.world.farm_at(x, y)
                 if farm is not None:
@@ -451,6 +457,36 @@ class PygameRenderer:
         if edges["west"]:
             pygame.draw.line(self._draw_target, color, rect.topleft, rect.bottomleft, 1)
         if edges["east"]:
+            pygame.draw.line(self._draw_target, color, rect.topright, rect.bottomright, 1)
+
+    def draw_workplace_placeholder(self, workplace, screen_x: int, screen_y: int, tile_x: int, tile_y: int):
+        rect = pygame.Rect(
+            screen_x * TILE_SIZE,
+            screen_y * TILE_SIZE,
+            TILE_SIZE,
+            TILE_SIZE,
+        )
+        if workplace.workplace_type == FARM:
+            color = COLORS["workplace_farm"]
+            self.draw_workplace_border(workplace, rect, tile_x, tile_y, color)
+            if (tile_x, tile_y) == workplace.position:
+                self.draw_centered_symbol(":", screen_x, screen_y, color)
+        elif workplace.workplace_type == STORAGE:
+            self.draw_workplace_border(workplace, rect, tile_x, tile_y, COLORS["workplace_storage"])
+        elif workplace.workplace_type == WORKSHOP:
+            self.draw_workplace_border(workplace, rect, tile_x, tile_y, COLORS["workplace_workshop"])
+        elif workplace.workplace_type == VILLAGE_CENTER:
+            pygame.draw.rect(self._draw_target, COLORS["workplace_center"], rect.inflate(-4, -4), 1)
+
+    def draw_workplace_border(self, workplace, rect, tile_x: int, tile_y: int, color: tuple[int, int, int]):
+        tiles = set(workplace.tiles)
+        if (tile_x, tile_y - 1) not in tiles:
+            pygame.draw.line(self._draw_target, color, rect.topleft, rect.topright, 1)
+        if (tile_x, tile_y + 1) not in tiles:
+            pygame.draw.line(self._draw_target, color, rect.bottomleft, rect.bottomright, 1)
+        if (tile_x - 1, tile_y) not in tiles:
+            pygame.draw.line(self._draw_target, color, rect.topleft, rect.bottomleft, 1)
+        if (tile_x + 1, tile_y) not in tiles:
             pygame.draw.line(self._draw_target, color, rect.topright, rect.bottomright, 1)
 
     def draw_panel(self, paused: bool, sim_speed: int):
@@ -711,6 +747,13 @@ class PygameRenderer:
                     ("Makes", workshop.production),
                     ("Progress", workshop.progress),
                     ("Produced", workshop.total_items_produced),
+                ])
+            workplace = self.world.workplace_at(tile_x, tile_y)
+            if workplace is not None:
+                details.extend([
+                    ("Workplace", workplace.workplace_type),
+                    ("Capacity", workplace.capacity),
+                    ("Workers", len(workplace.assigned_workers)),
                 ])
             farm = self.world.farm_at(tile_x, tile_y)
             if farm is not None:

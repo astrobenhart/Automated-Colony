@@ -67,6 +67,7 @@ class Agent:
     home_settlement_id: str | None = None
     home_settlement_name: str | None = None
     household_id: str | None = None
+    workplace_id: str | None = None
     home_id: str | None = None
     home_x: int | None = None
     home_y: int | None = None

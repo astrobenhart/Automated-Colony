@@ -222,7 +222,7 @@ Goal: Make the default experience feel like arriving at an existing village alre
 Features:
 - [x] Pre-seeded village start Phase 1: central village location, visible homes, and home-distributed villagers
 - [x] Homes as village anchors
-- [ ] Workplace placeholders for farms, storage, workshops, and future professions
+- [x] Workplace placeholders for farms, storage, workshops, and future professions
 - [ ] Daily schedule foundation
 - [ ] Household foundations without full reproduction yet
 - [ ] Pre-generated village paths or simple worn-path tiles

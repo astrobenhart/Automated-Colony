@@ -752,6 +752,22 @@ Settlement planner balance correction:
 - stable builders fall back to support rather than creating a permanent wood surplus
 - resource rows show a simple status label such as Low, Stable, Stocked, Needed, or Surplus so storage targets read as health signals rather than raw pass/fail counters
 
+## Workplace Placeholders v1
+
+Workplaces provide a shared data and visual foundation for future professions without adding new production chains.
+
+Implemented behavior:
+- settlements register workplace placeholders for storage, farm area, workshop, and village center
+- each workplace has an id, type, position, capacity, footprint tiles, and assigned worker ids
+- starting villagers may reference a workplace, but workplace assignment does not drive profession logic yet
+- farm workplaces are visual placeholders and do not create productive farm plots at startup
+- seeded village paths connect homes and core workplace areas
+
+Design boundaries:
+- no new farming, crafting, blacksmithing, crop growth, or profession output is introduced
+- existing stockpiles, workshops, and future farms remain the production surfaces until profession systems are designed
+- workplace data exists so future jobs can claim stable locations without inventing another registry
+
 ## Resource Reservation v1
 
 Reservations are soft coordination, not a job system.

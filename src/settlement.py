@@ -11,6 +11,7 @@ from src.profiler import profiler
 from src.reservations import FOOD as FOOD_RESERVATION, WOOD as WOOD_RESERVATION
 from src.roles import BUILDER, FORAGER, GENERALIST, SCOUT
 from src.village_paths import seed_village_paths
+from src.workplace import Workplace, create_workplaces
 from src.workshop import Workshop, create_workshops, is_workshop_tile
 
 FOOD = "food"
@@ -81,6 +82,7 @@ class Settlement:
     stockpiles: list[Stockpile] = field(default_factory=list)
     workshops: list[Workshop] = field(default_factory=list)
     farm_plots: list[FarmPlot] = field(default_factory=list)
+    workplaces: list[Workplace] = field(default_factory=list)
     activity_heatmap: dict[tuple[int, int], int] = field(default_factory=dict)
     local_food: set[tuple[int, int]] = field(default_factory=set)
     local_wood: set[tuple[int, int]] = field(default_factory=set)
@@ -133,6 +135,17 @@ class Settlement:
                 return home
         return None
 
+    def workplace_for(self, workplace_id: str | None) -> Workplace | None:
+        if workplace_id is None:
+            return None
+        for workplace in self.workplaces:
+            if workplace.workplace_id == workplace_id:
+                return workplace
+        return None
+
+    def workplaces_for_type(self, workplace_type: str) -> list[Workplace]:
+        return [workplace for workplace in self.workplaces if workplace.workplace_type == workplace_type]
+
 
 def found_settlement(world) -> Settlement:
     x, y = central_founding_site(world)
@@ -152,6 +165,7 @@ def found_settlement(world) -> Settlement:
     settlement.households = create_households(world, settlement)
     settlement.stockpiles = create_stockpiles(world, settlement)
     settlement.workshops = create_workshops(world, settlement)
+    settlement.workplaces = create_workplaces(world, settlement)
     seed_village_paths(world, settlement)
     return settlement
 

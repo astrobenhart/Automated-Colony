@@ -177,6 +177,7 @@ class World:
             )
             self.add_agent_to_household(agent, household)
             assign_daily_role(agent, self)
+            self.assign_agent_workplace(agent)
             self.agents.append(agent)
 
         self.update_settlement_population()
@@ -276,6 +277,39 @@ class World:
             household.member_ids.append(agent_id)
         if not household.founder_ids:
             household.founder_ids.append(agent_id)
+
+    def assign_agent_workplace(self, agent):
+        workplace = self.preferred_workplace_for_agent(agent)
+        if workplace is None:
+            return
+        agent_id = agent.agent_id or agent.name
+        if workplace.assign_worker(agent_id):
+            agent.workplace_id = workplace.workplace_id
+
+    def preferred_workplace_for_agent(self, agent):
+        if self.settlement is None:
+            return None
+        from src.roles import BUILDER, FORAGER, SCOUT
+        from src.workplace import FARM, STORAGE, VILLAGE_CENTER, WORKSHOP
+
+        if agent.role == FORAGER:
+            types = (FARM, STORAGE, VILLAGE_CENTER)
+        elif agent.role == BUILDER:
+            types = (WORKSHOP, STORAGE, VILLAGE_CENTER)
+        elif agent.role == SCOUT:
+            types = (VILLAGE_CENTER,)
+        else:
+            types = (STORAGE, FARM, VILLAGE_CENTER)
+
+        for workplace_type in types:
+            candidates = [
+                workplace
+                for workplace in self.settlement.workplaces_for_type(workplace_type)
+                if len(workplace.assigned_workers) < workplace.capacity
+            ]
+            if candidates:
+                return min(candidates, key=lambda workplace: (len(workplace.assigned_workers), workplace.y, workplace.x))
+        return None
 
     def _spawn_candidates_in_radius(self, radius, reserved):
         settlement = self.settlement
@@ -523,6 +557,14 @@ class World:
         for workshop in self.settlement.workshops:
             if workshop.x == x and workshop.y == y:
                 return workshop
+        return None
+
+    def workplace_at(self, x, y):
+        if self.settlement is None:
+            return None
+        for workplace in self.settlement.workplaces:
+            if (x, y) in workplace.tiles:
+                return workplace
         return None
 
     def home_at(self, x, y):
