@@ -10,6 +10,7 @@ from src.farming import FarmPlot
 from src.profiler import profiler
 from src.reservations import FOOD as FOOD_RESERVATION, WOOD as WOOD_RESERVATION
 from src.roles import BUILDER, FORAGER, GENERALIST, SCOUT
+from src.village_paths import seed_village_paths
 from src.workshop import Workshop, create_workshops, is_workshop_tile
 
 FOOD = "food"
@@ -151,6 +152,7 @@ def found_settlement(world) -> Settlement:
     settlement.households = create_households(world, settlement)
     settlement.stockpiles = create_stockpiles(world, settlement)
     settlement.workshops = create_workshops(world, settlement)
+    seed_village_paths(world, settlement)
     return settlement
 
 

@@ -270,10 +270,10 @@ Goal: Village Structure. Make the settlement legible as a living village with vi
 - [x] House completion increases capacity
 
 ### Paths
-- [ ] Pre-seeded village paths
+- [x] Pre-seeded village paths
 - [ ] Path wear system
 - [ ] Path traffic tracking
-- [ ] Path-preferred pathfinding
+- [x] Path-preferred pathfinding
 
 ### Households
 - [x] Household data model

@@ -31,6 +31,7 @@ from src.seasons import seasonal_tile_color
 from src.agent import Agent
 from src.profiler import profiler
 from src.ui_overlays import OverlayManager
+from src.village_paths import PATH, path_border_edges
 from src.villager_inspection import compact_villager_rows
 from src.world import World
 
@@ -297,6 +298,8 @@ class PygameRenderer:
                 )
 
                 pygame.draw.rect(self._draw_target, self.tile_color(tile.kind), rect)
+                if tile.kind == PATH:
+                    self.draw_path_border(screen_x, screen_y, x, y)
                 if DEBUG_DRAW_GRID:
                     pygame.draw.rect(self._draw_target, COLORS["grid"], rect, 1)
 
@@ -429,6 +432,24 @@ class PygameRenderer:
             pygame.draw.line(self._draw_target, color, rect.topleft, rect.bottomleft, 2)
         if edges["east"]:
             pygame.draw.line(self._draw_target, color, rect.topright, rect.bottomright, 2)
+
+    def draw_path_border(self, screen_x: int, screen_y: int, tile_x: int, tile_y: int):
+        rect = pygame.Rect(
+            screen_x * TILE_SIZE,
+            screen_y * TILE_SIZE,
+            TILE_SIZE,
+            TILE_SIZE,
+        )
+        color = COLORS["path_border"]
+        edges = path_border_edges(self.world, tile_x, tile_y)
+        if edges["north"]:
+            pygame.draw.line(self._draw_target, color, rect.topleft, rect.topright, 1)
+        if edges["south"]:
+            pygame.draw.line(self._draw_target, color, rect.bottomleft, rect.bottomright, 1)
+        if edges["west"]:
+            pygame.draw.line(self._draw_target, color, rect.topleft, rect.bottomleft, 1)
+        if edges["east"]:
+            pygame.draw.line(self._draw_target, color, rect.topright, rect.bottomright, 1)
 
     def draw_panel(self, paused: bool, sim_speed: int):
         panel_x = VIEWPORT_WIDTH * TILE_SIZE
