@@ -746,6 +746,12 @@ Design boundaries:
 
 Current balance constants favor a small survival buffer: food targets roughly three days of population needs, and water targets roughly two days.
 
+Settlement planner balance correction:
+- wood demand exists only when reserves are below target or active construction needs wood
+- builders without construction work support meaningful food or water shortages before gathering wood
+- stable builders fall back to support rather than creating a permanent wood surplus
+- resource rows show a simple status label such as Low, Stable, Stocked, Needed, or Surplus so storage targets read as health signals rather than raw pass/fail counters
+
 ## Resource Reservation v1
 
 Reservations are soft coordination, not a job system.

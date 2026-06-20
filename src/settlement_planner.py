@@ -19,6 +19,10 @@ WORK_EXPLORATION = "exploration"
 WORK_SUPPORT = "village_support"
 CRISIS_FOOD = "Food Crisis"
 CRISIS_WATER = "Water Crisis"
+BASE_FOOD_DEMAND = 20
+BASE_WATER_DEMAND = 10
+BASE_EXPLORATION_DEMAND = 6
+BASE_SUPPORT_DEMAND = 1
 
 WORK_ASSIGNMENTS = (
     WORK_FOOD,
@@ -65,21 +69,23 @@ def settlement_work_demands(world) -> dict[str, int]:
     water_target = population * SETTLEMENT_WATER_TARGET_DAYS
     food_shortage = max(0, food_target - world.colony_storage.food)
     water_shortage = max(0, water_target - world.colony_storage.water)
-    wood_shortage = max(0, DESIRED_WOOD_RESERVE - world.colony_storage.wood)
+    wood_reserve_shortage = max(0, DESIRED_WOOD_RESERVE - world.colony_storage.wood)
 
     demands = {
-        WORK_FOOD: 20 + food_shortage * 2 + max(0, 6 - local_food) * 5,
-        WORK_WATER: 10 + water_shortage * 2 + max(0, 2 - local_water) * 14,
-        WORK_WOOD: 8 + wood_shortage + max(0, 6 - local_wood) * 3,
+        WORK_FOOD: BASE_FOOD_DEMAND + food_shortage * 2 + max(0, 6 - local_food) * 5,
+        WORK_WATER: BASE_WATER_DEMAND + water_shortage * 2 + max(0, 2 - local_water) * 14,
+        WORK_WOOD: wood_reserve_shortage * 4,
         WORK_CONSTRUCTION: 0,
-        WORK_EXPLORATION: 6,
-        WORK_SUPPORT: 1,
+        WORK_EXPLORATION: BASE_EXPLORATION_DEMAND,
+        WORK_SUPPORT: BASE_SUPPORT_DEMAND,
     }
 
     priority = world.building_priority()
     if priority is not None:
         demands[WORK_CONSTRUCTION] = 80 + priority.missing_count * 20
-        demands[WORK_WOOD] += priority.wood_needed * 8
+        available_wood = world.colony_storage.wood + world.colony_storage.building_materials
+        construction_wood_shortage = max(0, priority.wood_needed - available_wood)
+        demands[WORK_WOOD] += construction_wood_shortage * 8
 
     crisis = settlement_crisis_state(world)
     if crisis == CRISIS_FOOD:
@@ -112,7 +118,7 @@ def assignment_for_agent(agent, world, demands: dict[str, int], role_counts: Cou
             return WORK_CONSTRUCTION
         if demands.get(WORK_WOOD, 0) > 0:
             return WORK_WOOD
-        return WORK_SUPPORT
+        return _builder_fallback_assignment(demands)
 
     if agent.role == FORAGER:
         return _balanced_choice(
@@ -122,8 +128,10 @@ def assignment_for_agent(agent, world, demands: dict[str, int], role_counts: Cou
         )
 
     if agent.role == GENERALIST:
-        options = [WORK_FOOD, WORK_WATER, WORK_WOOD]
-        if _construction_materials_available(world, agent):
+        options = [WORK_FOOD, WORK_WATER]
+        if demands.get(WORK_WOOD, 0) > 0:
+            options.append(WORK_WOOD)
+        if demands.get(WORK_CONSTRUCTION, 0) > 0 and _construction_materials_available(world, agent):
             options.append(WORK_CONSTRUCTION)
         return _balanced_choice(tuple(options), demands, role_counts)
 
@@ -199,6 +207,22 @@ def _stable_agent_index(agent) -> int:
 
 def _balanced_choice(options: tuple[str, ...], demands: dict[str, int], role_counts: Counter[str]) -> str:
     return max(options, key=lambda work: (demands.get(work, 0) - role_counts[work] * 12, demands.get(work, 0)))
+
+
+def _builder_fallback_assignment(demands: dict[str, int]) -> str:
+    options = []
+    if demands.get(WORK_FOOD, 0) > BASE_FOOD_DEMAND:
+        options.append(WORK_FOOD)
+    if demands.get(WORK_WATER, 0) > BASE_WATER_DEMAND:
+        options.append(WORK_WATER)
+    if demands.get(WORK_CONSTRUCTION, 0) > 0:
+        options.append(WORK_CONSTRUCTION)
+    if demands.get(WORK_WOOD, 0) > 0:
+        options.append(WORK_WOOD)
+
+    if not options:
+        return WORK_SUPPORT
+    return max(options, key=lambda work: demands.get(work, 0))
 
 
 def _construction_materials_available(world, agent=None) -> bool:

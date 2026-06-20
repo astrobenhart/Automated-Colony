@@ -3,6 +3,7 @@ from src.roles import BUILDER, FORAGER, GENERALIST, SCOUT
 from src.settlement import Settlement
 from src.settlement_planner import (
     CRISIS_FOOD,
+    WORK_SUPPORT,
     WORK_CONSTRUCTION,
     WORK_EXPLORATION,
     WORK_FOOD,
@@ -106,3 +107,38 @@ def test_water_demand_rises_when_water_storage_and_access_are_low():
     demands = settlement_work_demands(world)
 
     assert demands[WORK_WATER] > demands[WORK_WOOD]
+
+
+def test_wood_demand_is_zero_when_reserve_and_construction_are_satisfied():
+    world = make_world()
+    world.agents.append(Agent("Bryn", 5, 6, role=BUILDER, agent_id="bryn"))
+    world.agents.append(Agent("Gala", 6, 6, role=GENERALIST, agent_id="gala"))
+    world.tile_at(1, 1).kind = "shelter"
+    world.colony_storage.deposit_food(99)
+    world.colony_storage.deposit_water(99)
+    world.colony_storage.deposit_wood(20)
+    world.settlement.local_food = {(x, 2) for x in range(6)}
+    world.settlement.local_water = {(1, 3), (2, 3)}
+    world.settlement.local_wood = {(x, 4) for x in range(6)}
+
+    demands = settlement_work_demands(world)
+    assignments = plan_settlement_work(world)
+
+    assert demands[WORK_WOOD] == 0
+    assert assignments["bryn"] == WORK_SUPPORT
+    assert assignments["gala"] != WORK_WOOD
+
+
+def test_builder_fallback_supports_food_shortage_before_wood_surplus():
+    world = make_world()
+    world.agents.append(Agent("Bryn", 5, 6, role=BUILDER, agent_id="bryn"))
+    world.tile_at(1, 1).kind = "shelter"
+    world.colony_storage.deposit_water(99)
+    world.colony_storage.deposit_wood(99)
+    world.settlement.local_food = {(5, 5)}
+    world.settlement.local_water = {(1, 3), (2, 3)}
+    world.settlement.local_wood = {(x, 4) for x in range(6)}
+
+    assignments = plan_settlement_work(world)
+
+    assert assignments["bryn"] == WORK_FOOD

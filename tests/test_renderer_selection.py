@@ -803,12 +803,32 @@ def test_colony_summary_includes_settlement_priorities_and_planner():
     summary = "\n".join(renderer.colony_summary_lines())
 
     assert "Priorities:" in summary
-    assert "Food     3 / 18" in summary
-    assert "Water    2 / 12" in summary
+    assert "Food     3 / 18 Low" in summary
+    assert "Water    2 / 12 Low" in summary
     assert "Wood     4 /" in summary
     assert "Housing  3 / 6" in summary
     assert "Current Priorities:" in summary
     assert "1. Housing" in summary
+
+
+def test_colony_summary_resource_status_reports_stable_and_surplus():
+    world = make_world(width=8, height=8)
+    world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")
+    world.agents = [Agent(f"A{i}", i, 1) for i in range(4)]
+    world.tile_at(0, 2).kind = "home"
+    world.tile_at(1, 2).kind = "home"
+    world.colony_storage.deposit_food(4)
+    world.colony_storage.deposit_water(4)
+    world.colony_storage.deposit_wood(20)
+    world.settlement.local_food = {(1, 1), (2, 1), (3, 1), (4, 1)}
+    world.settlement.local_water = {(1, 3), (2, 3), (3, 3), (4, 3)}
+    renderer = make_renderer(world)
+
+    summary = "\n".join(renderer.colony_summary_lines())
+
+    assert "Food     4 / 12 Stable" in summary
+    assert "Water    4 / 8 Stable" in summary
+    assert "Wood     20 / 8 Surplus" in summary
 
 
 def test_colony_reason_lines_are_capped_and_hidden_when_stable():

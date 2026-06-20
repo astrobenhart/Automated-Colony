@@ -568,12 +568,14 @@ class PygameRenderer:
         housing_current = housing_structures * SHELTER_CAPACITY
         housing_target = self.world.needed_shelters() * SHELTER_CAPACITY
         wood_target = DESIRED_WOOD_RESERVE + (priority.wood_needed if priority is not None else 0)
+        food_target = population * SETTLEMENT_FOOD_TARGET_DAYS
+        water_target = population * SETTLEMENT_WATER_TARGET_DAYS
 
         lines = [
             "Priorities:",
-            f"Food     {self.world.colony_storage.food} / {population * SETTLEMENT_FOOD_TARGET_DAYS}",
-            f"Water    {self.world.colony_storage.water} / {population * SETTLEMENT_WATER_TARGET_DAYS}",
-            f"Wood     {self.world.colony_storage.wood} / {wood_target}",
+            f"Food     {self.world.colony_storage.food} / {food_target} {self.food_status(food_target)}",
+            f"Water    {self.world.colony_storage.water} / {water_target} {self.water_status(water_target)}",
+            f"Wood     {self.world.colony_storage.wood} / {wood_target} {self.wood_status(wood_target)}",
             f"Housing  {housing_current} / {housing_target}",
         ]
 
@@ -583,6 +585,43 @@ class PygameRenderer:
             for index, (name, _) in enumerate(priorities[:3], start=1):
                 lines.append(f"{index}. {_planner_label(name)}")
         return lines
+
+    def food_status(self, target: int) -> str:
+        population = len(self.world.living_agents())
+        carried = sum(agent.food for agent in self.world.living_agents())
+        local_food = len(self.world.settlement.local_food) if self.world.settlement is not None else 0
+        effective = self.world.colony_storage.food + carried + min(local_food, population)
+        if any(agent.hunger >= 70 for agent in self.world.living_agents()) and effective <= population:
+            return "Crisis"
+        if self.world.colony_storage.food >= target:
+            return "Stocked"
+        if effective >= max(1, population):
+            return "Stable"
+        return "Low"
+
+    def water_status(self, target: int) -> str:
+        population = len(self.world.living_agents())
+        carried = sum(agent.water for agent in self.world.living_agents())
+        local_water = len(self.world.settlement.local_water) if self.world.settlement is not None else 0
+        effective = self.world.colony_storage.water + carried + min(local_water, population)
+        if any(agent.thirst >= 70 for agent in self.world.living_agents()) and effective <= population:
+            return "Crisis"
+        if self.world.colony_storage.water >= target:
+            return "Stocked"
+        if effective >= max(1, population):
+            return "Stable"
+        return "Low"
+
+    def wood_status(self, target: int) -> str:
+        priority = self.world.building_priority()
+        stored = self.world.colony_storage.wood
+        if target > 0 and stored >= target * 2 and priority is None:
+            return "Surplus"
+        if stored >= target:
+            return "Stable"
+        if priority is not None:
+            return "Needed"
+        return "Low"
 
     def colony_reason_lines(self, max_lines: int = 3) -> list[str]:
         settlement = self.world.settlement
