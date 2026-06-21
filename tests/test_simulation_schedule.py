@@ -28,6 +28,12 @@ def test_settlement_metrics_run_on_daily_schedule_not_every_tick():
     assert calls["metrics"] == 1
 
 
+def test_day_length_config_uses_100_ticks_with_clean_hourly_division():
+    assert TICKS_PER_DAY == 100
+    assert TICKS_PER_HOUR == 10
+    assert TICKS_PER_DAY % TICKS_PER_HOUR == 0
+
+
 def test_wildlife_updates_hourly_and_on_daily_tick(monkeypatch):
     world = make_world()
     calls = {"wildlife": 0}

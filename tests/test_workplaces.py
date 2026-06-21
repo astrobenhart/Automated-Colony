@@ -1,4 +1,5 @@
 from src.workplace import FARM, STORAGE, VILLAGE_CENTER, WORKSHOP, WORKPLACE_TYPES
+from src.farming import FarmPlot, register_farm_workplace
 from src.village_paths import is_path_like
 from src.world import create_world
 
@@ -63,3 +64,15 @@ def test_seeded_paths_connect_to_workplace_areas():
             for tx, ty in workplace.tiles
             for px, py in path_tiles
         )
+
+
+def test_created_crop_fields_extend_farm_workplace_tiles():
+    world = create_world(seed=146, agent_count=0)
+    farm_workplace = world.settlement.workplaces_for_type(FARM)[0]
+    original_tiles = set(farm_workplace.tiles)
+    farm = FarmPlot(3, 3)
+
+    register_farm_workplace(world, farm)
+
+    assert set(farm.tiles) <= set(farm_workplace.tiles)
+    assert set(farm_workplace.tiles) >= original_tiles

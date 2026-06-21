@@ -851,17 +851,24 @@ Implemented behavior:
 - farm placement uses bounded local scoring near the settlement hub
 - placement avoids water, mountains, stockpiles, workshops, shelters, agents, existing farms, and the settlement center
 - placement scoring uses cheap terrain, distance, openness, water proximity, and special-tile proximity checks without pathfinding
-- farms grow once per day, with Spring/Summer/Autumn growth and much slower Winter growth
+- farms use crop states: Unprepared, Planted, Growing, Ready For Harvest, and Dormant
+- Spring is the planting season and consumes stored seed reserves
+- Summer advances planted crops through growth
+- Autumn turns crop growth into seasonal harvest batches
+- Winter leaves empty fields dormant
 - drought reduces farm growth and heavy rain improves it through the existing environmental event model
-- ready farms can be harvested through the existing food goal
+- ready farms can be harvested through farm work or urgent food behavior
+- harvests produce stored seed reserves as well as food, and villagers cannot eat seed reserves
+- the settlement planner can assign villagers to `farming` work when fields need planting or harvest
+- farm workplaces track assigned workers and active field tiles as the basis for future farmer specialization
 - Resource Reservation v1 can reserve a farm plot while a villager is moving to harvest it
 - critical hunger can still override farm reservations when no alternative exists
-- farm plots render as terrain-like interiors with a brown outline around the whole 2x2 plot
+- farm plots render as terrain-like interiors with a brown outline around the whole 2x2 plot and simple symbols for crop state
 
 Design boundaries:
 - no player farm placement
 - no farming setup UI
-- no crop selection, seeds, irrigation, or soil simulation
+- no crop selection, irrigation, soil simulation, preservation, or profession UI
 - no roads or zoning
 - no full hauling or job board
 - no farms at settlement founding unless future balance rules explicitly create food pressure before the first daily check

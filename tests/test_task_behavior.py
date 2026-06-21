@@ -1,5 +1,6 @@
 from src.agent import Agent
 from src.config import SEASONS, TICKS_PER_DAY
+from src.farming import FIELD_PLANTED, FIELD_READY, FarmPlot
 from src.settlement import FOOD, Settlement, Stockpile
 from src.task_behavior import (
     DAILY_ROLE_GATHER_FOOD,
@@ -15,6 +16,8 @@ from src.task_behavior import (
     STATE_MOVING_TO_TARGET,
     STATE_RETURNING_HOME,
     STATE_SLEEPING,
+    STATE_PLANTING,
+    STATE_HARVESTING_FARM,
     STATE_CHOPPING_WOOD,
     STATE_COLLECTING_WATER,
     assign_daily_role,
@@ -24,7 +27,7 @@ from src.task_behavior import (
     settlement_phase_label,
     village_phase,
 )
-from src.settlement_planner import WORK_EXPLORATION, WORK_FOOD, WORK_WATER, WORK_WOOD
+from src.settlement_planner import WORK_EXPLORATION, WORK_FARMING, WORK_FOOD, WORK_WATER, WORK_WOOD
 from src.roles import FORAGER
 from src.tile import Tile
 from src.world import World, create_world
@@ -248,6 +251,42 @@ def test_wood_worker_delivers_carried_wood_before_gathering_more():
     assert run_villager_task(agent, world)
 
     assert agent.task_state in {STATE_MOVING_TO_STORAGE, STATE_DEPOSITING}
+
+
+def test_farming_assignment_plants_spring_field_with_seeds():
+    world = make_world()
+    farm = FarmPlot(5, 5)
+    world.settlement.farm_plots.append(farm)
+    agent = Agent("Fenn", 5, 5, home_x=5, home_y=5)
+    agent.daily_role = WORK_FARMING
+    agent.task_state = STATE_PLANTING
+    agent.task_target = farm.origin
+    agent.task_timer = 1
+    starting_seeds = world.colony_storage.seed_reserve
+
+    assert run_villager_task(agent, world)
+
+    assert farm.crop_state == FIELD_PLANTED
+    assert world.colony_storage.seed_reserve < starting_seeds
+    assert agent.task_state == STATE_IDLE
+
+
+def test_farming_assignment_harvests_ready_field_then_deposits():
+    world = make_world()
+    farm = FarmPlot(5, 5, food=4)
+    farm.crop_state = FIELD_READY
+    world.settlement.farm_plots.append(farm)
+    agent = Agent("Fenn", 5, 5, home_x=5, home_y=5)
+    agent.daily_role = WORK_FARMING
+    agent.task_state = STATE_HARVESTING_FARM
+    agent.task_target = farm.origin
+    agent.task_timer = 1
+
+    assert run_villager_task(agent, world)
+
+    assert agent.task_state == STATE_MOVING_TO_STORAGE
+    assert agent.food > 0
+    assert farm.food < 4
 
 
 def test_food_worker_batches_harvest_until_carry_capacity():

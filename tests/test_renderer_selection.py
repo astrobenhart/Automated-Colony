@@ -24,6 +24,7 @@ from src.overlays.villagers import VILLAGERS_OVERLAY
 from src.roles import BUILDER, FORAGER, GENERALIST, ROLES, SCOUT
 from src.seasons import seasonal_tile_color
 from src.settlement import Settlement
+from src.farming import FIELD_READY, FarmPlot
 from src.tile import Tile
 from src.world import World
 
@@ -874,6 +875,33 @@ def test_colony_summary_shows_seasonal_wild_food_status():
 
     world.season_index = 3
     assert "Wild Food 2 | Winter Dormant" in renderer.colony_summary_lines()
+
+
+def test_colony_summary_and_selection_show_agriculture_foundation_details(monkeypatch):
+    world = make_world(width=8, height=8)
+    world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")
+    farm = FarmPlot(2, 2, food=3)
+    farm.crop_state = FIELD_READY
+    world.settlement.farm_plots.append(farm)
+    world.colony_storage.seed_reserve = 7
+    renderer = make_renderer(world)
+
+    assert "Farms 1 | Seeds 7" in "\n".join(renderer.colony_summary_lines())
+
+    renderer.selected_tile = (2, 2)
+    rows = []
+
+    def spy_draw_stat_row(label, value, x, y, width, bottom_y, color=None):
+        rows.append((label, value))
+        return y + 1
+
+    monkeypatch.setattr(renderer, "draw_section_header", lambda *args, **kwargs: args[2])
+    monkeypatch.setattr(renderer, "draw_stat_row", spy_draw_stat_row)
+
+    renderer.draw_selection_details(0, 0, 200, 200)
+
+    assert ("Crop State", FIELD_READY) in rows
+    assert ("Farm Food", 3) in rows
 
 
 def test_colony_reason_lines_are_capped_and_hidden_when_stable():

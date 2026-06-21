@@ -25,7 +25,7 @@ from src.config import (
     SEASON_FOOD_GROWTH_MODIFIERS,
 )
 from src.environment_events import active_event_names, environmental_tile_color
-from src.farming import farm_border_edges
+from src.farming import FIELD_DORMANT, FIELD_GROWING, FIELD_PLANTED, FIELD_READY, FIELD_UNPREPARED, farm_border_edges
 from src.overlays.history import HISTORY_OVERLAY, HistoryOverlay
 from src.overlays.villagers import VILLAGERS_OVERLAY, VillagersOverlay
 from src.resource_ecology import max_food, max_wood
@@ -60,6 +60,7 @@ def is_wood_visible_to_player(world: World, x: int, y: int) -> bool:
 def _planner_label(name: str) -> str:
     labels = {
         "food_production": "Food",
+        "farming": "Farming",
         "water_collection": "Water",
         "wood_gathering": "Wood",
         "house_construction": "Housing",
@@ -340,8 +341,7 @@ class PygameRenderer:
                 farm = self.world.farm_at(x, y)
                 if farm is not None:
                     self.draw_farm_border(farm, screen_x, screen_y, x, y)
-                    if farm.food > 0:
-                        self.draw_centered_symbol("#", screen_x, screen_y, COLORS["farm_crop"])
+                    self.draw_farm_state_symbol(farm, screen_x, screen_y)
 
                 if tile.food > 0 and is_food_visible_to_player(self.world, x, y):
                     self.draw_centered_symbol("f", screen_x, screen_y, self.resource_color("food", tile.food, max_food(tile)))
@@ -466,6 +466,17 @@ class PygameRenderer:
             pygame.draw.line(self._draw_target, color, rect.topleft, rect.bottomleft, 2)
         if edges["east"]:
             pygame.draw.line(self._draw_target, color, rect.topright, rect.bottomright, 2)
+
+    def draw_farm_state_symbol(self, farm, screen_x: int, screen_y: int):
+        symbols = {
+            FIELD_UNPREPARED: (".", COLORS["muted"]),
+            FIELD_PLANTED: (":", COLORS["workplace_farm"]),
+            FIELD_GROWING: ('"', COLORS["farm_crop"]),
+            FIELD_READY: ("#", COLORS["farm_crop"]),
+            FIELD_DORMANT: ("-", COLORS["muted"]),
+        }
+        symbol, color = symbols.get(farm.crop_state, (".", COLORS["muted"]))
+        self.draw_centered_symbol(symbol, screen_x, screen_y, color)
 
     def draw_path_border(self, screen_x: int, screen_y: int, tile_x: int, tile_y: int):
         rect = pygame.Rect(
@@ -642,7 +653,7 @@ class PygameRenderer:
             status,
             f"Food {self.world.colony_storage.food} | Water {self.world.colony_storage.water} | Wood {self.world.colony_storage.wood}",
             self.seasonal_food_line(),
-            f"Farms {farm_count} | Mats {self.world.colony_storage.building_materials}",
+            f"Farms {farm_count} | Seeds {self.world.colony_storage.seed_reserve} | Mats {self.world.colony_storage.building_materials}",
         ]
         reasons = self.colony_reason_lines(max_lines=3)
         if reasons:
@@ -832,8 +843,10 @@ class PygameRenderer:
             if farm is not None:
                 details.extend([
                     ("Farm Plot", f"{farm.origin_x},{farm.origin_y}"),
+                    ("Crop State", farm.crop_state),
                     ("Growth", farm.growth),
                     ("Farm Food", farm.food),
+                    ("Seed Yield", farm.seed_yield),
                     ("Fertility", round(farm.fertility, 2)),
                 ])
             color = COLORS["text"]

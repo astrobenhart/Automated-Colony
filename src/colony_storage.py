@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.config import FOOD_SPOILAGE_DAYS
+from src.config import FOOD_SPOILAGE_DAYS, STARTING_SEED_RESERVE
 
 
 class ColonyStorage:
@@ -10,11 +10,13 @@ class ColonyStorage:
         water: int = 0,
         wood: int = 0,
         building_materials: int = 0,
+        seed_reserve: int = STARTING_SEED_RESERVE,
     ):
         self.food_batches: list[int] = [0] * max(0, food)
         self.water = max(0, water)
         self.wood = max(0, wood)
         self.building_materials = max(0, building_materials)
+        self.seed_reserve = max(0, seed_reserve)
 
     @property
     def food(self) -> int:
@@ -53,6 +55,16 @@ class ColonyStorage:
                 fresh_batches.append(next_age)
         self.food_batches = fresh_batches
         return spoiled
+
+    def deposit_seeds(self, amount: int) -> int:
+        deposited = max(0, amount)
+        self.seed_reserve += deposited
+        return deposited
+
+    def withdraw_seeds(self, amount: int) -> int:
+        withdrawn = min(max(0, amount), self.seed_reserve)
+        self.seed_reserve -= withdrawn
+        return withdrawn
 
     def deposit_water(self, amount: int) -> int:
         deposited = max(0, amount)

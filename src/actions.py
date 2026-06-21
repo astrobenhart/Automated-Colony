@@ -16,7 +16,7 @@ from src.settlement import (
 )
 from src.building_placement import find_build_site_near_settlement
 from src.building_priorities import SHELTER, should_produce_building_materials
-from src.farming import HIGH, MEDIUM, choose_farm_target, harvest_farm, settlement_food_pressure
+from src.farming import HIGH, MEDIUM, choose_farm_target, farm_ready_to_harvest, harvest_farm, settlement_food_pressure
 from src.profiler import profiler
 from src.resource_ecology import harvest_wild_food
 from src.reservations import BUILD_SITE, FARM, FOOD as FOOD_RESERVATION, WOOD as WOOD_RESERVATION, WORKSHOP
@@ -125,7 +125,7 @@ class HarvestFarmAction(Action):
 
     def can_do(self, agent: Agent, world: World) -> bool:
         farm = world.farm_at(agent.x, agent.y)
-        if farm is None or farm.food <= 0 or not _farm_work_allowed(agent, world):
+        if farm is None or not farm_ready_to_harvest(farm) or not _farm_work_allowed(agent, world):
             return False
         return (
             agent.hunger >= 70
@@ -145,7 +145,7 @@ class HarvestFarmAction(Action):
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)
         farm = world.farm_at(agent.x, agent.y)
-        if farm is None or farm.food <= 0:
+        if farm is None or not farm_ready_to_harvest(farm):
             agent.record_no_progress()
             return
 

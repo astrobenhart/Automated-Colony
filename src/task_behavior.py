@@ -18,13 +18,23 @@ from src.config import (
     TASK_EXPLORE_TICKS,
     TASK_FATIGUE_INTERRUPT_THRESHOLD,
     TASK_HARVEST_TICKS,
+    TASK_HARVEST_FARM_TICKS,
     TASK_HUNGER_INTERRUPT_THRESHOLD,
+    TASK_PLANT_TICKS,
     TASK_SLEEP_TICKS,
     TASK_THIRST_INTERRUPT_THRESHOLD,
     TICKS_PER_DAY,
     SEASON_PHASE_BOUNDARIES,
 )
 from src.roles import WOOD
+from src.farming import (
+    choose_farm_work_target,
+    farm_needs_planting,
+    farm_ready_to_harvest,
+    farm_seed_cost,
+    harvest_farm,
+    plant_farm,
+)
 from src.resource_ecology import harvest_wild_food
 from src.settlement import (
     FOOD,
@@ -39,6 +49,7 @@ from src.settlement import (
 from src.settlement_planner import (
     WORK_CONSTRUCTION,
     WORK_EXPLORATION,
+    WORK_FARMING,
     WORK_FOOD,
     WORK_SUPPORT,
     WORK_WATER,
@@ -77,6 +88,8 @@ STATE_RETURNING_HOME = "returning_home"
 STATE_HANDLING_NEED = "handling_need"
 STATE_DRINKING = "drinking"
 STATE_SLEEPING = "sleeping"
+STATE_PLANTING = "planting"
+STATE_HARVESTING_FARM = "harvesting_farm"
 
 
 def assign_daily_role(agent: Agent, world: World):
@@ -104,6 +117,8 @@ def run_villager_task(agent: Agent, world: World) -> bool:
 
     if assignment == WORK_FOOD:
         return _run_gather_food_task(agent, world)
+    if assignment == WORK_FARMING:
+        return _run_farming_task(agent, world)
     if assignment == WORK_WATER:
         return _run_water_task(agent, world)
     if assignment == WORK_WOOD:
@@ -341,6 +356,57 @@ def _run_gather_food_task(agent: Agent, world: World) -> bool:
     )
 
 
+def _run_farming_task(agent: Agent, world: World) -> bool:
+    if agent.task_state == STATE_IDLE:
+        if agent.food > 0:
+            agent.task_state = STATE_MOVING_TO_STORAGE
+            agent.task_timer = 0
+            return _move_to_storage(agent, world, FOOD)
+        farm = choose_farm_work_target(world, agent)
+        if farm is None:
+            return _run_gather_food_task(agent, world)
+        agent.task_target = farm.origin
+        agent.task_state = STATE_MOVING_TO_TARGET
+
+    if agent.task_state == STATE_MOVING_TO_TARGET:
+        farm = _task_farm(agent, world)
+        if farm is None:
+            _clear_task_target(agent)
+            return False
+        if (agent.x, agent.y) in farm.tiles:
+            if farm_needs_planting(world, farm):
+                if world.colony_storage.seed_reserve < farm_seed_cost(farm):
+                    _clear_task_target(agent)
+                    return False
+                agent.task_state = STATE_PLANTING
+                agent.task_timer = TASK_PLANT_TICKS
+            elif farm_ready_to_harvest(farm):
+                agent.task_state = STATE_HARVESTING_FARM
+                agent.task_timer = TASK_HARVEST_FARM_TICKS
+            else:
+                _clear_task_target(agent)
+                return False
+            agent.current_target = None
+            agent.current_path = []
+            return True
+        target = min(
+            farm.tiles,
+            key=lambda pos: (abs(pos[0] - agent.x) + abs(pos[1] - agent.y), pos[1], pos[0]),
+        )
+        return _move_to_target(agent, world, target, "Moving to field", "Farm work")
+
+    if agent.task_state == STATE_PLANTING:
+        return _plant_field(agent, world)
+    if agent.task_state == STATE_HARVESTING_FARM:
+        return _harvest_field(agent, world)
+    if agent.task_state == STATE_MOVING_TO_STORAGE:
+        return _move_to_storage(agent, world, FOOD)
+    if agent.task_state == STATE_DEPOSITING:
+        return _deposit_resource(agent, world, FOOD)
+
+    return False
+
+
 def _run_water_task(agent: Agent, world: World) -> bool:
     return _run_resource_task(
         agent,
@@ -408,6 +474,50 @@ def _run_resource_task(
         return _deposit_resource(agent, world, resource_type)
 
     return False
+
+
+def _plant_field(agent: Agent, world: World) -> bool:
+    farm = _task_farm(agent, world)
+    if farm is None or (agent.x, agent.y) not in farm.tiles:
+        _clear_task_target(agent)
+        return False
+    agent.current_action = "Planting"
+    agent.current_goal = "Farm work"
+    agent.task_timer -= 1
+    if agent.task_timer > 0:
+        return True
+    if not plant_farm(world, farm):
+        _clear_task_target(agent)
+        return False
+    agent.task_state = STATE_IDLE
+    agent.task_timer = 0
+    agent.task_target = None
+    agent.reset_stuck()
+    world.log(f"{agent.name} plants a field.")
+    return True
+
+
+def _harvest_field(agent: Agent, world: World) -> bool:
+    farm = _task_farm(agent, world)
+    if farm is None or (agent.x, agent.y) not in farm.tiles:
+        _clear_task_target(agent)
+        return False
+    agent.current_action = "Harvesting farm"
+    agent.current_goal = "Farm work"
+    agent.task_timer -= 1
+    if agent.task_timer > 0:
+        return True
+    capacity = max(1, AGENT_FOOD_CARRY_CAPACITY - agent.food)
+    harvested = harvest_farm(world, farm, capacity)
+    if harvested <= 0:
+        _clear_task_target(agent)
+        return False
+    agent.food += harvested
+    agent.task_state = STATE_MOVING_TO_STORAGE
+    agent.task_timer = 0
+    agent.reset_stuck()
+    world.log(f"{agent.name} harvests field crops.")
+    return True
 
 
 def _collect_resource(agent: Agent, world: World, resource_type: str, action_name: str) -> bool:
@@ -824,6 +934,12 @@ def _clear_task_target(agent: Agent):
     agent.current_path = []
     agent.task_state = STATE_IDLE
     agent.task_timer = 0
+
+
+def _task_farm(agent: Agent, world: World):
+    if agent.task_target is None:
+        return None
+    return world.farm_at_origin(*agent.task_target)
 
 
 def _forget_resource_target(agent: Agent, world: World, pos: tuple[int, int], resource_type: str):

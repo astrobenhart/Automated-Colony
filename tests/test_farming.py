@@ -4,15 +4,24 @@ from src.actions import HarvestFarmAction, SeekFarmAction
 from src.agent import Agent
 from src.environment_events import create_environment_event
 from src.farming import (
+    FIELD_DORMANT,
+    FIELD_GROWING,
+    FIELD_PLANTED,
+    FIELD_READY,
+    FIELD_UNPREPARED,
     FarmPlot,
     choose_farm_target,
+    choose_farm_work_target,
     daily_farm_growth,
     farm_border_edges,
+    farm_seed_cost,
     farm_tiles,
     harvest_farm,
     is_valid_farm_site,
     max_farm_plots_for_population,
     maybe_create_farm,
+    plant_farm,
+    prepare_farm_harvest,
     settlement_food_pressure,
     update_farms,
 )
@@ -288,10 +297,80 @@ def test_update_farms_produces_food_over_days():
     farm = FarmPlot(3, 3)
     world.settlement.farm_plots.append(farm)
 
+    assert plant_farm(world, farm)
+    world.season_index = 1
     for _ in range(3):
         update_farms(world)
+    assert farm.crop_state == FIELD_GROWING
 
+    world.season_index = 2
+    update_farms(world)
+    assert farm.crop_state == FIELD_READY
     assert farm.food > 0
+
+
+def test_spring_planting_consumes_stored_seed_reserve():
+    world = make_world()
+    farm = FarmPlot(3, 3)
+    starting_seeds = world.colony_storage.seed_reserve
+
+    assert farm.crop_state == FIELD_UNPREPARED
+    assert plant_farm(world, farm)
+
+    assert farm.crop_state == FIELD_PLANTED
+    assert world.colony_storage.seed_reserve == starting_seeds - farm_seed_cost(farm)
+
+
+def test_autumn_harvest_generates_food_and_seed_reserves():
+    world = make_world()
+    farm = FarmPlot(3, 3)
+    assert plant_farm(world, farm)
+    farm.growth = 100
+    world.season_index = 2
+
+    prepare_farm_harvest(world, farm)
+    starting_seeds = world.colony_storage.seed_reserve
+
+    assert farm.crop_state == FIELD_READY
+    assert harvest_farm(world, farm, 3) == 3
+    assert world.colony_storage.seed_reserve > starting_seeds
+
+
+def test_incomplete_crop_growth_produces_reduced_harvest():
+    world = make_world()
+    farm = FarmPlot(3, 3)
+    assert plant_farm(world, farm)
+    farm.growth = 25
+    world.season_index = 2
+
+    prepare_farm_harvest(world, farm)
+
+    assert 0 < farm.food < 8
+
+
+def test_winter_sets_empty_fields_dormant():
+    world = make_world()
+    farm = FarmPlot(3, 3)
+    world.settlement.farm_plots.append(farm)
+    world.season_index = 3
+
+    update_farms(world)
+
+    assert farm.crop_state == FIELD_DORMANT
+
+
+def test_farm_work_target_prefers_planting_then_harvest():
+    world = make_world()
+    agent = world.agents[0]
+    plantable = FarmPlot(3, 3)
+    ready = FarmPlot(6, 3, food=2)
+    world.settlement.farm_plots.extend([plantable, ready])
+
+    assert choose_farm_work_target(world, agent) is ready
+
+    world.season_index = 0
+    world.settlement.farm_plots = [plantable]
+    assert choose_farm_work_target(world, agent) is plantable
 
 
 def test_harvest_reduces_farm_food_and_increases_carried_food():

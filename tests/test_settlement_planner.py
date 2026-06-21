@@ -1,4 +1,5 @@
 from src.agent import Agent
+from src.farming import FarmPlot
 from src.roles import BUILDER, FORAGER, GENERALIST, SCOUT
 from src.settlement import Settlement
 from src.settlement_planner import (
@@ -6,6 +7,7 @@ from src.settlement_planner import (
     WORK_SUPPORT,
     WORK_CONSTRUCTION,
     WORK_EXPLORATION,
+    WORK_FARMING,
     WORK_FOOD,
     WORK_WATER,
     WORK_WOOD,
@@ -58,8 +60,8 @@ def test_role_based_assignments_follow_planner_demands():
 
     assert assignments["ira"] == WORK_EXPLORATION
     assert assignments["bryn"] in {WORK_WOOD, WORK_CONSTRUCTION}
-    assert assignments["fenn"] in {WORK_FOOD, WORK_WATER}
-    assert assignments["gala"] in {WORK_FOOD, WORK_WATER, WORK_WOOD, WORK_CONSTRUCTION}
+    assert assignments["fenn"] in {WORK_FARMING, WORK_FOOD, WORK_WATER}
+    assert assignments["gala"] in {WORK_FARMING, WORK_FOOD, WORK_WATER, WORK_WOOD, WORK_CONSTRUCTION}
 
 
 def test_construction_assignment_waits_for_usable_wood():
@@ -142,3 +144,16 @@ def test_builder_fallback_supports_food_shortage_before_wood_surplus():
     assignments = plan_settlement_work(world)
 
     assert assignments["bryn"] == WORK_FOOD
+
+
+def test_planner_assigns_foragers_to_ready_farm_work():
+    world = make_world()
+    world.agents.append(Agent("Fenn", 5, 5, role=FORAGER, agent_id="fenn"))
+    world.colony_storage.deposit_food(3)
+    world.colony_storage.deposit_water(99)
+    world.settlement.farm_plots.append(FarmPlot(3, 3, food=4))
+
+    assignments = plan_settlement_work(world)
+
+    assert world.settlement.planned_demands[WORK_FARMING] > world.settlement.planned_demands[WORK_FOOD]
+    assert assignments["fenn"] == WORK_FARMING

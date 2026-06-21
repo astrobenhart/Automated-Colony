@@ -228,6 +228,11 @@ Features:
 - [x] Seasonal wild food regeneration
 - [x] Food spoilage
 - [x] Farm-ready food economy foundations
+- [x] Crop fields
+- [x] Planting cycle
+- [x] Seasonal harvests
+- [x] Stored seed reserves
+- [x] Farm workplace specialization
 - [ ] Household foundations without full reproduction yet
 - [x] Pre-generated village paths or simple worn-path tiles
 - [ ] Mixed lifecycle starting population

@@ -57,6 +57,18 @@ def test_food_assignment_rebuilds_fresh_batches_for_compatibility():
     assert storage.food == 0
 
 
+def test_seed_reserve_is_separate_from_edible_food():
+    storage = ColonyStorage(food=1, seed_reserve=3)
+
+    assert storage.food == 1
+    assert storage.seed_reserve == 3
+    assert storage.withdraw_food(5) == 1
+    assert storage.seed_reserve == 3
+    assert storage.withdraw_seeds(2) == 2
+    assert storage.food == 0
+    assert storage.seed_reserve == 1
+
+
 def test_deposit_and_withdraw_wood():
     storage = ColonyStorage()
 

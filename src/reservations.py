@@ -121,8 +121,9 @@ def _target_is_valid(world, reservation: Reservation) -> bool:
     if reservation.reservation_type == STOCKPILE_ACCESS:
         return world.tile_at(x, y).walkable
     if reservation.reservation_type == FARM:
+        from src.farming import farm_has_work
         farm = world.farm_at_origin(x, y)
-        return farm is not None and farm.active and farm.food > 0
+        return farm is not None and farm.active and farm_has_work(world, farm)
     return True
 
 
