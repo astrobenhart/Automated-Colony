@@ -30,6 +30,7 @@ from src.overlays.villagers import VILLAGERS_OVERLAY, VillagersOverlay
 from src.resource_ecology import max_food, max_wood
 from src.role_colors import color_for_role
 from src.seasons import seasonal_tile_color
+from src.task_behavior import settlement_phase_label
 from src.agent import Agent
 from src.profiler import profiler
 from src.ui_overlays import OverlayManager
@@ -560,19 +561,23 @@ class PygameRenderer:
             ("Day", self.world.day),
             ("Year", self.world.year),
             ("Season", self.world.season_label),
+            ("Phase", settlement_phase_label(self.world)),
             ("Speed", f"{sim_speed}x"),
         ]
 
     def draw_time_grid(self, x: int, y: int, width: int, bottom_y: int, sim_speed: int):
         rows = self.time_grid_rows(sim_speed)
         left_x, column_width, right_x, right_width = self.panel_column_layout(x, width)
-        first_y = y
-        y = self.draw_compact_stat_row(rows[0][0], rows[0][1], left_x, first_y, column_width, bottom_y)
-        right_y = self.draw_compact_stat_row(rows[1][0], rows[1][1], right_x, first_y, right_width, bottom_y)
-        second_y = max(y, right_y)
-        y = self.draw_compact_stat_row(rows[2][0], rows[2][1], left_x, second_y, column_width, bottom_y)
-        right_y = self.draw_compact_stat_row(rows[3][0], rows[3][1], right_x, second_y, right_width, bottom_y)
-        return max(y, right_y)
+        row_y = y
+        for index in range(0, len(rows), 2):
+            left_label, left_value = rows[index]
+            left_bottom = self.draw_compact_stat_row(left_label, left_value, left_x, row_y, column_width, bottom_y)
+            right_bottom = row_y
+            if index + 1 < len(rows):
+                right_label, right_value = rows[index + 1]
+                right_bottom = self.draw_compact_stat_row(right_label, right_value, right_x, row_y, right_width, bottom_y)
+            row_y = max(left_bottom, right_bottom)
+        return row_y
 
     def colony_summary_lines(self) -> list[str]:
         settlement = self.world.settlement

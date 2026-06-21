@@ -55,6 +55,12 @@ PHASE_MORNING = "morning"
 PHASE_DAY = "day"
 PHASE_EVENING = "evening"
 PHASE_NIGHT = "night"
+PHASE_LABELS = {
+    PHASE_MORNING: "Morning",
+    PHASE_DAY: "Day",
+    PHASE_EVENING: "Evening",
+    PHASE_NIGHT: "Night",
+}
 
 STATE_IDLE = "idle"
 STATE_MOVING_TO_TARGET = "moving_to_target"
@@ -121,6 +127,10 @@ def village_phase(world: World) -> str:
     return PHASE_NIGHT
 
 
+def settlement_phase_label(world: World) -> str:
+    return PHASE_LABELS[village_phase(world)]
+
+
 def _handle_needs(agent: Agent, world: World) -> bool:
     if agent.task_state == STATE_HANDLING_NEED:
         return _continue_eating(agent, world)
@@ -164,7 +174,7 @@ def _run_day_phase(agent: Agent, world: World) -> bool:
     if phase == PHASE_NIGHT:
         return _return_home_or_sleep(agent, world, urgent=False)
     if phase == PHASE_EVENING and agent.task_state in (STATE_IDLE, STATE_RETURNING_HOME, STATE_SLEEPING):
-        return _return_home_or_sleep(agent, world, urgent=False)
+        return _return_to_evening_destination(agent, world)
     return False
 
 
@@ -275,6 +285,24 @@ def _return_home_or_sleep(agent: Agent, world: World, urgent: bool) -> bool:
         return True
 
     agent.current_action = "At home"
+    agent.current_goal = "Evening"
+    return True
+
+
+def _return_to_evening_destination(agent: Agent, world: World) -> bool:
+    target = _evening_anchor(agent, world)
+    if (agent.x, agent.y) != target:
+        agent.task_state = STATE_RETURNING_HOME
+        return _move_to_target(agent, world, target, "Winding down", "Evening")
+
+    agent.task_state = STATE_IDLE
+    agent.task_timer = 0
+    agent.current_target = None
+    agent.current_path = []
+    if target == _home_anchor(agent, world):
+        agent.current_action = "At home"
+    else:
+        agent.current_action = "At village center"
     agent.current_goal = "Evening"
     return True
 
@@ -747,6 +775,17 @@ def _home_anchor(agent: Agent, world: World) -> tuple[int, int]:
     if world.settlement is not None:
         return world.settlement.x, world.settlement.y
     return agent.x, agent.y
+
+
+def _evening_anchor(agent: Agent, world: World) -> tuple[int, int]:
+    if world.settlement is not None and _agent_phase_bucket(agent) == 0:
+        return world.settlement.x, world.settlement.y
+    return _home_anchor(agent, world)
+
+
+def _agent_phase_bucket(agent: Agent) -> int:
+    stable_id = agent.agent_id or agent.name
+    return sum(ord(char) for char in stable_id) % 3
 
 
 def _distance(a: tuple[int, int], b: tuple[int, int]) -> int:

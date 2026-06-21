@@ -730,7 +730,7 @@ def test_two_column_status_section_draws_both_columns_compactly():
     assert end_y > 10
 
 
-def test_time_grid_contains_day_year_season_and_speed():
+def test_time_grid_contains_day_year_season_phase_and_speed():
     world = make_world(width=3, height=3)
     renderer = make_renderer(world)
 
@@ -740,6 +740,7 @@ def test_time_grid_contains_day_year_season_and_speed():
         ("Day", world.day),
         ("Year", world.year),
         ("Season", world.season_label),
+        ("Phase", "Morning"),
         ("Speed", "4x"),
     ]
 

@@ -223,9 +223,9 @@ Features:
 - [x] Pre-seeded village start Phase 1: central village location, visible homes, and home-distributed villagers
 - [x] Homes as village anchors
 - [x] Workplace placeholders for farms, storage, workshops, and future professions
-- [ ] Daily schedule foundation
+- [x] Daily schedule foundation
 - [ ] Household foundations without full reproduction yet
-- [ ] Pre-generated village paths or simple worn-path tiles
+- [x] Pre-generated village paths or simple worn-path tiles
 - [ ] Mixed lifecycle starting population
 - [ ] Pre-existing roles, routines, relationships, social bonds, and memories
 - [ ] Starting village history / Chronicle seed entries

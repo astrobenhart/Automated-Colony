@@ -1,7 +1,11 @@
 from src.agent import Agent
+from src.config import TICKS_PER_DAY
 from src.settlement import FOOD, Settlement, Stockpile
 from src.task_behavior import (
     DAILY_ROLE_GATHER_FOOD,
+    PHASE_DAY,
+    PHASE_EVENING,
+    PHASE_MORNING,
     PHASE_NIGHT,
     STATE_DEPOSITING,
     STATE_HANDLING_NEED,
@@ -10,10 +14,12 @@ from src.task_behavior import (
     STATE_MOVING_TO_STORAGE,
     STATE_MOVING_TO_TARGET,
     STATE_RETURNING_HOME,
+    STATE_SLEEPING,
     STATE_CHOPPING_WOOD,
     STATE_COLLECTING_WATER,
     assign_daily_role,
     run_villager_task,
+    settlement_phase_label,
     village_phase,
 )
 from src.settlement_planner import WORK_EXPLORATION, WORK_FOOD, WORK_WATER, WORK_WOOD
@@ -270,6 +276,63 @@ def test_night_phase_returns_villager_home():
     assert village_phase(world) == PHASE_NIGHT
     assert run_villager_task(agent, world)
     assert agent.task_state == STATE_RETURNING_HOME
+
+
+def test_village_phase_boundaries_use_shared_settlement_clock():
+    world = make_world()
+
+    world.tick = 0
+    assert village_phase(world) == PHASE_MORNING
+    assert settlement_phase_label(world) == "Morning"
+
+    world.tick = int(TICKS_PER_DAY * 0.2)
+    assert village_phase(world) == PHASE_DAY
+
+    world.tick = int(TICKS_PER_DAY * 0.7)
+    assert village_phase(world) == PHASE_EVENING
+
+    world.tick = int(TICKS_PER_DAY * 0.88)
+    assert village_phase(world) == PHASE_NIGHT
+    assert settlement_phase_label(world) == "Night"
+
+
+def test_evening_idle_villager_winds_down_toward_home_or_center():
+    world = make_world()
+    world.tick = int(TICKS_PER_DAY * 0.75)
+    agent = Agent("Ari", 2, 2, home_x=5, home_y=5)
+    agent.daily_role = WORK_FOOD
+    agent.task_state = STATE_IDLE
+
+    assert village_phase(world) == PHASE_EVENING
+    assert run_villager_task(agent, world)
+    assert agent.task_state == STATE_RETURNING_HOME
+    assert agent.current_goal == "Evening"
+    assert agent.current_action == "Winding down"
+
+
+def test_night_phase_starts_sleep_when_villager_is_home():
+    world = make_world()
+    world.tick = TICKS_PER_DAY - 1
+    agent = Agent("Ari", 5, 5, home_x=5, home_y=5)
+    agent.daily_role = WORK_FOOD
+
+    assert run_villager_task(agent, world)
+    assert agent.task_state == STATE_SLEEPING
+    assert agent.current_goal == "Rest"
+
+
+def test_night_phase_keeps_survival_needs_above_sleep():
+    world = make_world()
+    world.tick = TICKS_PER_DAY - 1
+    world.tile_at(7, 5).food = 1
+    agent = Agent("Ari", 2, 2, hunger=80, home_x=5, home_y=5)
+    agent.daily_role = WORK_FOOD
+    agent.task_state = STATE_IDLE
+
+    assert village_phase(world) == PHASE_NIGHT
+    assert run_villager_task(agent, world)
+    assert agent.current_goal == "Handle hunger"
+    assert agent.task_state == STATE_MOVING_TO_TARGET
 
 
 def test_failed_build_attempt_returns_withdrawn_storage_wood():

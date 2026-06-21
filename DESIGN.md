@@ -171,6 +171,22 @@ A blacksmith wakes early, walks to the forge, starts the forge, receives raw mat
 
 This blacksmith sequence is aspirational future behavior, not a v0.7 acceptance requirement.
 
+Current Daily Schedule Foundation:
+- the village uses one shared settlement clock phase: Morning, Day, Evening, or Night
+- Morning releases villagers from home/sleep states so planner work can resume
+- Day leaves the settlement planner and persistent task execution in control
+- Evening prevents idle villagers from starting fresh routine work and sends them toward home or the village center
+- Night strongly sends villagers home and keeps them sleeping or resting there
+- critical hunger, thirst, and fatigue remain survival overrides and may interrupt any phase
+- household/home assignments provide the night anchor, so household members naturally gather at shared homes
+- the right panel displays the current phase beside Day, Year, Season, and Speed
+
+Design boundaries:
+- no individual schedules
+- no weekly, seasonal, or profession-specific calendars
+- no player scheduling controls
+- no change to task frequency or per-villager decision cadence
+
 ## Paths and Lived-In Land
 
 Paths are a major design pillar because they visually communicate that people live here.
