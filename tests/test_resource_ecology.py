@@ -4,6 +4,7 @@ from src.resource_ecology import (
     apply_resource_ecology,
     food_dieoff_chance,
     food_growth_chance,
+    harvest_wild_food,
     max_food,
     max_wood,
     wood_growth_chance,
@@ -37,7 +38,7 @@ def test_forests_grow_wood_faster_than_plain_or_dry_terrain():
 
 
 def test_winter_growth_is_lower_than_spring_growth():
-    assert food_growth_chance("plain", "Winter") < food_growth_chance("plain", "Spring")
+    assert food_growth_chance("plain", "Winter") == 0.0
     assert wood_growth_chance("forest", "Winter") < wood_growth_chance("forest", "Spring")
 
 
@@ -88,3 +89,30 @@ def test_ecology_behavior_is_deterministic_with_seeded_rng():
         apply_resource_ecology(second, "Autumn", second_rng)
 
     assert (first.food, first.wood) == (second.food, second.wood)
+
+
+def test_harvested_wild_food_enters_depleted_state():
+    tile = Tile("plain", food=1)
+
+    assert harvest_wild_food(tile) == 1
+
+    assert tile.food == 0
+    assert tile.food_depleted_days > 0
+
+
+def test_depleted_wild_food_waits_before_regrowing():
+    tile = Tile("plain", food=1)
+    harvest_wild_food(tile)
+
+    apply_resource_ecology(tile, "Spring", FixedRandom(0.0))
+
+    assert tile.food == 0
+    assert tile.food_depleted_days > 0
+
+
+def test_winter_does_not_create_new_wild_food_growth():
+    tile = Tile("plain", food=0)
+
+    apply_resource_ecology(tile, "Winter", FixedRandom(0.0))
+
+    assert tile.food == 0

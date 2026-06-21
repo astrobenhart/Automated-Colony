@@ -18,6 +18,7 @@ from src.building_placement import find_build_site_near_settlement
 from src.building_priorities import SHELTER, should_produce_building_materials
 from src.farming import HIGH, MEDIUM, choose_farm_target, harvest_farm, settlement_food_pressure
 from src.profiler import profiler
+from src.resource_ecology import harvest_wild_food
 from src.reservations import BUILD_SITE, FARM, FOOD as FOOD_RESERVATION, WOOD as WOOD_RESERVATION, WORKSHOP
 from src.roles import BUILDER, FORAGER, GENERALIST, SCOUT
 from src.workshop import is_adjacent_to_workshop, workshop_access_tile, workshop_for
@@ -110,8 +111,11 @@ class GatherFoodAction(Action):
         super().execute(agent, world)
         agent.reset_stuck()
         tile = world.tile_at(agent.x, agent.y)
-        tile.food -= 1
-        agent.food += 1
+        harvested = harvest_wild_food(tile, 1)
+        if harvested <= 0:
+            agent.record_no_progress()
+            return
+        agent.food += harvested
         world.reservations.release(FOOD_RESERVATION, (agent.x, agent.y), agent)
         world.log(f"{agent.name} gathers food.")
 

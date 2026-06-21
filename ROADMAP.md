@@ -224,6 +224,10 @@ Features:
 - [x] Homes as village anchors
 - [x] Workplace placeholders for farms, storage, workshops, and future professions
 - [x] Daily schedule foundation
+- [x] Day progress HUD bar
+- [x] Seasonal wild food regeneration
+- [x] Food spoilage
+- [x] Farm-ready food economy foundations
 - [ ] Household foundations without full reproduction yet
 - [x] Pre-generated village paths or simple worn-path tiles
 - [ ] Mixed lifecycle starting population

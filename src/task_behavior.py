@@ -22,8 +22,10 @@ from src.config import (
     TASK_SLEEP_TICKS,
     TASK_THIRST_INTERRUPT_THRESHOLD,
     TICKS_PER_DAY,
+    SEASON_PHASE_BOUNDARIES,
 )
 from src.roles import WOOD
+from src.resource_ecology import harvest_wild_food
 from src.settlement import (
     FOOD,
     WATER,
@@ -117,18 +119,38 @@ def run_villager_task(agent: Agent, world: World) -> bool:
 
 
 def village_phase(world: World) -> str:
-    day_tick = world.tick % TICKS_PER_DAY
-    if day_tick < TICKS_PER_DAY * 0.2:
+    progress = day_progress(world)
+    morning_end, day_end, evening_end = phase_boundaries(world)
+    if progress < morning_end:
         return PHASE_MORNING
-    if day_tick < TICKS_PER_DAY * 0.7:
+    if progress < day_end:
         return PHASE_DAY
-    if day_tick < TICKS_PER_DAY * 0.88:
+    if progress < evening_end:
         return PHASE_EVENING
     return PHASE_NIGHT
 
 
 def settlement_phase_label(world: World) -> str:
     return PHASE_LABELS[village_phase(world)]
+
+
+def day_progress(world: World) -> float:
+    return (world.tick % TICKS_PER_DAY) / TICKS_PER_DAY
+
+
+def phase_boundaries(world: World) -> tuple[float, float, float]:
+    season = getattr(world, "season", "Spring")
+    return SEASON_PHASE_BOUNDARIES.get(season, SEASON_PHASE_BOUNDARIES["Spring"])
+
+
+def phase_progress_segments(world: World) -> list[tuple[str, float, float]]:
+    morning_end, day_end, evening_end = phase_boundaries(world)
+    return [
+        (PHASE_MORNING, 0.0, morning_end),
+        (PHASE_DAY, morning_end, day_end),
+        (PHASE_EVENING, day_end, evening_end),
+        (PHASE_NIGHT, evening_end, 1.0),
+    ]
 
 
 def _handle_needs(agent: Agent, world: World) -> bool:
@@ -401,8 +423,12 @@ def _collect_resource(agent: Agent, world: World, resource_type: str, action_nam
         return True
 
     if resource_type == FOOD:
-        world.tile_at(*target).food -= 1
-        agent.food += 1
+        harvested = harvest_wild_food(world.tile_at(*target), 1)
+        if harvested <= 0:
+            _forget_resource_target(agent, world, target, resource_type)
+            _clear_task_target(agent)
+            return False
+        agent.food += harvested
         agent.remembered_food.add(target)
         world.colony_memory.remember_food(target)
     elif resource_type == WATER:

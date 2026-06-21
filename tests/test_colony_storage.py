@@ -1,6 +1,7 @@
 from src.actions import DepositFoodAction, DepositWoodAction, EatFromStorageAction
 from src.agent import Agent
 from src.colony_storage import ColonyStorage
+from src.settlement import FOOD, Settlement, Stockpile, deposit_to_stockpile
 from src.tile import Tile
 from src.world import World
 
@@ -33,6 +34,27 @@ def test_deposit_and_withdraw_food():
     assert storage.withdraw_food(5) == 1
     assert storage.food == 0
     assert storage.withdraw_food(1) == 0
+
+
+def test_food_storage_tracks_age_and_spoilage():
+    storage = ColonyStorage()
+    storage.deposit_food(2)
+    storage.age_food(max_age=3)
+    storage.deposit_food(1)
+
+    assert storage.food == 3
+    assert storage.age_food(max_age=3) == 0
+    assert storage.age_food(max_age=3) == 2
+    assert storage.food == 1
+
+
+def test_food_assignment_rebuilds_fresh_batches_for_compatibility():
+    storage = ColonyStorage()
+    storage.food = 2
+
+    assert storage.food_batches == [0, 0]
+    assert storage.age_food(max_age=1) == 2
+    assert storage.food == 0
 
 
 def test_deposit_and_withdraw_wood():
@@ -116,3 +138,25 @@ def test_carried_food_is_preferred_over_storage_food():
 
     assert agent.current_goal == "Eat"
     assert not isinstance(action, EatFromStorageAction)
+
+
+def test_world_daily_food_spoilage_updates_visible_stockpile():
+    world = make_world()
+    world.settlement = Settlement(
+        "Willowhold",
+        2,
+        2,
+        founded_day=1,
+        founded_season="Spring",
+        stockpiles=[Stockpile(2, 3, FOOD)],
+    )
+    deposited = world.colony_storage.deposit_food(2)
+    deposit_to_stockpile(world, FOOD, deposited)
+
+    world.colony_storage.food_batches = [13, 13]
+    assert world.settlement.stockpile_for(FOOD).stored_amount == 2
+
+    world.age_stored_food()
+
+    assert world.colony_storage.food == 0
+    assert world.settlement.stockpile_for(FOOD).stored_amount == 0

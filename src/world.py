@@ -35,6 +35,7 @@ from src.settlement import (
     is_within_resource_radius,
     resource_search_radius,
     update_resource_pressures,
+    withdraw_from_stockpile,
 )
 from src.wildlife import spawn_wildlife, update_wildlife
 from src.world_history import WorldHistory
@@ -479,6 +480,7 @@ class World:
     def run_daily_updates(self):
         update_environment_events(self, random)
         decay_foot_traffic(self)
+        self.age_stored_food()
         self.regrow_resources()
         update_farms(self)
         self.run_daily_settlement_updates()
@@ -513,6 +515,15 @@ class World:
         for row in self.tiles:
             for tile in row:
                 apply_resource_ecology(tile, self.season, random, self.active_environment_events, self.settings)
+
+    def age_stored_food(self):
+        from src.settlement import FOOD
+
+        spoiled = self.colony_storage.age_food()
+        if spoiled <= 0:
+            return
+        withdraw_from_stockpile(self, FOOD, spoiled)
+        self.log(f"{spoiled} stored food spoils.")
 
     def living_agents(self):
         return [agent for agent in self.agents if agent.alive]

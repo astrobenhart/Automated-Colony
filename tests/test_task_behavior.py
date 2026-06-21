@@ -1,5 +1,5 @@
 from src.agent import Agent
-from src.config import TICKS_PER_DAY
+from src.config import SEASONS, TICKS_PER_DAY
 from src.settlement import FOOD, Settlement, Stockpile
 from src.task_behavior import (
     DAILY_ROLE_GATHER_FOOD,
@@ -18,6 +18,8 @@ from src.task_behavior import (
     STATE_CHOPPING_WOOD,
     STATE_COLLECTING_WATER,
     assign_daily_role,
+    phase_boundaries,
+    phase_progress_segments,
     run_villager_task,
     settlement_phase_label,
     village_phase,
@@ -269,7 +271,7 @@ def test_food_worker_batches_harvest_until_carry_capacity():
 
 def test_night_phase_returns_villager_home():
     world = make_world()
-    world.tick = 49
+    world.tick = TICKS_PER_DAY - 1
     agent = Agent("Ari", 2, 2, home_x=5, home_y=5)
     agent.daily_role = WORK_FOOD
 
@@ -294,6 +296,28 @@ def test_village_phase_boundaries_use_shared_settlement_clock():
     world.tick = int(TICKS_PER_DAY * 0.88)
     assert village_phase(world) == PHASE_NIGHT
     assert settlement_phase_label(world) == "Night"
+
+
+def test_phase_boundaries_change_with_seasonal_daylight():
+    world = make_world()
+    world.tick = int(TICKS_PER_DAY * 0.84)
+
+    world.season_index = SEASONS.index("Summer")
+    assert village_phase(world) == PHASE_EVENING
+
+    world.season_index = SEASONS.index("Winter")
+    assert village_phase(world) == PHASE_NIGHT
+
+
+def test_phase_progress_segments_cover_the_whole_day():
+    world = make_world()
+    segments = phase_progress_segments(world)
+
+    assert segments[0] == (PHASE_MORNING, 0.0, phase_boundaries(world)[0])
+    assert segments[-1] == (PHASE_NIGHT, phase_boundaries(world)[2], 1.0)
+    assert segments[0][1] == 0.0
+    assert segments[-1][2] == 1.0
+    assert all(start < end for _, start, end in segments)
 
 
 def test_evening_idle_villager_winds_down_toward_home_or_center():

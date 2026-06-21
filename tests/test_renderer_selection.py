@@ -16,7 +16,7 @@ from src.config import (
     VIEWPORT_HEIGHT,
     VIEWPORT_WIDTH,
 )
-from src.renderer import PygameRenderer, VILLAGER_TILE_OFFSETS
+from src.renderer import PHASE_BAR_COLORS, PygameRenderer, VILLAGER_TILE_OFFSETS
 from src.renderer import color_for_role
 from src.renderer import is_food_visible_to_player
 from src.renderer import is_wood_visible_to_player
@@ -730,19 +730,51 @@ def test_two_column_status_section_draws_both_columns_compactly():
     assert end_y > 10
 
 
-def test_time_grid_contains_day_year_season_phase_and_speed():
+def test_time_grid_contains_year_day_and_speed():
     world = make_world(width=3, height=3)
     renderer = make_renderer(world)
 
     rows = renderer.time_grid_rows(sim_speed=4)
 
     assert rows == [
-        ("Day", world.day),
         ("Year", world.year),
-        ("Season", world.season_label),
-        ("Phase", "Morning"),
+        ("Day", world.day),
         ("Speed", "4x"),
     ]
+
+
+def test_day_progress_bar_draws_seasonal_phase_segments():
+    world = make_world(width=3, height=3)
+    renderer = make_renderer(world)
+
+    renderer.draw_day_progress_bar(10, 10, 100, 100)
+
+    morning_pixel = renderer.screen.get_at((16, 15))[:3]
+    day_pixel = renderer.screen.get_at((35, 15))[:3]
+
+    assert morning_pixel == PHASE_BAR_COLORS["morning"]
+    assert day_pixel == PHASE_BAR_COLORS["day"]
+
+
+def test_time_header_draws_season_phase_and_numeric_context(monkeypatch):
+    world = make_world(width=3, height=3)
+    renderer = make_renderer(world)
+    lines = []
+
+    def spy_draw_text_line(text, x, y, width, bottom_y, font=None, color=None):
+        lines.append(str(text))
+        return y + 1
+
+    monkeypatch.setattr(renderer, "draw_text_line", spy_draw_text_line)
+    monkeypatch.setattr(renderer, "draw_section_header", lambda text, x, y, width, bottom_y: spy_draw_text_line(text, x, y, width, bottom_y))
+
+    renderer.draw_time_header(10, 10, 200, 200, sim_speed=4)
+
+    assert "Time" in lines
+    assert f"Season: {world.season_label}" in lines
+    assert any("Morning" in line for line in lines)
+    assert "Year: 1" in lines
+    assert "Day: 1" in lines
 
 
 def test_colony_summary_uses_villagers_without_capacity_denominator():
@@ -830,6 +862,18 @@ def test_colony_summary_resource_status_reports_stable_and_surplus():
     assert "Food     4 / 12 Stable" in summary
     assert "Water    4 / 8 Stable" in summary
     assert "Wood     20 / 8 Surplus" in summary
+
+
+def test_colony_summary_shows_seasonal_wild_food_status():
+    world = make_world(width=8, height=8)
+    world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")
+    world.settlement.local_food = {(1, 1), (2, 1)}
+    renderer = make_renderer(world)
+
+    assert "Wild Food 2 | Growing" in renderer.colony_summary_lines()
+
+    world.season_index = 3
+    assert "Wild Food 2 | Winter Dormant" in renderer.colony_summary_lines()
 
 
 def test_colony_reason_lines_are_capped_and_hidden_when_stable():

@@ -173,6 +173,7 @@ This blacksmith sequence is aspirational future behavior, not a v0.7 acceptance 
 
 Current Daily Schedule Foundation:
 - the village uses one shared settlement clock phase: Morning, Day, Evening, or Night
+- phase boundaries vary by season while the overall daily tick budget remains stable
 - Morning releases villagers from home/sleep states so planner work can resume
 - Day leaves the settlement planner and persistent task execution in control
 - Evening prevents idle villagers from starting fresh routine work and sends them toward home or the village center
@@ -186,6 +187,13 @@ Design boundaries:
 - no weekly, seasonal, or profession-specific calendars
 - no player scheduling controls
 - no change to task frequency or per-villager decision cadence
+
+Current Day Progress HUD:
+- the right panel uses a dedicated Time header as the primary visual representation of the day
+- Season appears first, followed by a segmented day progress bar, current phase, and Year/Day/Speed context
+- the progress bar uses the same seasonal phase boundaries as villager behavior, so Summer shows longer daylight and Winter shows longer night
+- the bar is lightweight immediate-mode UI rendering and does not touch world simulation state
+- future weather, temperature, storm, drought, and event badges should be added to this Time header rather than creating another competing top-level dashboard
 
 ## Paths and Lived-In Land
 
@@ -767,6 +775,25 @@ Settlement planner balance correction:
 - builders without construction work support meaningful food or water shortages before gathering wood
 - stable builders fall back to support rather than creating a permanent wood surplus
 - resource rows show a simple status label such as Low, Stable, Stocked, Needed, or Surplus so storage targets read as health signals rather than raw pass/fail counters
+
+## Seasonal Resource Ecology Foundations
+
+Wild food is a seasonal natural resource, not an infinite pantry.
+
+Implemented behavior:
+- harvesting wild food removes available food from the tile
+- a wild food node that is harvested to zero enters a short depleted cooldown before it can regrow
+- Spring and Summer support strong new wild food growth
+- Autumn growth is reduced
+- Winter allows existing food to be harvested but does not create new wild food growth
+- stored food is tracked in simple age batches and spoils after a fixed number of days
+- spoiled stored food is removed from both abstract colony storage and visible food stockpiles
+- the colony summary shows local wild food count and a seasonal food status such as Growing or Winter Dormant
+
+Design boundaries:
+- wild food and farm food remain separate concepts: wild food lives on terrain tiles, farm food lives on `FarmPlot`
+- no planting, crop choice, preservation, farming profession, irrigation, or farm production-chain expansion is introduced here
+- future farms can use different growth, harvest, and spoilage rules without changing wild food ecology
 
 ## Workplace Placeholders v1
 

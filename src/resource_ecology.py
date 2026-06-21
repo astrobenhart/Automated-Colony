@@ -2,6 +2,7 @@ from src.config import (
     SEASON_FOOD_GROWTH_MODIFIERS,
     SEASON_MOISTURE_MODIFIERS,
     SEASON_WOOD_GROWTH_MODIFIERS,
+    WILD_FOOD_DEPLETION_DAYS,
 )
 from src.environment_events import (
     food_dieoff_event_multiplier,
@@ -90,6 +91,8 @@ def food_growth_chance(
     kind = _kind(tile)
     if max_food(kind) == 0:
         return 0.0
+    if season == "Winter":
+        return 0.0
 
     base = FOOD_GROWTH_BASE.get(kind, 0.0)
     moisture_modifier = SEASON_MOISTURE_MODIFIERS.get(season, 1.0)
@@ -163,11 +166,14 @@ def apply_resource_ecology(
 
     if food_cap == 0:
         tile.food = 0
+        tile.food_depleted_days = 0
     else:
         tile.food = min(tile.food, food_cap)
         if tile.food > 0 and rng.random() < food_dieoff_chance(tile, season, active_events, settings):
             tile.food -= 1
-        if tile.food < food_cap and rng.random() < food_growth_chance(tile, season, active_events, settings):
+        if tile.food_depleted_days > 0:
+            tile.food_depleted_days -= 1
+        elif tile.food < food_cap and rng.random() < food_growth_chance(tile, season, active_events, settings):
             tile.food += 1
 
     if wood_cap == 0:
@@ -184,6 +190,14 @@ def _kind(tile: Tile | str) -> str:
     if isinstance(tile, str):
         return tile
     return tile.kind
+
+
+def harvest_wild_food(tile: Tile, amount: int = 1) -> int:
+    harvested = min(max(0, amount), tile.food)
+    tile.food -= harvested
+    if harvested > 0 and tile.food == 0 and max_food(tile) > 0:
+        tile.food_depleted_days = WILD_FOOD_DEPLETION_DAYS
+    return harvested
 
 
 def _resource_abundance(settings: WorldGenSettings | None) -> float:

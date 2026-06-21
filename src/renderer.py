@@ -22,6 +22,7 @@ from src.config import (
     SHELTER_CAPACITY,
     SETTLEMENT_FOOD_TARGET_DAYS,
     SETTLEMENT_WATER_TARGET_DAYS,
+    SEASON_FOOD_GROWTH_MODIFIERS,
 )
 from src.environment_events import active_event_names, environmental_tile_color
 from src.farming import farm_border_edges
@@ -30,7 +31,16 @@ from src.overlays.villagers import VILLAGERS_OVERLAY, VillagersOverlay
 from src.resource_ecology import max_food, max_wood
 from src.role_colors import color_for_role
 from src.seasons import seasonal_tile_color
-from src.task_behavior import settlement_phase_label
+from src.task_behavior import (
+    PHASE_DAY,
+    PHASE_EVENING,
+    PHASE_MORNING,
+    PHASE_NIGHT,
+    day_progress,
+    phase_progress_segments,
+    settlement_phase_label,
+    village_phase,
+)
 from src.agent import Agent
 from src.profiler import profiler
 from src.ui_overlays import OverlayManager
@@ -57,6 +67,21 @@ def _planner_label(name: str) -> str:
         "village_support": "Support",
     }
     return labels.get(name, name.replace("_", " ").title())
+
+
+PHASE_ICONS = {
+    PHASE_MORNING: "[/]",
+    PHASE_DAY: "[*]",
+    PHASE_EVENING: r"[\]",
+    PHASE_NIGHT: "[C]",
+}
+
+PHASE_BAR_COLORS = {
+    PHASE_MORNING: (188, 132, 78),
+    PHASE_DAY: (218, 186, 82),
+    PHASE_EVENING: (154, 104, 98),
+    PHASE_NIGHT: (62, 72, 116),
+}
 
 
 VILLAGER_TILE_OFFSETS = (
@@ -507,7 +532,7 @@ class PygameRenderer:
         y = self.draw_world_identity_header(content_x, y, content_width, bottom_y)
         y += self.panel_gap
 
-        y = self.draw_time_grid(content_x, y, content_width, bottom_y, sim_speed)
+        y = self.draw_time_header(content_x, y, content_width, bottom_y, sim_speed)
 
         y += self.panel_gap
         y = self.draw_colony_summary(content_x, y, content_width, bottom_y)
@@ -558,10 +583,8 @@ class PygameRenderer:
 
     def time_grid_rows(self, sim_speed: int) -> list[tuple[str, object]]:
         return [
-            ("Day", self.world.day),
             ("Year", self.world.year),
-            ("Season", self.world.season_label),
-            ("Phase", settlement_phase_label(self.world)),
+            ("Day", self.world.day),
             ("Speed", f"{sim_speed}x"),
         ]
 
@@ -579,6 +602,35 @@ class PygameRenderer:
             row_y = max(left_bottom, right_bottom)
         return row_y
 
+    def draw_time_header(self, x: int, y: int, width: int, bottom_y: int, sim_speed: int):
+        y = self.draw_section_header("Time", x, y, width, bottom_y)
+        y = self.draw_text_line(f"Season: {self.world.season_label}", x, y, width, bottom_y)
+        y = self.draw_day_progress_bar(x, y + 2, width, bottom_y)
+        phase_key = village_phase(self.world)
+        phase_line = f"{PHASE_ICONS[phase_key]} {settlement_phase_label(self.world)}"
+        y = self.draw_text_line(phase_line, x, y + 4, width, bottom_y, color=COLORS["warning"])
+        return self.draw_time_grid(x, y, width, bottom_y, sim_speed)
+
+    def draw_day_progress_bar(self, x: int, y: int, width: int, bottom_y: int):
+        bar_height = 12
+        if y + bar_height > bottom_y:
+            return y
+
+        rect = pygame.Rect(x, y, width, bar_height)
+        pygame.draw.rect(self.screen, COLORS["grid"], rect)
+
+        inner = rect.inflate(-2, -2)
+        for phase, start, end in phase_progress_segments(self.world):
+            segment_x = inner.left + round(inner.width * start)
+            segment_width = max(1, round(inner.width * (end - start)))
+            segment_rect = pygame.Rect(segment_x, inner.top, segment_width, inner.height)
+            pygame.draw.rect(self.screen, PHASE_BAR_COLORS[phase], segment_rect)
+
+        marker_x = inner.left + round(inner.width * day_progress(self.world))
+        pygame.draw.line(self.screen, COLORS["text"], (marker_x, rect.top - 1), (marker_x, rect.bottom + 1), 2)
+        pygame.draw.rect(self.screen, COLORS["muted"], rect, 1)
+        return rect.bottom + 3
+
     def colony_summary_lines(self) -> list[str]:
         settlement = self.world.settlement
         report = settlement.carrying_capacity_report if settlement is not None else None
@@ -589,6 +641,7 @@ class PygameRenderer:
             f"{len(self.world.living_agents())} Villagers",
             status,
             f"Food {self.world.colony_storage.food} | Water {self.world.colony_storage.water} | Wood {self.world.colony_storage.wood}",
+            self.seasonal_food_line(),
             f"Farms {farm_count} | Mats {self.world.colony_storage.building_materials}",
         ]
         reasons = self.colony_reason_lines(max_lines=3)
@@ -597,6 +650,21 @@ class PygameRenderer:
             lines.extend(reasons)
         lines.extend(self.settlement_priority_lines())
         return lines
+
+    def seasonal_food_line(self) -> str:
+        settlement = self.world.settlement
+        local_food = len(settlement.local_food) if settlement is not None else 0
+        return f"Wild Food {local_food} | {self.seasonal_food_status()}"
+
+    def seasonal_food_status(self) -> str:
+        if self.world.season == "Winter":
+            return "Winter Dormant"
+        modifier = SEASON_FOOD_GROWTH_MODIFIERS.get(self.world.season, 1.0)
+        if modifier >= 0.9:
+            return "Growing"
+        if modifier >= 0.25:
+            return "Slowing"
+        return "Scarce"
 
     def settlement_priority_lines(self) -> list[str]:
         settlement = self.world.settlement
