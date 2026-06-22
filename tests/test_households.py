@@ -10,6 +10,14 @@ def test_starting_villagers_belong_to_households():
     assert world.settlement.households
     assert all(agent.household_id in household_ids for agent in world.agents)
     assert all(agent.home_id is not None for agent in world.agents)
+    assert all(
+        len([
+            household
+            for household in world.settlement.households
+            if (agent.agent_id or agent.name) in household.member_ids
+        ]) == 1
+        for agent in world.agents
+    )
 
 
 def test_households_group_multiple_villagers_as_village_units():
@@ -24,7 +32,24 @@ def test_households_group_multiple_villagers_as_village_units():
     for household in world.settlement.households:
         assert household.household_name
         assert household.home_id is not None
+        assert household.home_building_id == household.home_id
+        assert household.founded_year == world.year
+        assert household.household_head in household.member_ids
         assert household.founder_ids
+
+
+def test_homes_are_owned_by_households():
+    world = create_world(seed=176, agent_count=45)
+    households_by_home = {
+        household.home_building_id: household
+        for household in world.settlement.households
+    }
+
+    assert world.settlement.homes
+    for home in world.settlement.homes:
+        household = households_by_home[home.home_id]
+        assert home.household_id == household.household_id
+        assert household.home_id == home.home_id
 
 
 def test_household_members_share_home_anchor_for_night_gathering():
@@ -42,6 +67,43 @@ def test_household_members_share_home_anchor_for_night_gathering():
     anchors = {(member.home_id, member.home_x, member.home_y) for member in members}
 
     assert anchors == {(household.home_id, members[0].home_x, members[0].home_y)}
+
+
+def test_household_membership_remains_stable_after_daily_updates():
+    world = create_world(seed=177, agent_count=45)
+    before = {
+        agent.agent_id: (agent.household_id, agent.home_id)
+        for agent in world.agents
+    }
+
+    world.run_daily_updates()
+
+    after = {
+        agent.agent_id: (agent.household_id, agent.home_id)
+        for agent in world.agents
+    }
+    assert after == before
+
+
+def test_household_cohabitation_increases_familiarity_once_per_day():
+    world = create_world(seed=178, agent_count=45)
+    household = next(
+        household
+        for household in world.settlement.households
+        if len(household.member_ids) > 1
+    )
+    members = [
+        agent
+        for agent in world.agents
+        if (agent.agent_id or agent.name) in household.member_ids
+    ]
+    first, second = members[:2]
+
+    world.run_daily_updates()
+
+    assert household.cohabitation_days == 1
+    assert first.social_memory[second.agent_id].familiarity_score >= 1
+    assert second.social_memory[first.agent_id].familiarity_score >= 1
 
 
 def test_generational_placeholders_exist_without_family_logic():

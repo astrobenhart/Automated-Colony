@@ -87,6 +87,33 @@ def update_social_memory(world: World, radius: int = SOCIAL_MEMORY_RADIUS):
                 break
 
 
+def update_household_familiarity(world: World):
+    settlement = getattr(world, "settlement", None)
+    if settlement is None:
+        return
+
+    living_by_id = {
+        villager_key(agent): agent
+        for agent in world.living_agents()
+    }
+
+    for household in settlement.households:
+        members = [
+            living_by_id[member_id]
+            for member_id in household.member_ids
+            if member_id in living_by_id
+        ]
+        if not members:
+            continue
+
+        household.cohabitation_days += 1
+        for observer in members:
+            for other in members:
+                if other is observer:
+                    continue
+                record_observation(observer, other, world.day)
+
+
 def nearby_agents(
     observer: Agent,
     by_tile: dict[tuple[int, int], list[Agent]],

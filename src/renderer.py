@@ -644,23 +644,36 @@ class PygameRenderer:
 
     def colony_summary_lines(self) -> list[str]:
         settlement = self.world.settlement
-        report = settlement.carrying_capacity_report if settlement is not None else None
-        status = report.status if report is not None else "Unknown"
-        farm_count = len([farm for farm in settlement.farm_plots if farm.active]) if settlement is not None else 0
+        population = len(self.world.living_agents())
 
         lines = [
-            f"{len(self.world.living_agents())} Villagers",
-            status,
-            f"Food {self.world.colony_storage.food} | Water {self.world.colony_storage.water} | Wood {self.world.colony_storage.wood}",
-            self.seasonal_food_line(),
-            f"Farms {farm_count} | Seeds {self.world.colony_storage.seed_reserve} | Mats {self.world.colony_storage.building_materials}",
+            f"Pop      {population}",
         ]
-        reasons = self.colony_reason_lines(max_lines=3)
-        if reasons:
-            lines.append("Reason:")
-            lines.extend(reasons)
-        lines.extend(self.settlement_priority_lines())
+        if settlement is not None:
+            lines.append(f"Homes    {self.home_count()}")
+            if settlement.household_count:
+                lines.append(f"Households {settlement.household_count}")
+                if settlement.average_household_size > 0:
+                    lines.append(f"Avg Home {settlement.average_household_size:.1f}")
+
+        lines.extend([
+            f"Food     {self.food_status(self.food_target())}",
+            f"Water    {self.water_status(self.water_target())}",
+            f"Housing  {self.housing_status()}",
+        ])
         return lines
+
+    def home_count(self) -> int:
+        settlement = self.world.settlement
+        if settlement is not None and settlement.homes:
+            return len(settlement.homes)
+        return self.world.count_tiles("home") + self.world.count_tiles("shelter")
+
+    def food_target(self) -> int:
+        return len(self.world.living_agents()) * SETTLEMENT_FOOD_TARGET_DAYS
+
+    def water_target(self) -> int:
+        return len(self.world.living_agents()) * SETTLEMENT_WATER_TARGET_DAYS
 
     def seasonal_food_line(self) -> str:
         settlement = self.world.settlement
@@ -743,6 +756,20 @@ class PygameRenderer:
             return "Needed"
         return "Low"
 
+    def housing_status(self) -> str:
+        settlement = self.world.settlement
+        if settlement is None:
+            return "Unknown"
+        report = settlement.carrying_capacity_report
+        if report is not None and report.status == "Shelter Strained":
+            return "Strained"
+        housing_structures = self.world.count_tiles("shelter") + self.world.count_tiles("home")
+        housing_current = housing_structures * SHELTER_CAPACITY
+        housing_target = self.world.needed_shelters() * SHELTER_CAPACITY
+        if housing_current >= housing_target:
+            return "Stable"
+        return "Strained"
+
     def colony_reason_lines(self, max_lines: int = 3) -> list[str]:
         settlement = self.world.settlement
         if settlement is None or settlement.carrying_capacity_report is None:
@@ -773,13 +800,17 @@ class PygameRenderer:
         y = self.draw_section_header("Colony", x, y, width, bottom_y)
         lines = self.colony_summary_lines()
         for index, line in enumerate(lines):
-            color = COLORS["warning"] if index == 1 and line != "Stable" else COLORS["text"]
-            if line == "Reason:":
-                color = COLORS["muted"]
-            elif index > 4:
+            color = COLORS["warning"] if self.is_colony_warning_line(line) else COLORS["text"]
+            if index in (1, 2, 3):
                 color = COLORS["muted"]
             y = self.draw_text_line(line, x, y, width, bottom_y, color=color)
         return y
+
+    def is_colony_warning_line(self, line: str) -> bool:
+        return any(
+            line.endswith(status)
+            for status in ("Crisis", "Low", "Needed", "Strained")
+        )
 
     def draw_selection_details(self, x: int, y: int, width: int, bottom_y: int):
         y = self.draw_section_header("Selection", x, y, width, bottom_y)
@@ -805,6 +836,9 @@ class PygameRenderer:
                 details.extend([
                     ("Settlement", settlement.name),
                     ("Pop", settlement.population),
+                    ("Households", settlement.household_count),
+                    ("Avg HH Size", round(settlement.average_household_size, 1)),
+                    ("Largest HH", settlement.largest_household_size),
                     ("Center", f"{settlement.x},{settlement.y}"),
                     ("Radius", settlement.radius),
                     ("Founded", f"D{settlement.founded_day} {settlement.founded_season}"),
@@ -824,6 +858,10 @@ class PygameRenderer:
                     ("Stored", stockpile.stored_amount),
                     ("Capacity", stockpile.capacity),
                 ])
+            home = self.world.home_at(tile_x, tile_y)
+            if home is not None and self.world.settlement is not None:
+                household = self.world.settlement.household_for_home(home.home_id)
+                details.extend(self.household_detail_rows(home, household))
             workshop = self.world.workshop_at(tile_x, tile_y)
             if workshop is not None:
                 details.extend([
@@ -859,6 +897,34 @@ class PygameRenderer:
             y = self.draw_stat_row(label, value, x, y, width, bottom_y, color=color)
 
         return y
+
+    def household_detail_rows(self, home, household) -> list[tuple[str, object]]:
+        rows: list[tuple[str, object]] = [("Home", home.home_id or f"{home.x},{home.y}")]
+        if household is None:
+            return rows
+
+        rows.extend([
+            ("Household", household.household_name),
+            ("Household ID", household.household_id),
+            ("Founded Year", household.founded_year),
+            ("Size", household.size),
+            ("Head", self.household_member_name(household.household_head)),
+            ("Members", self.household_member_names(household)),
+        ])
+        return rows
+
+    def household_member_names(self, household) -> str:
+        if household is None or not household.member_ids:
+            return "None"
+        return ", ".join(self.household_member_name(member_id) for member_id in household.member_ids)
+
+    def household_member_name(self, member_id: str | None) -> str:
+        if member_id is None:
+            return "None"
+        for agent in self.world.agents:
+            if (agent.agent_id or agent.name) == member_id:
+                return agent.name
+        return member_id
 
     def draw_two_column_section(
         self,

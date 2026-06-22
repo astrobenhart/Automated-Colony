@@ -21,7 +21,7 @@ from src.seasons import (
 from src.resource_ecology import apply_resource_ecology
 from src.lifecycle import lifecycle_stage_for_index
 from src.roles import role_for_index
-from src.social_memory import update_social_memory
+from src.social_memory import update_household_familiarity, update_social_memory
 from src.traits import trait_for_index
 from src.task_behavior import assign_daily_role, run_villager_task
 from src.settlement_planner import plan_settlement_work
@@ -274,10 +274,30 @@ class World:
         if household is None:
             return
         agent_id = agent.agent_id or agent.name
-        if agent_id not in household.member_ids:
-            household.member_ids.append(agent_id)
-        if not household.founder_ids:
-            household.founder_ids.append(agent_id)
+        if self.settlement is not None:
+            for other_household in self.settlement.households:
+                if other_household is not household and agent_id in other_household.member_ids:
+                    other_household.member_ids.remove(agent_id)
+
+        household.add_member(agent_id)
+        agent.household_id = household.household_id
+        agent.home_id = household.home_id
+        home = self.settlement.home_for_id(household.home_id) if self.settlement is not None else None
+        if home is not None:
+            agent.home_x = home.x
+            agent.home_y = home.y
+
+    def ensure_household_membership(self):
+        if self.settlement is None or not self.settlement.households:
+            return
+
+        default_household = self.settlement.households[0]
+        for agent in self.living_agents():
+            household = self.household_for_agent(agent)
+            if household is None:
+                home_household = self.household_for_home(getattr(agent, "home_id", None))
+                household = home_household or default_household
+            self.add_agent_to_household(agent, household)
 
     def assign_agent_workplace(self, agent):
         workplace = self.preferred_workplace_for_agent(agent)
@@ -488,6 +508,8 @@ class World:
         self.update_carrying_capacity()
         self.plan_settlement_work()
         update_social_memory(self)
+        self.ensure_household_membership()
+        update_household_familiarity(self)
         update_influence_peaks(self)
         expire_remembrances(self)
         update_wildlife(self, random)

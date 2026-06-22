@@ -31,6 +31,7 @@ class Home:
     x: int
     y: int
     home_id: str | None = None
+    household_id: str | None = None
 
 
 @dataclass
@@ -38,8 +39,34 @@ class Household:
     household_id: str
     household_name: str
     home_id: str | None = None
+    home_building_id: str | None = None
     member_ids: list[str] = field(default_factory=list)
     founder_ids: list[str] = field(default_factory=list)
+    founded_year: int = 1
+    household_head: str | None = None
+    cohabitation_days: int = 0
+
+    def __post_init__(self):
+        if self.home_building_id is None:
+            self.home_building_id = self.home_id
+        if self.home_id is None:
+            self.home_id = self.home_building_id
+
+    @property
+    def members(self) -> list[str]:
+        return self.member_ids
+
+    @property
+    def size(self) -> int:
+        return len(self.member_ids)
+
+    def add_member(self, member_id: str):
+        if member_id not in self.member_ids:
+            self.member_ids.append(member_id)
+        if not self.founder_ids:
+            self.founder_ids.append(member_id)
+        if self.household_head is None:
+            self.household_head = member_id
 
 
 @dataclass
@@ -123,7 +150,7 @@ class Settlement:
         if home_id is None:
             return None
         for household in self.households:
-            if household.home_id == home_id:
+            if household.home_id == home_id or household.home_building_id == home_id:
                 return household
         return None
 
@@ -145,6 +172,22 @@ class Settlement:
 
     def workplaces_for_type(self, workplace_type: str) -> list[Workplace]:
         return [workplace for workplace in self.workplaces if workplace.workplace_type == workplace_type]
+
+    @property
+    def household_count(self) -> int:
+        return len(self.households)
+
+    @property
+    def average_household_size(self) -> float:
+        if not self.households:
+            return 0.0
+        return sum(household.size for household in self.households) / len(self.households)
+
+    @property
+    def largest_household_size(self) -> int:
+        if not self.households:
+            return 0
+        return max(household.size for household in self.households)
 
 
 def found_settlement(world) -> Settlement:
@@ -201,10 +244,13 @@ def create_households(world, settlement: Settlement, rng: random.Random | None =
     households = []
     for index, home in enumerate(settlement.homes):
         household_id = f"household-{index}"
+        home.household_id = household_id
         households.append(Household(
             household_id=household_id,
             household_name=household_name(rng, index),
             home_id=home.home_id,
+            home_building_id=home.home_id,
+            founded_year=getattr(world, "year", 1),
         ))
     return households
 

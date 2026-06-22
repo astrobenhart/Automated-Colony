@@ -26,7 +26,7 @@ from src.seasons import seasonal_tile_color
 from src.settlement import Settlement
 from src.farming import FIELD_READY, FarmPlot
 from src.tile import Tile
-from src.world import World
+from src.world import World, create_world
 
 
 def make_world(width: int = 3, height: int = 3) -> World:
@@ -778,7 +778,7 @@ def test_time_header_draws_season_phase_and_numeric_context(monkeypatch):
     assert "Day: 1" in lines
 
 
-def test_colony_summary_uses_villagers_without_capacity_denominator():
+def test_colony_summary_uses_compact_population_without_capacity_denominator():
     world = make_world(width=8, height=8)
     world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")
     world.agents = [Agent(f"A{i}", i, 1) for i in range(9)]
@@ -793,7 +793,7 @@ def test_colony_summary_uses_villagers_without_capacity_denominator():
     lines = renderer.colony_summary_lines()
     summary = "\n".join(lines)
 
-    assert "9 Villagers" in lines
+    assert "Pop      9" in lines
     assert "9 / 12 Villagers" not in summary
     assert "9/12" not in summary
 
@@ -819,7 +819,7 @@ def test_colony_summary_excludes_debug_fields():
     assert "Settle" not in summary
 
 
-def test_colony_summary_includes_settlement_priorities_and_planner():
+def test_colony_summary_omits_planner_diagnostics_and_targets():
     world = make_world(width=8, height=8)
     world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")
     world.agents = [Agent(f"A{i}", i, 1) for i in range(6)]
@@ -836,16 +836,27 @@ def test_colony_summary_includes_settlement_priorities_and_planner():
 
     summary = "\n".join(renderer.colony_summary_lines())
 
-    assert "Priorities:" in summary
-    assert "Food     3 / 18 Low" in summary
-    assert "Water    2 / 12 Low" in summary
-    assert "Wood     4 /" in summary
-    assert "Housing  3 / 6" in summary
-    assert "Current Priorities:" in summary
-    assert "1. Housing" in summary
+    assert "Priorities:" not in summary
+    assert "Current Priorities:" not in summary
+    assert "1. Housing" not in summary
+    assert "3 / 18" not in summary
+    assert "2 / 12" not in summary
+    assert "Food     Stable" in summary or "Food     Low" in summary
+    assert "Water    Stable" in summary or "Water    Low" in summary
+    assert "Housing  Strained" in summary
 
 
-def test_colony_summary_resource_status_reports_stable_and_surplus():
+def test_colony_summary_includes_household_statistics():
+    world = create_world(seed=913, agent_count=45)
+    renderer = make_renderer(world)
+
+    summary = "\n".join(renderer.colony_summary_lines())
+
+    assert "Households " in summary
+    assert "Avg Home " in summary
+
+
+def test_colony_summary_resource_status_reports_stability_without_raw_targets():
     world = make_world(width=8, height=8)
     world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")
     world.agents = [Agent(f"A{i}", i, 1) for i in range(4)]
@@ -860,21 +871,23 @@ def test_colony_summary_resource_status_reports_stable_and_surplus():
 
     summary = "\n".join(renderer.colony_summary_lines())
 
-    assert "Food     4 / 12 Stable" in summary
-    assert "Water    4 / 8 Stable" in summary
-    assert "Wood     20 / 8 Surplus" in summary
+    assert "Food     Stable" in summary
+    assert "Water    Stable" in summary
+    assert "Wood" not in summary
+    assert "20 / 8" not in summary
 
 
-def test_colony_summary_shows_seasonal_wild_food_status():
+def test_colony_summary_omits_seasonal_wild_food_diagnostics():
     world = make_world(width=8, height=8)
     world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")
     world.settlement.local_food = {(1, 1), (2, 1)}
     renderer = make_renderer(world)
 
-    assert "Wild Food 2 | Growing" in renderer.colony_summary_lines()
+    assert "Wild Food 2 | Growing" not in renderer.colony_summary_lines()
+    assert all("Wild Food" not in line for line in renderer.colony_summary_lines())
 
     world.season_index = 3
-    assert "Wild Food 2 | Winter Dormant" in renderer.colony_summary_lines()
+    assert all("Winter Dormant" not in line for line in renderer.colony_summary_lines())
 
 
 def test_colony_summary_and_selection_show_agriculture_foundation_details(monkeypatch):
@@ -886,7 +899,9 @@ def test_colony_summary_and_selection_show_agriculture_foundation_details(monkey
     world.colony_storage.seed_reserve = 7
     renderer = make_renderer(world)
 
-    assert "Farms 1 | Seeds 7" in "\n".join(renderer.colony_summary_lines())
+    summary = "\n".join(renderer.colony_summary_lines())
+    assert "Farms 1 | Seeds 7" not in summary
+    assert "Seeds 7" not in summary
 
     renderer.selected_tile = (2, 2)
     rows = []
@@ -902,6 +917,30 @@ def test_colony_summary_and_selection_show_agriculture_foundation_details(monkey
 
     assert ("Crop State", FIELD_READY) in rows
     assert ("Farm Food", 3) in rows
+
+
+def test_selected_home_tile_shows_household_details(monkeypatch):
+    world = create_world(seed=914, agent_count=45)
+    home = world.settlement.homes[0]
+    household = world.settlement.household_for_home(home.home_id)
+    renderer = make_renderer(world)
+    renderer.selected_tile = (home.x, home.y)
+    rows = []
+
+    def spy_draw_stat_row(label, value, x, y, width, bottom_y, color=None):
+        rows.append((label, value))
+        return y + 1
+
+    monkeypatch.setattr(renderer, "draw_section_header", lambda *args, **kwargs: args[2])
+    monkeypatch.setattr(renderer, "draw_stat_row", spy_draw_stat_row)
+
+    renderer.draw_selection_details(0, 0, 220, 220)
+
+    assert ("Home", home.home_id) in rows
+    assert ("Household", household.household_name) in rows
+    assert ("Founded Year", household.founded_year) in rows
+    assert ("Size", len(household.member_ids)) in rows
+    assert any(label == "Members" and value != "None" for label, value in rows)
 
 
 def test_colony_reason_lines_are_capped_and_hidden_when_stable():
@@ -928,6 +967,25 @@ def test_colony_reason_lines_are_capped_and_hidden_when_stable():
     assert renderer.colony_reason_lines() == []
 
 
+def test_colony_summary_omits_reason_text_even_when_strained():
+    world = make_world(width=8, height=8)
+    world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")
+    world.agents = [Agent(f"A{i}", i, 1) for i in range(9)]
+    world.settlement.carrying_capacity_report = CarryingCapacityReport(
+        population=9,
+        capacity=6,
+        status="Food Strained",
+        reason="Food is the limiting factor.",
+    )
+    renderer = make_renderer(world)
+
+    summary = "\n".join(renderer.colony_summary_lines())
+
+    assert "Reason:" not in summary
+    assert "Food stores low" not in summary
+    assert "Few local food sources" not in summary
+
+
 def test_colony_summary_handles_missing_capacity_report():
     world = make_world(width=8, height=8)
     world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")
@@ -935,7 +993,10 @@ def test_colony_summary_handles_missing_capacity_report():
 
     lines = renderer.colony_summary_lines()
 
-    assert "Unknown" in lines
+    assert "Pop      0" in lines
+    assert "Food     Stocked" in lines
+    assert "Water    Stocked" in lines
+    assert "Housing  Stable" in lines
 
 
 def test_renderer_recognizes_settlement_center():

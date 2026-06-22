@@ -470,9 +470,12 @@ Households are village-unit membership records used to make the starting settlem
 Each household has:
 - household ID
 - household name
-- home ID
+- home ID / home building ID
 - member IDs
 - founder IDs
+- founded year
+- household head
+- cohabitation duration
 
 Each villager has:
 - household ID
@@ -480,6 +483,12 @@ Each villager has:
 - parent IDs
 - child IDs
 - generation
+
+Each home belongs to one household. Villagers belong to exactly one household, keep a stable home anchor, and return to that same home during night behavior.
+
+Household cohabitation reinforces existing social memory once per day. This is a lightweight familiarity hook only: it does not assign work, choose partners, create children, alter survival, or replace the explicit relationship/generation systems planned later.
+
+Selecting a house shows the household name, ID, members, founded year, head, and size. Settlement information can summarize household count, average household size, and largest household.
 
 Households do not implement marriage, childbirth, inheritance, romance, family trees, dynasties, politics, or household controls. They are community context and future data architecture only.
 
@@ -898,7 +907,7 @@ Design boundaries:
 
 The goal is to make settlement problems legible at a glance. If the panel says `Food Strained`, it should also explain the food/storage/farm context that caused that status.
 
-## Right Panel Summary v1
+## Right Panel Summary v2
 
 The right panel is a player-facing observation dashboard.
 
@@ -906,15 +915,16 @@ Implemented behavior:
 - world identity remains the top anchor
 - Day, Year, Season, and Speed appear in a compact two-row grid below the identity
 - the separate debug-style Simulation section is removed from the default summary
-- Colony shows villager count, settlement status, stored food/wood, farm count, and building materials
-- strained colonies show at most three short reason lines
-- stable colonies keep the main summary compact and omit reason lines
+- Colony answers one question: how is the colony doing right now?
+- Colony shows compact tier-one health signals: population, homes, households when available, food status, water status, and housing status
+- planner priorities, resource targets, workforce allocation, farm counts, production statistics, and detailed reason text are reserved for future overlays
 - detailed values such as settlement center, radius, claims, farm growth, farm food, workshop progress, and capacity estimate live in selected-object details
 
 Design boundaries:
 - no gameplay logic changes
 - no model data removal
 - no population current/max display
+- no planner diagnostics in the default HUD
 - no menus or renderer overhaul
 
 The default panel should answer what world this is, what time it is, how the colony is doing, and what just happened.

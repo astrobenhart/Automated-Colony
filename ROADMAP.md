@@ -233,7 +233,7 @@ Features:
 - [x] Seasonal harvests
 - [x] Stored seed reserves
 - [x] Farm workplace specialization
-- [ ] Household foundations without full reproduction yet
+- [x] Household foundations without full reproduction yet
 - [x] Pre-generated village paths or simple worn-path tiles
 - [ ] Mixed lifecycle starting population
 - [ ] Pre-existing roles, routines, relationships, social bonds, and memories
