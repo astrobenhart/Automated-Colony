@@ -350,41 +350,113 @@ Notes:
 
 ## v0.8 - Generational Village
 
-Goal: Add the smallest complete generational loop: partnerships, reproduction, children, aging, inheritance, family relationships, and Chronicle continuity.
+Goal: Prove the smallest complete generational loop.
 
-### Generations
+Core question:
+Can a village replace itself across generations?
+
+v0.8 is intentionally narrow. It should prove believable continuity and long-term village life without expanding into a complete family simulation.
+
+### Phase 1 - Partnerships
+
+Purpose:
+Create stable long-term pair bonds that can support later generational systems.
+
+Features:
 - [ ] Partnership formation
 - [ ] Household partnerships
+
+Notes:
+- Partnerships are social bonds, not romance simulation.
+- No marriage system.
+- No romance drama.
+- No legal family structures.
+
+### Phase 2 - Births
+
+Purpose:
+Introduce population renewal.
+
+Features:
 - [ ] Reproduction system
-- [ ] Pregnancy system
 - [ ] Birth events
+
+Notes:
+- Births should emerge from established partnerships.
+- Do not treat reproduction as a simple population counter.
+- Pregnancy mechanics are deferred unless explicitly needed later.
+
+### Phase 3 - Children
+
+Purpose:
+Allow villagers to progress through life stages.
+
+Features:
 - [ ] Child lifecycle
 - [ ] Aging progression
 - [ ] Workforce entry
+
+Notes:
+- Children remain members of their household.
+- Children eventually become working adults.
+- Avoid education systems or child-specific professions.
+
+### Phase 4 - Family Identity
+
+Purpose:
+Create continuity between generations.
+
+Features:
 - [ ] Family relationships
 - [ ] Family memories
 - [ ] Trait inheritance
-- [ ] Household succession
-- [ ] Natural death from aging
-- [ ] Family chronicle integration
-
-### Society
-- [ ] Family trees
-- [ ] Multi-generation households
-- [ ] Inheritance of homes
-- [ ] Family reputation
-
-### Storytelling
-- [ ] Birth chronicle entries
-- [ ] Family milestone events
-- [ ] Generational history tracking
 
 Notes:
-- v0.8 should stay intentionally small: prove the first generational loop before expanding it.
-- Reproduction should not be a simple population counter.
-- Children should inherit traits from parents with room for variation.
-- Old-age death should remain tied to renewal systems so villages do not collapse automatically.
-- Avoid pregnancy mechanics, inheritance law, romance drama, detailed domestic economy, and full family-tree UI unless a later design explicitly needs them.
+- Children inherit traits from parents with variation.
+- Family memories should feed the Chronicle and village history systems.
+
+### Phase 5 - Renewal
+
+Purpose:
+Close the generational loop.
+
+Features:
+- [ ] Household succession
+- [ ] Natural death from aging
+- [ ] Family Chronicle integration
+
+Notes:
+- Villages must be capable of replacing older generations naturally.
+- Deaths should connect to renewal rather than creating automatic settlement collapse.
+
+### Future Backlog - Not Core v0.8
+- [ ] Family trees
+- [ ] Family reputation
+
+Status:
+Future enhancement after the core generational loop is proven.
+
+Reasons:
+- Family trees are primarily visualization and record-keeping rather than simulation behavior.
+- Family reputation does not contribute to proving the first generational loop and adds additional social complexity.
+
+Notes:
+- v0.8 exists to prove the first generational loop.
+- Keep implementation intentionally small.
+- Prioritize simulation behavior over UI complexity.
+- Avoid pregnancy mechanics, inheritance law systems, romance drama, politics, detailed domestic economies, and complex social simulation.
+- Focus on partnerships, births, children, aging, trait inheritance, succession, natural death, and village renewal.
+- Family trees and family reputation are secondary to proving long-term village continuity.
+
+Success Criteria:
+- Partnerships form.
+- Children are born.
+- Children age into working adults.
+- Traits inherit with variation.
+- Family relationships and memories persist.
+- Elder villagers can die of old age.
+- Households can continue through successors.
+- The village can continue into the next generation without advanced social simulation systems.
 
 ## v0.9 - Workplaces, Professions, and Delivery Networks
 
