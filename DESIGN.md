@@ -118,10 +118,18 @@ Starting village fabric may include:
 - fields and paths showing prior human activity
 
 Starting scenarios:
-- Frontier Camp: closest to the current experience, with 10-20 villagers, fewer buildings, and visible survival pressure.
-- Small Village: recommended v0.7 default, with 30-60 villagers, homes, farms, paths, workplaces, simple households, existing routines, and social bonds.
-- Old Village: future scenario with established history, remembered dead, worn paths, older buildings, and larger family networks.
+- Pioneer Camp: a 0-2 year frontier start with 12-20 villagers, fewer buildings, limited stores, and visible survival pressure.
+- Growing Village: recommended v0.7 default, with 30-60 villagers, homes, farms, paths, workplaces, simple households, existing routines, and social bonds.
+- Mature Settlement: a 20-50 year start with established infrastructure, stronger social memory, older paths, and deeper Chronicle context.
+- Ancient Hamlet: a 50+ year start with old households, long Chronicle history, stronger traditions, and more unresolved folklore.
 - Market Town: future scenario with 100-200 villagers, districts, more professions, and delivery networks.
+
+Current v0.7 Phase 1 implementation:
+- The default start uses the existing central settlement founding logic, then places 8-15 visible home tiles in a loose cluster inside the village radius.
+- The default population is 45 villagers, within the short-term 30-60 villager target.
+- Villagers spawn on a randomly assigned home tile or an adjacent valid tile after homes are created.
+- Multiple villagers can share a tile. Spawning and core movement do not enforce one-agent-per-tile occupancy.
+- This phase does not seed paths, farms, storage expansion, history, social familiarity, schedules, households, reproduction, or delivery systems.
 
 ## Stable Living Villages
 
@@ -134,10 +142,17 @@ Core stability principle:
 - Generation systems should support continuity, not erase scarcity.
 
 v0.6 life and social foundations remain lightweight:
-- Adult and Elder are currently lifecycle labels.
+- v0.6 introduced Adult and Elder as lifecycle labels.
 - Traits are currently display-first.
 - Social memory, influence, remembrance, settlement identity, and social bond labels are observer-facing.
-- Lifecycle Labels v1 is static identity metadata. Villagers are assigned Adult or Elder when created, the label appears in selected-villager details, and there is no Adult-to-Elder progression or Elder-to-death rule.
+- Lifecycle Labels v1 was static identity metadata. Villagers were assigned Adult or Elder when created, the label appeared in selected-villager details, and there was no Adult-to-Elder progression or Elder-to-death rule.
+
+v0.7 mixed starting population:
+- Starting villagers now receive seeded ages, lifecycle stages, and experience labels.
+- Lifecycle stages are Young Adult, Adult, Older Adult, and Elder.
+- Experience labels are Novice, Experienced, and Veteran.
+- Household founding years and established-years metadata imply village history before observation begins.
+- These fields are still static startup metadata; there is no aging progression, child stage, old-age death, reproduction, or inheritance logic yet.
 
 v0.7 should not implement reproduction casually. It should prepare the settlement model, start generation, and identity/history layers so reproduction, children, parent links, inherited traits, and aging can arrive as coherent systems later.
 
@@ -163,6 +178,30 @@ Future-facing example:
 A blacksmith wakes early, walks to the forge, starts the forge, receives raw materials, crafts goods, sends goods into storage or delivery networks, closes the forge, returns home, eats, spends time with household, sleeps, and wakes again the next day.
 
 This blacksmith sequence is aspirational future behavior, not a v0.7 acceptance requirement.
+
+Current Daily Schedule Foundation:
+- the village uses one shared settlement clock phase: Morning, Day, Evening, or Night
+- phase boundaries vary by season while the overall daily tick budget remains stable
+- Morning releases villagers from home/sleep states so planner work can resume
+- Day leaves the settlement planner and persistent task execution in control
+- Evening prevents idle villagers from starting fresh routine work and sends them toward home or the village center
+- Night strongly sends villagers home and keeps them sleeping or resting there
+- critical hunger, thirst, and fatigue remain survival overrides and may interrupt any phase
+- household/home assignments provide the night anchor, so household members naturally gather at shared homes
+- the right panel displays the current phase beside Day, Year, Season, and Speed
+
+Design boundaries:
+- no individual schedules
+- no weekly, seasonal, or profession-specific calendars
+- no player scheduling controls
+- no change to task frequency or per-villager decision cadence
+
+Current Day Progress HUD:
+- the right panel uses a dedicated Time header as the primary visual representation of the day
+- Season appears first, followed by a segmented day progress bar, current phase, and Year/Day/Speed context
+- the progress bar uses the same seasonal phase boundaries as villager behavior, so Summer shows longer daylight and Winter shows longer night
+- the bar is lightweight immediate-mode UI rendering and does not touch world simulation state
+- future weather, temperature, storm, drought, and event badges should be added to this Time header rather than creating another competing top-level dashboard
 
 ## Paths and Lived-In Land
 
@@ -252,6 +291,60 @@ Trait inheritance direction:
 - a child may blend tendencies from both parents
 - there may be a small chance of a new/random trait
 - traits should remain simple and display-first before deeply changing behavior
+
+## Generational Architecture Foundation
+
+v0.7 adds generation-ready data structures without enabling reproduction.
+
+Villager lifecycle model:
+- birth year and birth day
+- current age
+- lifecycle stage
+- death year and death day
+- alive/deceased status
+- lifecycle history record for future age progression
+
+Family structure model:
+- mother ID
+- father ID
+- parent IDs
+- child / children IDs
+- sibling IDs
+- partner IDs
+- generation number
+
+Household lineage model:
+- founder IDs
+- household head
+- founding year
+- generation count
+- historical member IDs
+- succession history
+
+Inheritance architecture:
+- personality traits
+- work preferences
+- social tendencies
+- appearance traits
+
+Memory and relationship extension:
+- future relationship types include acquaintance, friend, household member, parent, child, sibling, and partner
+- future family memory categories include parent, child, sibling, household elder, and family loss
+- current social memory remains score-based and display-only
+
+Chronicle support:
+- future categories include births, family events, and household succession
+- death records preserve household, home, generation, parent, child, sibling, birth year, and death year fields
+
+Future v0.8 reproduction flow:
+1. Advance ages on a scheduled cadence.
+2. Move villagers through lifecycle stages.
+3. Evaluate household-based reproduction eligibility.
+4. Create a child with parent IDs, household ID, generation, inherited trait profile, and birth Chronicle entry.
+5. Add household historical membership and family memories.
+6. Keep old-age death disabled until renewal is stable.
+
+This architecture does not implement reproduction, pregnancy, childbirth, marriages, genetics, inheritance logic, population growth, old-age death, or family-tree UI.
 
 ## Simulation Scale and Level of Detail
 
@@ -418,17 +511,70 @@ Social bonds should describe familiarity before they imply family.
 Social Bond Labels v1 are display-only labels derived from existing social memory. They do not create a relationship simulation.
 
 Current labels:
-- Often Seen With
-- Trusted Neighbor
-- Close Companion
+- Familiar
+- Friend
+- Close Friend
+- Trusted Companion
 
-These labels are non-romantic and non-family. They must not imply partners, spouses, parents, children, siblings, households, couples, ancestry, reproduction, marriage, or pair bonding.
+These labels are non-romantic and non-family. They must not imply partners, spouses, parents, children, siblings, couples, ancestry, reproduction, marriage, or pair bonding.
+
+Family, reproduction, ancestry, children, romance, inheritance, and pair-bond systems are deferred until they are explicitly designed as lifecycle and generation systems. Household foundations now exist as village-unit membership, not family simulation.
 
 Bond labels are shown compactly on villager character cards and are capped to the strongest few known villagers. They use existing familiarity levels rather than raw familiarity scores.
 
 Social Bond Labels do not affect AI, movement, pathfinding, gathering, building, farming, state labels, death/remembrance behavior, influence calculation, settlement membership, survival, social-memory growth, or any other gameplay behavior.
 
-In v0.6 these labels remain non-family and non-romantic. Future household, reproduction, ancestry, children, and parent-link systems should be designed explicitly through the lived-in settlement and generational roadmap rather than inferred from Social Bond Labels.
+In v0.6 these labels remain non-family and non-romantic. Household foundations, reproduction, ancestry, children, and parent-link systems should be designed explicitly through the lived-in settlement and generational roadmap rather than inferred from Social Bond Labels.
+
+## Pre-Existing Social History
+
+The v0.7 starting village seeds quiet prior life so villagers do not all begin as strangers.
+
+Seeded startup data:
+- years in role
+- routine age
+- workplace familiarity
+- household familiarity
+- personal memory snippets
+- social-memory familiarity from shared household, workplace, and role history
+
+Relationship strength is derived from shared history:
+- household members gain familiarity based on household established years
+- coworkers gain familiarity based on overlapping workplace routine
+- villagers with the same role may know a few long-running peers
+
+Starting memories are grounded in settlement activity, such as shared households, steady work routines, workplace history, and long-running role practice. They are not dramatic fabricated events.
+
+Pre-existing social history remains observer-facing. It does not affect AI, pathfinding, work assignment, gathering, building, farming, survival, reproduction, inheritance, romance, family trees, or player controls.
+
+## Household Foundations
+
+Households are village-unit membership records used to make the starting settlement legible and to prepare for future generations.
+
+Each household has:
+- household ID
+- household name
+- home ID / home building ID
+- member IDs
+- founder IDs
+- founded year
+- household head
+- cohabitation duration
+
+Each villager has:
+- household ID
+- home ID
+- parent IDs
+- child IDs
+- generation
+
+Each home belongs to one household. Villagers belong to exactly one household, keep a stable home anchor, and return to that same home during night behavior.
+
+Household cohabitation reinforces existing social memory once per day. This is a lightweight familiarity hook only: it does not assign work, choose partners, create children, alter survival, or replace the explicit relationship/generation systems planned later.
+
+Selecting a house shows the household name, ID, members, founded year, head, and size. Settlement information can summarize household count, average household size, and largest household.
+
+Households do not implement marriage, childbirth, inheritance, romance, family trees, dynasties, politics, or household controls. They are community context and future data architecture only.
 
 ## Overlay Framework
 
@@ -469,11 +615,24 @@ Current Chronicle content includes:
 - active remembrance lines such as `Ari is remembering Rowan.`
 - remembered dead from permanent Death Records
 
+Starting Chronicle seed entries include:
+- settlement foundation and early development
+- household founding and oldest-household notes
+- workplace and infrastructure establishment
+- population milestones appropriate to starting population
+- environmental hardship or abundance
+- grounded local stories tied to existing villagers
+- one uncommon unresolved mystery
+
 History entries should use readable player-facing language and season/year dates where possible, such as `Summer, Year 2`, instead of raw ticks or debug counters.
 
 Remembered dead are shown as compact story cards with name, role, lifecycle stage, influence label, cause of death, date, and remembered-by names when available.
 
-Future Chronicle content may include settlement founding, first farms, first workshops, shortages, influential villagers, visitors, mysteries, migrations, leaders, ruins, and legends. Those event types should slot into the same Chronicle structure later, but are not implemented in v1.
+Seeded Chronicle entries are stored in `WorldHistory` before normal simulation events are appended. The History overlay sorts all entries chronologically, so startup history and later events form one continuous record.
+
+Mystery entries are atmospheric only. They have no explanation, no monsters, no combat, and no direct magical mechanics.
+
+Future Chronicle content may include births, deaths, partnerships, household continuity, inheritance, magical events, major settlement developments, influential villagers, visitors, mysteries, migrations, leaders, ruins, and legends. Those event types should slot into the same Chronicle structure later.
 
 ## Appearance System
 
@@ -697,6 +856,67 @@ Design boundaries:
 
 Thresholds are intentionally conservative and tunable. This is the first step toward settlement-level decision making, not a logistics system.
 
+## Survival Economy Balance v1
+
+Survival work has priority over expansion when the village is under pressure.
+
+Implemented behavior:
+- critical hunger interrupts current work and seeks food if no carried or stored food is available
+- critical thirst interrupts current work and seeks water if no carried or stored water is available
+- food and water crises redirect routine labor away from construction and wood gathering
+- simultaneous food and water crises split villagers between food and water work instead of sending the whole village to one resource
+- food, water, and wood workers carry small batches before returning to storage
+- food and water actions are intentionally shorter than wood chopping and construction
+
+Design boundaries:
+- this is a prioritization and throughput balance pass, not arbitrary resource generation
+- local resource preferences remain soft, and urgent survival can still use any reachable known resource
+- construction should resume once survival buffers recover
+- long-running construction remains incremental so villagers can be interrupted between progress ticks
+
+Current balance constants favor a small survival buffer: food targets roughly three days of population needs, and water targets roughly two days.
+
+Settlement planner balance correction:
+- wood demand exists only when reserves are below target or active construction needs wood
+- builders without construction work support meaningful food or water shortages before gathering wood
+- stable builders fall back to support rather than creating a permanent wood surplus
+- resource rows show a simple status label such as Low, Stable, Stocked, Needed, or Surplus so storage targets read as health signals rather than raw pass/fail counters
+
+## Seasonal Resource Ecology Foundations
+
+Wild food is a seasonal natural resource, not an infinite pantry.
+
+Implemented behavior:
+- harvesting wild food removes available food from the tile
+- a wild food node that is harvested to zero enters a short depleted cooldown before it can regrow
+- Spring and Summer support strong new wild food growth
+- Autumn growth is reduced
+- Winter allows existing food to be harvested but does not create new wild food growth
+- stored food is tracked in simple age batches and spoils after a fixed number of days
+- spoiled stored food is removed from both abstract colony storage and visible food stockpiles
+- the colony summary shows local wild food count and a seasonal food status such as Growing or Winter Dormant
+
+Design boundaries:
+- wild food and farm food remain separate concepts: wild food lives on terrain tiles, farm food lives on `FarmPlot`
+- no planting, crop choice, preservation, farming profession, irrigation, or farm production-chain expansion is introduced here
+- future farms can use different growth, harvest, and spoilage rules without changing wild food ecology
+
+## Workplace Placeholders v1
+
+Workplaces provide a shared data and visual foundation for future professions without adding new production chains.
+
+Implemented behavior:
+- settlements register workplace placeholders for storage, farm area, workshop, and village center
+- each workplace has an id, type, position, capacity, footprint tiles, and assigned worker ids
+- starting villagers may reference a workplace, but workplace assignment does not drive profession logic yet
+- farm workplaces are visual placeholders and do not create productive farm plots at startup
+- seeded village paths connect homes and core workplace areas
+
+Design boundaries:
+- no new farming, crafting, blacksmithing, crop growth, or profession output is introduced
+- existing stockpiles, workshops, and future farms remain the production surfaces until profession systems are designed
+- workplace data exists so future jobs can claim stable locations without inventing another registry
+
 ## Resource Reservation v1
 
 Reservations are soft coordination, not a job system.
@@ -737,17 +957,24 @@ Implemented behavior:
 - farm placement uses bounded local scoring near the settlement hub
 - placement avoids water, mountains, stockpiles, workshops, shelters, agents, existing farms, and the settlement center
 - placement scoring uses cheap terrain, distance, openness, water proximity, and special-tile proximity checks without pathfinding
-- farms grow once per day, with Spring/Summer/Autumn growth and much slower Winter growth
+- farms use crop states: Unprepared, Planted, Growing, Ready For Harvest, and Dormant
+- Spring is the planting season and consumes stored seed reserves
+- Summer advances planted crops through growth
+- Autumn turns crop growth into seasonal harvest batches
+- Winter leaves empty fields dormant
 - drought reduces farm growth and heavy rain improves it through the existing environmental event model
-- ready farms can be harvested through the existing food goal
+- ready farms can be harvested through farm work or urgent food behavior
+- harvests produce stored seed reserves as well as food, and villagers cannot eat seed reserves
+- the settlement planner can assign villagers to `farming` work when fields need planting or harvest
+- farm workplaces track assigned workers and active field tiles as the basis for future farmer specialization
 - Resource Reservation v1 can reserve a farm plot while a villager is moving to harvest it
 - critical hunger can still override farm reservations when no alternative exists
-- farm plots render as terrain-like interiors with a brown outline around the whole 2x2 plot
+- farm plots render as terrain-like interiors with a brown outline around the whole 2x2 plot and simple symbols for crop state
 
 Design boundaries:
 - no player farm placement
 - no farming setup UI
-- no crop selection, seeds, irrigation, or soil simulation
+- no crop selection, irrigation, soil simulation, preservation, or profession UI
 - no roads or zoning
 - no full hauling or job board
 - no farms at settlement founding unless future balance rules explicitly create food pressure before the first daily check
@@ -777,7 +1004,7 @@ Design boundaries:
 
 The goal is to make settlement problems legible at a glance. If the panel says `Food Strained`, it should also explain the food/storage/farm context that caused that status.
 
-## Right Panel Summary v1
+## Right Panel Summary v2
 
 The right panel is a player-facing observation dashboard.
 
@@ -785,15 +1012,16 @@ Implemented behavior:
 - world identity remains the top anchor
 - Day, Year, Season, and Speed appear in a compact two-row grid below the identity
 - the separate debug-style Simulation section is removed from the default summary
-- Colony shows villager count, settlement status, stored food/wood, farm count, and building materials
-- strained colonies show at most three short reason lines
-- stable colonies keep the main summary compact and omit reason lines
+- Colony answers one question: how is the colony doing right now?
+- Colony shows compact tier-one health signals: population, homes, households when available, food status, water status, and housing status
+- planner priorities, resource targets, workforce allocation, farm counts, production statistics, and detailed reason text are reserved for future overlays
 - detailed values such as settlement center, radius, claims, farm growth, farm food, workshop progress, and capacity estimate live in selected-object details
 
 Design boundaries:
 - no gameplay logic changes
 - no model data removal
 - no population current/max display
+- no planner diagnostics in the default HUD
 - no menus or renderer overhaul
 
 The default panel should answer what world this is, what time it is, how the colony is doing, and what just happened.
@@ -999,6 +1227,65 @@ Non-goals for the current roadmap:
 - Kingdoms
 
 These may become future possibilities, but the next design step is village formation, not large-scale states.
+
+## Starting Scenario Maturity
+
+Starting scenarios change initial conditions, not simulation rules. Every settlement still uses the same planner, households, workplaces, paths, relationships, chronicle, ecology, and villager task systems after generation.
+
+Implemented scenario levels:
+- Pioneer Camp: 0-2 years old, 12-20 villagers, 4-7 homes, limited reserves, sparse path wear, shorter chronicle, and lighter social bonds.
+- Growing Village: 5-15 years old and the default v0.7 experience, preserving the 30-60 villager start and 8-15 home cluster.
+- Mature Settlement: 20-50 years old, larger housing footprint, stronger workplace and household familiarity, more chronicle entries, and more worn village routes.
+- Ancient Hamlet: 50-90 years old, older demographics, long-established households, strong social bonds, denser local stories, and several unresolved folklore entries.
+
+Scenario scaling affects:
+- population and home counts
+- settlement age and household founding years
+- age distribution and experience flavor
+- initial reserves for non-default starts
+- pre-seeded path wear
+- relationship strength derived from shared history
+- chronicle density, including environmental history, local stories, and mystery entries
+
+Design boundaries:
+- no separate rulesets per scenario
+- no scripted success or failure states
+- no reproduction, inheritance, children, family trees, or generational turnover yet
+- mysterious events remain unresolved history and do not add magic mechanics
+- Growing Village remains the stable default for current v0.7 balance and tests
+
+## Simulation Level of Detail
+
+Simulation LOD keeps the village visually lively while moving slow-changing systems away from the hot loop.
+
+Implemented tiers:
+- LOD 0 Visual Systems: movement interpolation, animation state, renderer feedback. Runs every render frame or tick.
+- LOD 1 Active Task Execution: walking, hauling, harvesting, building, eating, sleeping, and workplace actions. Runs every simulation tick for the active rotating villager batch.
+- LOD 2 Needs Systems: hunger, thirst, fatigue, and wildlife updates. Runs hourly with elapsed-tick scaling so per-day balance stays stable.
+- LOD 3 Social Systems: relationship growth, household familiarity, workplace familiarity, and influence peaks. Runs daily.
+- LOD 4 Settlement Planning: resource targets, workforce balancing, housing demand, workplace demand, farms, ecology, storage spoilage, and path decay. Runs daily or event-driven.
+- LOD 5 Historical Systems: chronicle entries, remembrance expiry, demographic records, family history, and future summaries. Runs event-driven or as daily cleanup.
+
+Developer instrumentation:
+- `World.lod_stats` stores calls, last duration, total duration, and average duration per LOD tier.
+- `World.lod_report()` returns rows sorted by total cost.
+- Renderer frames record LOD 0 timing without adding player-facing HUD clutter.
+
+Future generational cadence:
+- Aging: daily or seasonal, not per tick.
+- Birth eligibility: daily or seasonal household pass.
+- Child creation: event-driven.
+- Death checks for age/illness/accidents: daily or event-driven.
+- Trait inheritance: only when a child is created.
+- Family tree updates: event-driven on birth, death, household split, partnership, or adoption.
+- Chronicle birth/death/family entries: event-driven.
+- Demographic reports: daily, seasonal, or overlay-requested only.
+
+Design boundaries:
+- do not attach slow systems to movement or rendering loops
+- do not recompute settlement-wide social, family, or planner state per tick
+- keep active visible work responsive even as background systems slow down
+- prefer event-driven updates whenever a future system changes rarely
 
 ## Design Priorities
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from src.death_memory import active_remembrance_name
 from src.influence import influence_label
 from src.social_bonds import social_bonds
-from src.social_memory import familiarity_summary
+from src.social_memory import relationship_summary
 from src.state import state_label
 
 
@@ -37,8 +37,11 @@ def villager_detail_sections(agent, world=None) -> list[tuple[str, list[tuple[st
 
     return [
         ("Identity", identity_rows(agent, world)),
+        ("Household", household_rows(agent, world)),
         ("Status", status_rows(agent, world)),
+        ("Relationships", relationship_rows(agent)),
         ("Bonds", bond_rows(agent)),
+        ("Memories", memory_rows(agent)),
     ]
 
 
@@ -49,26 +52,68 @@ def compact_villager_rows(agent, world=None) -> list[tuple[str, object]]:
     return [
         ("Agent", getattr(agent, "name", "Villager")),
         ("Role", getattr(agent, "role", "Unknown")),
+        ("Household", household_name_for_agent(agent, world)),
         ("State", safe_state_label(agent, world) or "Unknown"),
         ("Action", getattr(agent, "current_action", "Unknown")),
     ]
 
 
 def identity_rows(agent, world=None) -> list[tuple[str, object]]:
-    role_life = " · ".join(
-        str(value)
-        for value in (
-            getattr(agent, "role", None),
-            getattr(agent, "lifecycle_stage", None),
-        )
-        if value
-    )
     return present_rows([
         ("Name", getattr(agent, "name", None)),
-        ("Role", role_life),
+        ("Age", getattr(agent, "age", None)),
+        ("Stage", getattr(agent, "lifecycle_stage", None)),
+        ("Role", getattr(agent, "role", None)),
+        ("Experience", getattr(agent, "experience_level", None)),
+        ("Role Years", getattr(agent, "years_in_role", None)),
         ("Trait", getattr(agent, "trait", None)),
         ("Home", getattr(agent, "home_settlement_name", None)),
     ])
+
+
+def household_rows(agent, world=None) -> list[tuple[str, object]]:
+    household = household_for_agent(agent, world)
+    rows = [
+        ("Household", household.household_name if household is not None else getattr(agent, "household_id", None)),
+        ("Home", home_label(agent, world)),
+        ("Members", household_member_names(household, world) if household is not None else None),
+    ]
+    return present_rows(rows) or [("", "None")]
+
+
+def household_name_for_agent(agent, world=None) -> str:
+    household = household_for_agent(agent, world)
+    if household is not None:
+        return household.household_name
+    return getattr(agent, "household_id", None) or "Unknown"
+
+
+def household_for_agent(agent, world=None):
+    if world is None or getattr(world, "settlement", None) is None:
+        return None
+    return world.settlement.household_for(getattr(agent, "household_id", None))
+
+
+def home_label(agent, world=None) -> str | None:
+    home_id = getattr(agent, "home_id", None)
+    if world is not None and getattr(world, "settlement", None) is not None:
+        home = world.settlement.home_for_id(home_id)
+        if home is not None:
+            return f"{home.home_id} ({home.x}, {home.y})"
+    home_x = getattr(agent, "home_x", None)
+    home_y = getattr(agent, "home_y", None)
+    if home_x is not None and home_y is not None:
+        return f"({home_x}, {home_y})"
+    return home_id
+
+
+def household_member_names(household, world=None) -> str | None:
+    if household is None or not household.member_ids:
+        return None
+    if world is None:
+        return ", ".join(household.member_ids)
+    names_by_id = {agent.agent_id or agent.name: agent.name for agent in world.agents}
+    return ", ".join(names_by_id.get(member_id, member_id) for member_id in household.member_ids)
 
 
 def status_rows(agent, world=None) -> list[tuple[str, object]]:
@@ -82,17 +127,11 @@ def status_rows(agent, world=None) -> list[tuple[str, object]]:
     return rows
 
 
-def familiarity_rows(agent) -> list[tuple[str, object]]:
-    if not hasattr(agent, "social_memory"):
+def relationship_rows(agent) -> list[tuple[str, object]]:
+    relationships = relationship_summary(agent)
+    if not relationships:
         return [("", "None")]
-
-    names = [
-        item.split(" (", 1)[0]
-        for item in familiarity_summary(agent)
-    ]
-    if not names:
-        return [("", "None")]
-    return [("", name) for name in names]
+    return relationships
 
 
 def bond_rows(agent) -> list[tuple[str, object]]:
@@ -100,6 +139,13 @@ def bond_rows(agent) -> list[tuple[str, object]]:
     if not bonds:
         return [("", "None")]
     return [(bond.label, bond.name) for bond in bonds]
+
+
+def memory_rows(agent) -> list[tuple[str, object]]:
+    memories = getattr(agent, "personal_memories", None)
+    if not memories:
+        return [("", "None")]
+    return [("Memory", memory) for memory in memories[:3]]
 
 
 def present_rows(rows: list[tuple[str, object | None]]) -> list[tuple[str, object]]:

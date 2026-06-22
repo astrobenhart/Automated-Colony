@@ -9,7 +9,6 @@ from src.settlement import (
     deposit_to_stockpile,
     is_adjacent_to_stockpile,
     is_near_settlement,
-    random_tile_near_settlement,
     stockpile_access_tile,
     stockpile_for,
     valid_build_tile_near_settlement,
@@ -17,8 +16,9 @@ from src.settlement import (
 )
 from src.building_placement import find_build_site_near_settlement
 from src.building_priorities import SHELTER, should_produce_building_materials
-from src.farming import HIGH, MEDIUM, choose_farm_target, harvest_farm, settlement_food_pressure
+from src.farming import HIGH, MEDIUM, choose_farm_target, farm_ready_to_harvest, harvest_farm, settlement_food_pressure
 from src.profiler import profiler
+from src.resource_ecology import harvest_wild_food
 from src.reservations import BUILD_SITE, FARM, FOOD as FOOD_RESERVATION, WOOD as WOOD_RESERVATION, WORKSHOP
 from src.roles import BUILDER, FORAGER, GENERALIST, SCOUT
 from src.workshop import is_adjacent_to_workshop, workshop_access_tile, workshop_for
@@ -111,8 +111,11 @@ class GatherFoodAction(Action):
         super().execute(agent, world)
         agent.reset_stuck()
         tile = world.tile_at(agent.x, agent.y)
-        tile.food -= 1
-        agent.food += 1
+        harvested = harvest_wild_food(tile, 1)
+        if harvested <= 0:
+            agent.record_no_progress()
+            return
+        agent.food += harvested
         world.reservations.release(FOOD_RESERVATION, (agent.x, agent.y), agent)
         world.log(f"{agent.name} gathers food.")
 
@@ -122,7 +125,7 @@ class HarvestFarmAction(Action):
 
     def can_do(self, agent: Agent, world: World) -> bool:
         farm = world.farm_at(agent.x, agent.y)
-        if farm is None or farm.food <= 0 or not _farm_work_allowed(agent, world):
+        if farm is None or not farm_ready_to_harvest(farm) or not _farm_work_allowed(agent, world):
             return False
         return (
             agent.hunger >= 70
@@ -142,7 +145,7 @@ class HarvestFarmAction(Action):
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)
         farm = world.farm_at(agent.x, agent.y)
-        if farm is None or farm.food <= 0:
+        if farm is None or not farm_ready_to_harvest(farm):
             agent.record_no_progress()
             return
 
@@ -433,24 +436,84 @@ class WanderAction(Action):
     def execute(self, agent: Agent, world: World):
         super().execute(agent, world)
 
+        if agent.idle_until_tick > world.tick:
+            agent.current_action = "Idle"
+            return
+
         if _can_use_settlement_bias(agent):
-            target = random_tile_near_settlement(world, random, agent.role)
+            target = agent.current_target
+            if target is None or target == (agent.x, agent.y):
+                target = random_tile_near_home(world, agent, random)
             if target is not None and target != (agent.x, agent.y):
                 if _step_along_path(agent, world, target):
+                    if (agent.x, agent.y) == target:
+                        begin_idle_pause(agent, world, random)
                     return
-
-        directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-        random.shuffle(directions)
-
-        for dx, dy in directions:
-            nx = agent.x + dx
-            ny = agent.y + dy
-
-            if world.can_move_to(nx, ny):
-                agent.x = nx
-                agent.y = ny
-                agent.reset_stuck()
+            elif target == (agent.x, agent.y):
+                agent.current_target = None
+                agent.current_path = []
+                begin_idle_pause(agent, world, random)
                 return
+
+        target = random_tile_near_home(world, agent, random)
+        if target is not None and target != (agent.x, agent.y):
+            if _step_along_path(agent, world, target):
+                if (agent.x, agent.y) == target:
+                    begin_idle_pause(agent, world, random)
+                return
+
+        begin_idle_pause(agent, world, random)
+
+
+def begin_idle_pause(agent: Agent, world: World, rng=random):
+    from src.config import IDLE_MAX_TICKS, IDLE_MIN_TICKS
+
+    agent.current_action = "Idle"
+    agent.current_target = None
+    agent.current_path = []
+    agent.idle_until_tick = world.tick + rng.randint(IDLE_MIN_TICKS, IDLE_MAX_TICKS)
+
+
+def random_tile_near_home(world: World, agent: Agent, rng=random) -> tuple[int, int] | None:
+    home = home_anchor(agent, world)
+    if home is None:
+        return None
+
+    home_x, home_y = home
+    radius = max(1, getattr(agent, "home_wander_radius", 4))
+    candidates = []
+    for y in range(max(0, home_y - radius), min(world.height, home_y + radius + 1)):
+        for x in range(max(0, home_x - radius), min(world.width, home_x + radius + 1)):
+            if (x, y) == (agent.x, agent.y):
+                continue
+            if max(abs(x - home_x), abs(y - home_y)) > radius:
+                continue
+            if not world.is_valid_spawn_tile(x, y):
+                continue
+            candidates.append((x, y))
+
+    if not candidates:
+        return None
+    return rng.choice(candidates)
+
+
+def home_anchor(agent: Agent, world: World) -> tuple[int, int] | None:
+    if agent.home_x is not None and agent.home_y is not None:
+        return agent.home_x, agent.home_y
+    settlement = world.settlement
+    if settlement is not None and settlement.homes:
+        nearest_home = min(
+            settlement.homes,
+            key=lambda home: (max(abs(home.x - agent.x), abs(home.y - agent.y)), home.y, home.x),
+        )
+        agent.home_x = nearest_home.x
+        agent.home_y = nearest_home.y
+        return agent.home_x, agent.home_y
+    if settlement is not None:
+        return settlement.x, settlement.y
+    agent.home_x = agent.x
+    agent.home_y = agent.y
+    return agent.home_x, agent.home_y
 
 
 def _can_use_settlement_bias(agent: Agent) -> bool:
@@ -584,11 +647,19 @@ def _step_along_path(agent: Agent, world: World, target: tuple[int, int]) -> boo
     start = (agent.x, agent.y)
 
     # Recompute path if target changed or path is exhausted.
-    if agent.current_target != target or not agent.current_path:
+    if agent.current_target != target:
         agent.current_target = target
-        agent.current_path = find_path(world, start, target, avoid_occupied=True)
+        agent.failed_path_target = None
+        agent.current_path = find_path(world, start, target, avoid_occupied=False)
+        if agent.current_path:
+            agent.begin_render_path([start] + agent.current_path)
+    elif not agent.current_path and agent.failed_path_target != target:
+        agent.current_path = find_path(world, start, target, avoid_occupied=False)
+        if agent.current_path:
+            agent.begin_render_path([start] + agent.current_path)
 
     if not agent.current_path:
+        agent.failed_path_target = target
         agent.record_path_blocked()
         return False  # Unreachable.
 
@@ -596,9 +667,13 @@ def _step_along_path(agent: Agent, world: World, target: tuple[int, int]) -> boo
     nx, ny = next_step
 
     if world.can_move_to(nx, ny):
+        from src.village_paths import record_foot_traffic
+
         agent.current_path.pop(0)
+        agent.failed_path_target = None
         agent.x = nx
         agent.y = ny
+        record_foot_traffic(world, nx, ny)
         agent.reset_stuck()
         return True
 

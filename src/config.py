@@ -8,13 +8,13 @@ DEBUG_DRAW_GRID = False
 PANEL_WIDTH = 400
 PANEL_HEIGHT = 160
 PANEL_HEIGTH = PANEL_HEIGHT
-STARTING_AGENTS = 10
+STARTING_AGENTS = 45
 INITIAL_SPAWN_RADIUS = 3
 INITIAL_SPAWN_MAX_RADIUS = 10
 WORLD_SEED = None
-HUNGER_RATE = 1
-THIRST_RATE = 1
-FATIGUE_RATE = 1
+HUNGER_RATE = 0.5
+THIRST_RATE = 0.5
+FATIGUE_RATE = 0.5
 HUNGER_DEATH_THRESHOLD = 100
 THIRST_DEATH_THRESHOLD = 100
 SHELTER_CAPACITY = 3
@@ -32,7 +32,13 @@ FARM_COMFORT_FOOD_DAYS = 3.0
 FARM_CREATION_MIN_DAY = 2
 FARM_PLACEMENT_RADIUS_MARGIN = 4
 FARM_GROWTH_THRESHOLD = 100
-FARM_FOOD_CAP = 6
+FARM_FOOD_CAP = 8
+STARTING_SEED_RESERVE = 12
+FARM_SEED_COST_PER_TILE = 1
+FARM_HARVEST_FOOD_PER_TILE = 2
+FARM_HARVEST_SEEDS_PER_TILE = 1
+TASK_PLANT_TICKS = 4
+TASK_HARVEST_FARM_TICKS = 4
 FARM_SEASON_GROWTH = {
     "Spring": 42, # default 42
     "Summer": 30, # default 30
@@ -47,12 +53,52 @@ NEED_SCORE_LOW_THRESHOLD = 15
 NEED_SCORE_SWITCH_MARGIN = 10
 STUCK_TICK_LIMIT = 3
 NO_PROGRESS_TICK_LIMIT = 5
+DECISION_INTERVAL_TICKS = 5
+MAX_UPDATES_PER_TICK = 5
+PERFORMANCE_LOGGING = True
+PERFORMANCE_LOG_INTERVAL_FRAMES = 60
+SIMULATION_SPEED_SCALAR = 0.25
+SOCIAL_MEMORY_MAX_OBSERVATIONS_PER_AGENT = 8
+VILLAGER_RENDER_TILES_PER_SECOND = 8.0
+HOME_WANDER_MIN_RADIUS = 3
+HOME_WANDER_MAX_RADIUS = 6
+IDLE_MIN_TICKS = 2
+IDLE_MAX_TICKS = 10
+TASK_HUNGER_INTERRUPT_THRESHOLD = 70
+TASK_THIRST_INTERRUPT_THRESHOLD = 70
+TASK_FATIGUE_INTERRUPT_THRESHOLD = 80
+TASK_HARVEST_TICKS = 2
+TASK_COLLECT_WATER_TICKS = 2
+TASK_CHOP_WOOD_TICKS = 6
+TASK_DEPOSIT_TICKS = 1
+TASK_EAT_TICKS = 1
+TASK_DRINK_TICKS = 1
+TASK_SLEEP_TICKS = 5
+TASK_BUILD_TICKS = 15
+TASK_EXPLORE_TICKS = 4
+AGENT_FOOD_CARRY_CAPACITY = 3
+AGENT_WATER_CARRY_CAPACITY = 3
+AGENT_WOOD_CARRY_CAPACITY = 2
+SETTLEMENT_FOOD_TARGET_DAYS = 3
+SETTLEMENT_WATER_TARGET_DAYS = 2
+SETTLEMENT_FOOD_CRISIS_DAYS = 1
+SETTLEMENT_WATER_CRISIS_DAYS = 1
+WILD_FOOD_DEPLETION_DAYS = 4
+FOOD_SPOILAGE_DAYS = 14
+PATH_TRAFFIC_INCREMENT = 1
+PATH_TRAFFIC_DAILY_DECAY = 1
+PATH_TRAFFIC_TRAMPLED_THRESHOLD = 6
+PATH_TRAFFIC_WORN_THRESHOLD = 18
+PATH_TRAFFIC_DIRT_THRESHOLD = 36
+PATH_TRAFFIC_ESTABLISHED_THRESHOLD = 72
+PATH_TRAFFIC_PRESEEDED = 90
 RIVER_COUNT = 3
 RIVER_MIN_LENGTH = 8
 RIVER_SOURCE_ELEVATION = 0.70
 RIVER_WIDEN_CHANCE = 0.06
 DAYS_PER_SEASON = 20
-TICKS_PER_DAY = 50
+TICKS_PER_HOUR = 10
+TICKS_PER_DAY = 100
 ENV_EVENT_CHANCE_PER_DAY = 0.06
 ENV_EVENT_MIN_DURATION_DAYS = 3
 ENV_EVENT_MAX_DURATION_DAYS = 6
@@ -61,6 +107,12 @@ WILDLIFE_DENSITY = 0.010
 WILDLIFE_MAX_ANIMALS = 45
 WILDLIFE_WANDER_CHANCE = 0.02
 SEASONS = ["Spring", "Summer", "Autumn", "Winter"]
+SEASON_PHASE_BOUNDARIES = {
+    "Spring": (0.20, 0.70, 0.88),
+    "Summer": (0.16, 0.76, 0.92),
+    "Autumn": (0.20, 0.66, 0.84),
+    "Winter": (0.24, 0.62, 0.78),
+}
 SEASON_FOOD_GROWTH_MODIFIERS = {
     "Spring": 1, # default 1.45
     "Summer": 0.6, # default 0.95
@@ -93,9 +145,15 @@ COLORS = {
     "hill": (126, 136, 86),
     "wetland": (55, 118, 104),
     "dry": (150, 132, 82),
+    "trampled_grass": (104, 136, 72),
+    "worn_grass": (126, 124, 70),
+    "dirt_path": (132, 104, 62),
+    "path": (118, 108, 70),
+    "path_border": (82, 74, 48),
     "water": (45, 95, 170),
     "mountain": (110, 110, 110),
     "shelter": (145, 95, 45),
+    "home": (164, 104, 58),
     "food": (230, 80, 80),
     "wood": (130, 80, 35),
     "wildlife": (220, 205, 150),
@@ -103,6 +161,10 @@ COLORS = {
     "stockpile_food": (240, 120, 100),
     "stockpile_wood": (170, 110, 55),
     "workshop": (200, 165, 95),
+    "workplace_storage": (185, 135, 78),
+    "workplace_farm": (112, 142, 62),
+    "workplace_workshop": (184, 146, 86),
+    "workplace_center": (228, 198, 105),
     "farm_border": (120, 74, 34),
     "farm_crop": (190, 175, 70),
     "agent": (245, 245, 245),
@@ -128,9 +190,14 @@ SEASONAL_TERRAIN_COLORS = {
         "hill": (138, 150, 92),
         "wetland": (60, 140, 116),
         "dry": (162, 146, 90),
+        "trampled_grass": (112, 148, 76),
+        "worn_grass": (132, 130, 72),
+        "dirt_path": (138, 112, 66),
+        "path": (124, 118, 76),
         "water": (54, 116, 188),
         "mountain": (120, 124, 118),
         "shelter": (145, 95, 45),
+        "home": (164, 104, 58),
     },
     "Summer": {
         "grass": (94, 142, 66),
@@ -139,9 +206,14 @@ SEASONAL_TERRAIN_COLORS = {
         "hill": (142, 126, 78),
         "wetland": (74, 118, 86),
         "dry": (176, 140, 68),
+        "trampled_grass": (112, 128, 62),
+        "worn_grass": (132, 116, 62),
+        "dirt_path": (142, 104, 56),
+        "path": (128, 112, 64),
         "water": (38, 82, 150),
         "mountain": (106, 104, 98),
         "shelter": (145, 95, 45),
+        "home": (156, 96, 52),
     },
     "Autumn": {
         "grass": (112, 138, 66),
@@ -150,9 +222,14 @@ SEASONAL_TERRAIN_COLORS = {
         "hill": (136, 108, 72),
         "wetland": (83, 110, 82),
         "dry": (150, 118, 72),
+        "trampled_grass": (116, 126, 62),
+        "worn_grass": (128, 108, 58),
+        "dirt_path": (132, 94, 54),
+        "path": (120, 98, 58),
         "water": (44, 92, 158),
         "mountain": (112, 104, 96),
         "shelter": (145, 95, 45),
+        "home": (170, 106, 56),
     },
     "Winter": {
         "grass": (142, 154, 138),
@@ -161,9 +238,14 @@ SEASONAL_TERRAIN_COLORS = {
         "hill": (152, 152, 138),
         "wetland": (112, 140, 148),
         "dry": (156, 148, 126),
+        "trampled_grass": (132, 142, 126),
+        "worn_grass": (138, 134, 112),
+        "dirt_path": (138, 122, 96),
+        "path": (134, 128, 106),
         "water": (74, 102, 150),
         "mountain": (172, 174, 168),
         "shelter": (135, 105, 76),
+        "home": (148, 112, 82),
     },
 }
 
@@ -175,8 +257,13 @@ TERRAIN_LABELS = {
     "plain": "Plain",
     "wetland": "Wetland",
     "dry": "Dry",
+    "trampled_grass": "Trampled",
+    "worn_grass": "Worn",
+    "dirt_path": "Dirt Path",
+    "path": "Path",
     "grass": "Grass",
     "shelter": "Shelter",
+    "home": "Home",
 }
 
 SYMBOL_LABELS = {
@@ -192,4 +279,5 @@ SYMBOL_LABELS = {
     "W": "Wood Pile",
     "T": "Workshop",
     "#": "Farm Plot",
+    "H": "Home",
 }

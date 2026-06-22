@@ -93,8 +93,8 @@ def test_character_card_formats_social_bonds_without_raw_scores():
     sections = dict(villager_detail_sections(agent))
     rendered = "\n".join(f"{label}: {value}" for label, value in sections["Bonds"])
 
-    assert ("Close Companion", "Bryn") in sections["Bonds"]
-    assert ("Trusted Neighbor", "Cato") in sections["Bonds"]
+    assert ("Close Friend", "Bryn") in sections["Bonds"]
+    assert ("Friend", "Cato") in sections["Bonds"]
     assert "30" not in rendered
     assert "10" not in rendered
 

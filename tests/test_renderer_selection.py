@@ -16,7 +16,7 @@ from src.config import (
     VIEWPORT_HEIGHT,
     VIEWPORT_WIDTH,
 )
-from src.renderer import PygameRenderer
+from src.renderer import PHASE_BAR_COLORS, PygameRenderer, VILLAGER_TILE_OFFSETS
 from src.renderer import color_for_role
 from src.renderer import is_food_visible_to_player
 from src.renderer import is_wood_visible_to_player
@@ -24,8 +24,9 @@ from src.overlays.villagers import VILLAGERS_OVERLAY
 from src.roles import BUILDER, FORAGER, GENERALIST, ROLES, SCOUT
 from src.seasons import seasonal_tile_color
 from src.settlement import Settlement
+from src.farming import FIELD_READY, FarmPlot
 from src.tile import Tile
-from src.world import World
+from src.world import World, create_world
 
 
 def make_world(width: int = 3, height: int = 3) -> World:
@@ -530,14 +531,105 @@ def test_renderer_draws_agent_using_role_color(monkeypatch):
     renderer = make_renderer(world)
     calls = []
 
-    def spy_draw_centered_symbol(symbol, x, y, color):
-        calls.append((symbol, x, y, color))
+    def spy_draw_agent_symbol(agent, x, y, offset=(0, 0)):
+        calls.append((agent, x, y, offset))
 
-    monkeypatch.setattr(renderer, "draw_centered_symbol", spy_draw_centered_symbol)
+    monkeypatch.setattr(renderer, "draw_agent_symbol", spy_draw_agent_symbol)
 
     renderer.draw_world()
 
-    assert ("@", 1, 1, color_for_role(BUILDER)) in calls
+    assert (agent, 1, 1, VILLAGER_TILE_OFFSETS[0]) in calls
+    assert color_for_role(BUILDER)
+
+
+def test_renderer_offsets_agents_that_share_a_tile(monkeypatch):
+    world = make_world(width=3, height=3)
+    agents = [
+        Agent("Ari", 1, 1, agent_id="a"),
+        Agent("Bryn", 1, 1, agent_id="b"),
+        Agent("Cato", 1, 1, agent_id="c"),
+    ]
+    world.agents.extend(agents)
+    renderer = make_renderer(world)
+    calls = []
+
+    def spy_draw_agent_symbol(agent, x, y, offset=(0, 0)):
+        calls.append((agent.agent_id, x, y, offset))
+
+    monkeypatch.setattr(renderer, "draw_agent_symbol", spy_draw_agent_symbol)
+
+    renderer.draw_world()
+
+    assert calls == [
+        ("a", 1, 1, VILLAGER_TILE_OFFSETS[0]),
+        ("b", 1, 1, VILLAGER_TILE_OFFSETS[1]),
+        ("c", 1, 1, VILLAGER_TILE_OFFSETS[2]),
+    ]
+
+
+def test_renderer_advances_agent_interpolation_without_world_update():
+    world = make_world(width=3, height=3)
+    agent = Agent("Ari", 0, 0)
+    agent.begin_render_move(0, 0, 1, 0)
+    world.agents.append(agent)
+    renderer = make_renderer(world)
+
+    renderer.update_agent_render_motion(0.05)
+
+    render_x, render_y = agent.render_position()
+    assert 0 < render_x < 1
+    assert render_y == 0
+
+
+def test_renderer_advances_agent_across_multiple_path_nodes_without_logic_update():
+    world = make_world(width=4, height=3)
+    agent = Agent("Ari", 0, 1)
+    agent.begin_render_path([(0, 1), (1, 1), (2, 1), (3, 1)])
+    world.agents.append(agent)
+    renderer = make_renderer(world)
+
+    renderer.update_agent_render_motion(0.15)
+
+    render_x, render_y = agent.render_position()
+    assert 1 < render_x < 2
+    assert render_y == 1
+
+
+def test_renderer_reuses_cached_map_surface_between_world_ticks(monkeypatch):
+    world = make_world(width=3, height=3)
+    renderer = make_renderer(world)
+    rebuilds = []
+    original_rebuild = renderer.rebuild_map_surface
+
+    def spy_rebuild(start_x, start_y, end_x, end_y):
+        rebuilds.append((start_x, start_y, end_x, end_y))
+        original_rebuild(start_x, start_y, end_x, end_y)
+
+    monkeypatch.setattr(renderer, "rebuild_map_surface", spy_rebuild)
+
+    renderer.draw_world()
+    renderer.draw_world()
+
+    assert len(rebuilds) == 1
+
+
+def test_renderer_invalidates_cached_map_surface_when_world_tick_changes(monkeypatch):
+    world = make_world(width=3, height=3)
+    renderer = make_renderer(world)
+    rebuilds = []
+    original_rebuild = renderer.rebuild_map_surface
+
+    def spy_rebuild(start_x, start_y, end_x, end_y):
+        rebuilds.append(world.tick)
+        original_rebuild(start_x, start_y, end_x, end_y)
+
+    monkeypatch.setattr(renderer, "rebuild_map_surface", spy_rebuild)
+
+    renderer.draw_world()
+    world.tick += 1
+    renderer.draw_world()
+
+    assert rebuilds == [0, 1]
 
 
 def test_role_colors_are_bright_for_screensaver_readability():
@@ -639,21 +731,54 @@ def test_two_column_status_section_draws_both_columns_compactly():
     assert end_y > 10
 
 
-def test_time_grid_contains_day_year_season_and_speed():
+def test_time_grid_contains_year_day_and_speed():
     world = make_world(width=3, height=3)
     renderer = make_renderer(world)
 
     rows = renderer.time_grid_rows(sim_speed=4)
 
     assert rows == [
-        ("Day", world.day),
         ("Year", world.year),
-        ("Season", world.season_label),
+        ("Day", world.day),
         ("Speed", "4x"),
     ]
 
 
-def test_colony_summary_uses_villagers_without_capacity_denominator():
+def test_day_progress_bar_draws_seasonal_phase_segments():
+    world = make_world(width=3, height=3)
+    renderer = make_renderer(world)
+
+    renderer.draw_day_progress_bar(10, 10, 100, 100)
+
+    morning_pixel = renderer.screen.get_at((16, 15))[:3]
+    day_pixel = renderer.screen.get_at((35, 15))[:3]
+
+    assert morning_pixel == PHASE_BAR_COLORS["morning"]
+    assert day_pixel == PHASE_BAR_COLORS["day"]
+
+
+def test_time_header_draws_season_phase_and_numeric_context(monkeypatch):
+    world = make_world(width=3, height=3)
+    renderer = make_renderer(world)
+    lines = []
+
+    def spy_draw_text_line(text, x, y, width, bottom_y, font=None, color=None):
+        lines.append(str(text))
+        return y + 1
+
+    monkeypatch.setattr(renderer, "draw_text_line", spy_draw_text_line)
+    monkeypatch.setattr(renderer, "draw_section_header", lambda text, x, y, width, bottom_y: spy_draw_text_line(text, x, y, width, bottom_y))
+
+    renderer.draw_time_header(10, 10, 200, 200, sim_speed=4)
+
+    assert "Time" in lines
+    assert f"Season: {world.season_label}" in lines
+    assert any("Morning" in line for line in lines)
+    assert "Year: 1" in lines
+    assert "Day: 1" in lines
+
+
+def test_colony_summary_uses_compact_population_without_capacity_denominator():
     world = make_world(width=8, height=8)
     world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")
     world.agents = [Agent(f"A{i}", i, 1) for i in range(9)]
@@ -668,7 +793,7 @@ def test_colony_summary_uses_villagers_without_capacity_denominator():
     lines = renderer.colony_summary_lines()
     summary = "\n".join(lines)
 
-    assert "9 Villagers" in lines
+    assert "Pop      9" in lines
     assert "9 / 12 Villagers" not in summary
     assert "9/12" not in summary
 
@@ -691,7 +816,133 @@ def test_colony_summary_excludes_debug_fields():
     assert "Rad" not in summary
     assert "Claims" not in summary
     assert "Cap" not in summary
-    assert "Settle" not in summary
+    assert "Settlement Growing Village" in summary
+    assert "Age      0 Years" in summary
+
+
+def test_colony_summary_omits_planner_diagnostics_and_targets():
+    world = make_world(width=8, height=8)
+    world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")
+    world.agents = [Agent(f"A{i}", i, 1) for i in range(6)]
+    world.tile_at(0, 2).kind = "home"
+    world.colony_storage.deposit_food(3)
+    world.colony_storage.deposit_water(2)
+    world.colony_storage.deposit_wood(4)
+    world.settlement.planned_demands = {
+        "house_construction": 80,
+        "wood_gathering": 40,
+        "food_production": 20,
+    }
+    renderer = make_renderer(world)
+
+    summary = "\n".join(renderer.colony_summary_lines())
+
+    assert "Priorities:" not in summary
+    assert "Current Priorities:" not in summary
+    assert "1. Housing" not in summary
+    assert "3 / 18" not in summary
+    assert "2 / 12" not in summary
+    assert "Food     Stable" in summary or "Food     Low" in summary
+    assert "Water    Stable" in summary or "Water    Low" in summary
+    assert "Housing  Strained" in summary
+
+
+def test_colony_summary_includes_household_statistics():
+    world = create_world(seed=913, agent_count=45)
+    renderer = make_renderer(world)
+
+    summary = "\n".join(renderer.colony_summary_lines())
+
+    assert "Households " in summary
+    assert "Avg Home " in summary
+
+
+def test_colony_summary_resource_status_reports_stability_without_raw_targets():
+    world = make_world(width=8, height=8)
+    world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")
+    world.agents = [Agent(f"A{i}", i, 1) for i in range(4)]
+    world.tile_at(0, 2).kind = "home"
+    world.tile_at(1, 2).kind = "home"
+    world.colony_storage.deposit_food(4)
+    world.colony_storage.deposit_water(4)
+    world.colony_storage.deposit_wood(20)
+    world.settlement.local_food = {(1, 1), (2, 1), (3, 1), (4, 1)}
+    world.settlement.local_water = {(1, 3), (2, 3), (3, 3), (4, 3)}
+    renderer = make_renderer(world)
+
+    summary = "\n".join(renderer.colony_summary_lines())
+
+    assert "Food     Stable" in summary
+    assert "Water    Stable" in summary
+    assert "Wood" not in summary
+    assert "20 / 8" not in summary
+
+
+def test_colony_summary_omits_seasonal_wild_food_diagnostics():
+    world = make_world(width=8, height=8)
+    world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")
+    world.settlement.local_food = {(1, 1), (2, 1)}
+    renderer = make_renderer(world)
+
+    assert "Wild Food 2 | Growing" not in renderer.colony_summary_lines()
+    assert all("Wild Food" not in line for line in renderer.colony_summary_lines())
+
+    world.season_index = 3
+    assert all("Winter Dormant" not in line for line in renderer.colony_summary_lines())
+
+
+def test_colony_summary_and_selection_show_agriculture_foundation_details(monkeypatch):
+    world = make_world(width=8, height=8)
+    world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")
+    farm = FarmPlot(2, 2, food=3)
+    farm.crop_state = FIELD_READY
+    world.settlement.farm_plots.append(farm)
+    world.colony_storage.seed_reserve = 7
+    renderer = make_renderer(world)
+
+    summary = "\n".join(renderer.colony_summary_lines())
+    assert "Farms 1 | Seeds 7" not in summary
+    assert "Seeds 7" not in summary
+
+    renderer.selected_tile = (2, 2)
+    rows = []
+
+    def spy_draw_stat_row(label, value, x, y, width, bottom_y, color=None):
+        rows.append((label, value))
+        return y + 1
+
+    monkeypatch.setattr(renderer, "draw_section_header", lambda *args, **kwargs: args[2])
+    monkeypatch.setattr(renderer, "draw_stat_row", spy_draw_stat_row)
+
+    renderer.draw_selection_details(0, 0, 200, 200)
+
+    assert ("Crop State", FIELD_READY) in rows
+    assert ("Farm Food", 3) in rows
+
+
+def test_selected_home_tile_shows_household_details(monkeypatch):
+    world = create_world(seed=914, agent_count=45)
+    home = world.settlement.homes[0]
+    household = world.settlement.household_for_home(home.home_id)
+    renderer = make_renderer(world)
+    renderer.selected_tile = (home.x, home.y)
+    rows = []
+
+    def spy_draw_stat_row(label, value, x, y, width, bottom_y, color=None):
+        rows.append((label, value))
+        return y + 1
+
+    monkeypatch.setattr(renderer, "draw_section_header", lambda *args, **kwargs: args[2])
+    monkeypatch.setattr(renderer, "draw_stat_row", spy_draw_stat_row)
+
+    renderer.draw_selection_details(0, 0, 220, 220)
+
+    assert ("Home", home.home_id) in rows
+    assert ("Household", household.household_name) in rows
+    assert ("Founded Year", household.founded_year) in rows
+    assert ("Household Age", household.established_years) in rows
+    assert ("Size", len(household.member_ids)) in rows
+    assert any(label == "Members" and value != "None" for label, value in rows)
 
 
 def test_colony_reason_lines_are_capped_and_hidden_when_stable():
@@ -718,6 +969,25 @@ def test_colony_reason_lines_are_capped_and_hidden_when_stable():
     assert renderer.colony_reason_lines() == []
 
 
+def test_colony_summary_omits_reason_text_even_when_strained():
+    world = make_world(width=8, height=8)
+    world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")
+    world.agents = [Agent(f"A{i}", i, 1) for i in range(9)]
+    world.settlement.carrying_capacity_report = CarryingCapacityReport(
+        population=9,
+        capacity=6,
+        status="Food Strained",
+        reason="Food is the limiting factor.",
+    )
+    renderer = make_renderer(world)
+
+    summary = "\n".join(renderer.colony_summary_lines())
+
+    assert "Reason:" not in summary
+    assert "Food stores low" not in summary
+    assert "Few local food sources" not in summary
+
+
 def test_colony_summary_handles_missing_capacity_report():
     world = make_world(width=8, height=8)
     world.settlement = Settlement("Willowhold", 4, 4, founded_day=1, founded_season="Spring")
@@ -725,7 +995,10 @@ def test_colony_summary_handles_missing_capacity_report():
 
     lines = renderer.colony_summary_lines()
 
-    assert "Unknown" in lines
+    assert "Pop      0" in lines
+    assert "Food     Stocked" in lines
+    assert "Water    Stocked" in lines
+    assert "Housing  Stable" in lines
 
 
 def test_renderer_recognizes_settlement_center():

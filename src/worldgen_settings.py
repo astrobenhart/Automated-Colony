@@ -9,6 +9,7 @@ from src.config import (
     WILDLIFE_DENSITY,
     WIDTH,
 )
+from src.scenarios import DEFAULT_SCENARIO_KEY, scenario_for_key
 
 
 def _clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
@@ -28,6 +29,7 @@ class WorldGenSettings:
     wildlife_density: float = WILDLIFE_DENSITY
     event_frequency: float = ENV_EVENT_CHANCE_PER_DAY
     resource_abundance: float = 1.0
+    scenario: str = DEFAULT_SCENARIO_KEY
 
     def __post_init__(self):
         object.__setattr__(self, "width", max(1, int(self.width)))
@@ -40,6 +42,7 @@ class WorldGenSettings:
         object.__setattr__(self, "wildlife_density", _clamp(float(self.wildlife_density)))
         object.__setattr__(self, "event_frequency", _clamp(float(self.event_frequency)))
         object.__setattr__(self, "resource_abundance", _clamp(float(self.resource_abundance)))
+        object.__setattr__(self, "scenario", scenario_for_key(self.scenario).key)
 
     def with_overrides(self, **kwargs) -> "WorldGenSettings":
         return replace(self, **{key: value for key, value in kwargs.items() if value is not None})

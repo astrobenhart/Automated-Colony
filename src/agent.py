@@ -28,8 +28,9 @@ from src.goals import (
     ExploreGoal,
     Goal,
 )
+from src.generations import FamilyLinks, FamilyMemoryRecord, InheritanceProfile, LifecycleRecord
 from src.profiler import profiler
-from src.lifecycle import ADULT
+from src.lifecycle import ADULT, EXPERIENCED
 from src.roles import FOOD, WATER, WOOD, GENERALIST, discovery_radius, role_goal_bonus
 from src.social_memory import SocialMemoryEntry
 from src.traits import CALM
@@ -49,6 +50,7 @@ class Agent:
     fatigue: int = 0
 
     food: int = 0
+    water: int = 0
     wood: int = 0
 
     alive: bool = True
@@ -56,6 +58,12 @@ class Agent:
     current_goal: str = "Explore"
     role: str = GENERALIST
     lifecycle_stage: str = ADULT
+    age: int = 35
+    experience_level: str = EXPERIENCED
+    years_in_role: int = 0
+    routine_age: int = 0
+    household_familiarity: int = 0
+    workplace_familiarity: int = 0
     trait: str = CALM
     agent_id: str | None = None
     peak_influence_score: int = 0
@@ -65,8 +73,35 @@ class Agent:
     remembrance_expires_day: int = 0
     home_settlement_id: str | None = None
     home_settlement_name: str | None = None
+    household_id: str | None = None
+    workplace_id: str | None = None
+    home_id: str | None = None
+    home_x: int | None = None
+    home_y: int | None = None
     birth_settlement_id: str | None = None
     birth_settlement_name: str | None = None
+    birth_year: int | None = None
+    birth_day: int | None = None
+    death_year: int | None = None
+    death_day: int | None = None
+    mother_id: str | None = None
+    father_id: str | None = None
+    parent_ids: list[str] = field(default_factory=list)
+    child_ids: list[str] = field(default_factory=list)
+    children_ids: list[str] = field(default_factory=list)
+    sibling_ids: list[str] = field(default_factory=list)
+    partner_ids: list[str] = field(default_factory=list)
+    generation: int = 0
+    lifecycle_record: LifecycleRecord = field(default_factory=LifecycleRecord)
+    family_links: FamilyLinks = field(default_factory=FamilyLinks)
+    inheritance_profile: InheritanceProfile = field(default_factory=InheritanceProfile)
+    render_from_x: float | None = field(default=None, repr=False)
+    render_from_y: float | None = field(default=None, repr=False)
+    render_target_x: float | None = field(default=None, repr=False)
+    render_target_y: float | None = field(default=None, repr=False)
+    render_progress: float = field(default=1.0, repr=False)
+    render_path: list[tuple[float, float]] = field(default_factory=list, repr=False)
+    render_path_index: int = field(default=0, repr=False)
 
     # Memory of coordinate locations
     remembered_food: set[tuple[int, int]] = field(default_factory=set, repr=False)
@@ -74,21 +109,138 @@ class Agent:
     remembered_wood: set[tuple[int, int]] = field(default_factory=set, repr=False)
     remembered_shelters: set[tuple[int, int]] = field(default_factory=set, repr=False)
     social_memory: dict[str, SocialMemoryEntry] = field(default_factory=dict, repr=False)
+    personal_memories: list[str] = field(default_factory=list, repr=False)
+    family_memories: list[FamilyMemoryRecord] = field(default_factory=list, repr=False)
 
     # Active path being followed (list of (x,y) steps, nearest first)
     current_path: list[tuple[int, int]] = field(default_factory=list, repr=False)
     current_target: tuple[int, int] | None = field(default=None, repr=False)
+    failed_path_target: tuple[int, int] | None = field(default=None, repr=False)
     current_reservation_keys: set[tuple[str, tuple[int, int]]] = field(default_factory=set, repr=False)
+    active_action: Action | None = field(default=None, repr=False)
+    last_decision_tick: int = -1
+    idle_until_tick: int = 0
+    home_wander_radius: int = 4
+    daily_role: str | None = None
+    task_state: str = "idle"
+    task_target: tuple[int, int] | None = field(default=None, repr=False)
+    task_timer: int = 0
+    task_resume_state: str | None = field(default=None, repr=False)
     stuck_ticks: int = 0
     no_progress_ticks: int = 0
+
+    def __post_init__(self):
+        self.sync_generation_architecture()
+        self.sync_render_position()
+
+    @property
+    def deceased(self) -> bool:
+        return not self.alive
+
+    def sync_generation_architecture(self):
+        if self.children_ids and not self.child_ids:
+            self.child_ids.extend(self.children_ids)
+        if self.child_ids and not self.children_ids:
+            self.children_ids.extend(self.child_ids)
+
+        parent_ids = []
+        for parent_id in (self.mother_id, self.father_id):
+            if parent_id and parent_id not in parent_ids:
+                parent_ids.append(parent_id)
+        for parent_id in self.parent_ids:
+            if parent_id not in parent_ids:
+                parent_ids.append(parent_id)
+        self.parent_ids = parent_ids
+
+        self.family_links.mother_id = self.mother_id
+        self.family_links.father_id = self.father_id
+        self.family_links.parent_ids = list(self.parent_ids)
+        self.family_links.children_ids = list(self.children_ids)
+        self.family_links.sibling_ids = list(self.sibling_ids)
+        self.family_links.partner_ids = list(self.partner_ids)
+
+        self.lifecycle_record.birth_year = self.birth_year
+        self.lifecycle_record.birth_day = self.birth_day
+        self.lifecycle_record.death_year = self.death_year
+        self.lifecycle_record.death_day = self.death_day
+
+        if self.trait and self.trait not in self.inheritance_profile.personality_traits:
+            self.inheritance_profile.personality_traits.append(self.trait)
+        if self.role and self.role not in self.inheritance_profile.work_preferences:
+            self.inheritance_profile.work_preferences.append(self.role)
+        if self.appearance_seed is not None:
+            self.inheritance_profile.appearance_traits["appearance_seed"] = self.appearance_seed
+        if self.appearance_type is not None:
+            self.inheritance_profile.appearance_traits["appearance_type"] = self.appearance_type
 
     def discovery_radius(self, resource_type: str) -> int:
         return discovery_radius(self.role, resource_type)
 
-    def update_needs(self):
-        self.hunger += HUNGER_RATE
-        self.thirst += THIRST_RATE
-        self.fatigue += FATIGUE_RATE
+    def update_needs(self, ticks: float = 1):
+        scale = max(0, ticks)
+        self.hunger += HUNGER_RATE * scale
+        self.thirst += THIRST_RATE * scale
+        self.fatigue += FATIGUE_RATE * scale
+
+    def sync_render_position(self):
+        self.render_from_x = float(self.x)
+        self.render_from_y = float(self.y)
+        self.render_target_x = float(self.x)
+        self.render_target_y = float(self.y)
+        self.render_progress = 1.0
+        self.render_path = [(float(self.x), float(self.y))]
+        self.render_path_index = 0
+
+    def begin_render_move(self, from_x: int, from_y: int, to_x: int, to_y: int):
+        self.begin_render_path([(from_x, from_y), (to_x, to_y)])
+
+    def begin_render_path(self, path: list[tuple[int, int]]):
+        if not path:
+            self.sync_render_position()
+            return
+
+        self.render_path = [(float(x), float(y)) for x, y in path]
+        self.render_path_index = 0
+        self.render_from_x, self.render_from_y = self.render_path[0]
+        if len(self.render_path) > 1:
+            self.render_target_x, self.render_target_y = self.render_path[1]
+        else:
+            self.render_target_x, self.render_target_y = self.render_path[0]
+        self.render_progress = 0.0
+
+    def advance_render_motion(self, time_delta: float, tiles_per_second: float):
+        if not self.render_path or self.render_path_index >= len(self.render_path) - 1:
+            self.render_progress = 1.0
+            return
+
+        self.render_progress += max(0.0, time_delta) * tiles_per_second
+        while self.render_progress >= 1.0 and self.render_path_index < len(self.render_path) - 1:
+            self.render_progress -= 1.0
+            self.render_path_index += 1
+            self.render_from_x, self.render_from_y = self.render_path[self.render_path_index]
+            if self.render_path_index < len(self.render_path) - 1:
+                self.render_target_x, self.render_target_y = self.render_path[self.render_path_index + 1]
+            else:
+                self.render_target_x, self.render_target_y = self.render_path[self.render_path_index]
+                self.render_progress = 1.0
+                break
+
+    def render_position(self) -> tuple[float, float]:
+        if (
+            self.render_from_x is None
+            or self.render_from_y is None
+            or self.render_target_x is None
+            or self.render_target_y is None
+        ):
+            self.sync_render_position()
+
+        if self.render_path and self.render_path_index >= len(self.render_path) - 1:
+            return self.render_path[-1]
+
+        progress = max(0.0, min(1.0, self.render_progress))
+        x = self.render_from_x + (self.render_target_x - self.render_from_x) * progress
+        y = self.render_from_y + (self.render_target_y - self.render_from_y) * progress
+        return x, y
 
     def scan_surroundings(self, world: World):
         food_radius = self.discovery_radius(FOOD)
@@ -199,6 +351,25 @@ class Agent:
         goal = self.choose_goal(world)
         return goal.choose_action(self, world)
 
+    def update_decision(self, world: World) -> Action:
+        self.scan_surroundings(world)
+        self.active_action = self.choose_action(world)
+        self.last_decision_tick = world.tick
+        return self.active_action
+
+    def action_for_tick(self, world: World) -> Action:
+        from src.config import DECISION_INTERVAL_TICKS
+
+        if (
+            self.active_action is None
+            or self.last_decision_tick < 0
+            or world.tick - self.last_decision_tick >= DECISION_INTERVAL_TICKS
+            or not self.active_action.can_do(self, world)
+        ):
+            return self.update_decision(world)
+
+        return self.active_action
+
     def reset_stuck(self):
         self.stuck_ticks = 0
         self.no_progress_ticks = 0
@@ -209,18 +380,23 @@ class Agent:
 
         if self.stuck_ticks >= STUCK_TICK_LIMIT:
             self.current_target = None
+            self.failed_path_target = None
 
     def progress_snapshot(self, world: World):
         return {
             "position": (self.x, self.y),
             "needs": (self.hunger, self.thirst, self.fatigue),
-            "inventory": (self.food, self.wood),
-            "storage": (world.colony_storage.food, world.colony_storage.wood),
+            "inventory": (self.food, self.water, self.wood),
+            "storage": (world.colony_storage.food, world.colony_storage.water, world.colony_storage.wood),
             "shelters": world.count_tiles("shelter"),
             "target": self.current_target,
         }
 
     def update_progress_tracking(self, world: World, before):
+        if self.current_action == "Idle" and self.idle_until_tick > world.tick:
+            self.no_progress_ticks = 0
+            return
+
         after = self.progress_snapshot(world)
         if self._made_progress(before, after):
             self.no_progress_ticks = 0
@@ -236,6 +412,8 @@ class Agent:
         if self.no_progress_ticks >= NO_PROGRESS_TICK_LIMIT:
             self.current_path = []
             self.current_target = None
+            self.failed_path_target = None
+            self.active_action = None
             self.current_action = "Recovering"
 
     def release_reservations(self, world: World):
@@ -259,12 +437,14 @@ class Agent:
         if self.hunger >= HUNGER_DEATH_THRESHOLD:
             self.alive = False
             self.current_action = "Dead"
+            self.active_action = None
             self.release_reservations(world)
             from src.death_memory import record_death
             record_death(world, self, "starvation")
         elif self.thirst >= THIRST_DEATH_THRESHOLD:
             self.alive = False
             self.current_action = "Dead"
+            self.active_action = None
             self.release_reservations(world)
             from src.death_memory import record_death
             record_death(world, self, "thirst")

@@ -33,6 +33,11 @@ def add_shelters(world, count):
         world.tile_at(index, 3).kind = "shelter"
 
 
+def add_homes(world, count):
+    for index in range(count):
+        world.tile_at(index, 4).kind = "home"
+
+
 def teardown_function():
     pygame.quit()
 
@@ -83,6 +88,18 @@ def test_shelter_strained_report_when_beds_are_limiting():
     assert report.capacity == 3
     assert report.status == SHELTER_STRAINED
     assert report.reason == "Shelter space is the limiting factor."
+
+
+def test_home_tiles_count_toward_housing_capacity():
+    world = make_world(population=7)
+    add_homes(world, 2)
+    world.colony_storage.deposit_food(30)
+    world.settlement.local_water = {(1, 1), (2, 1), (3, 1)}
+
+    report = carrying_capacity_report(world)
+
+    assert report.shelter_capacity == 6
+    assert report.reason_lines[1] == "Shelter: 6 capacity from 2 housing structures (0 shelters, 2 homes)"
 
 
 def test_water_strained_report_when_water_access_is_limiting():

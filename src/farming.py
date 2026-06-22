@@ -9,14 +9,18 @@ from src.config import (
     FARM_CREATION_MIN_DAY,
     FARM_FOOD_CAP,
     FARM_GROWTH_THRESHOLD,
+    FARM_HARVEST_FOOD_PER_TILE,
+    FARM_HARVEST_SEEDS_PER_TILE,
     FARM_MAX_PLOTS_LARGE,
     FARM_MAX_PLOTS_MEDIUM,
     FARM_MAX_PLOTS_SMALL,
     FARM_PLACEMENT_RADIUS_MARGIN,
+    FARM_SEED_COST_PER_TILE,
     FARM_SEASON_GROWTH,
     FARM_START_FOOD_DAYS,
 )
 from src.environment_events import food_growth_event_multiplier
+from src.workplace import DEFAULT_CAPACITY, FARM as FARM_WORKPLACE, Workplace
 
 if TYPE_CHECKING:
     from src.agent import Agent
@@ -26,6 +30,11 @@ if TYPE_CHECKING:
 LOW = "LOW"
 MEDIUM = "MEDIUM"
 HIGH = "HIGH"
+FIELD_UNPREPARED = "Unprepared"
+FIELD_PLANTED = "Planted"
+FIELD_GROWING = "Growing"
+FIELD_READY = "Ready For Harvest"
+FIELD_DORMANT = "Dormant"
 
 FARMABLE_TERRAIN = {
     "grass": 1.0,
@@ -44,6 +53,8 @@ class FarmPlot:
     active: bool = True
     fertility: float = 1.0
     last_harvest_day: int = 0
+    crop_state: str = FIELD_UNPREPARED
+    seed_yield: int = 0
 
     def __post_init__(self):
         expected = farm_tiles(self.origin_x, self.origin_y)
@@ -54,6 +65,8 @@ class FarmPlot:
 
         if sorted(self.tiles) != sorted(expected):
             raise ValueError("FarmPlot must own exactly the four tiles in its 2x2 footprint.")
+        if self.food > 0:
+            self.crop_state = FIELD_READY
 
     @property
     def origin(self) -> tuple[int, int]:
@@ -117,9 +130,32 @@ def maybe_create_farm(world: World) -> FarmPlot | None:
 
     farm = FarmPlot(site[0], site[1], fertility=farm_fertility(world, site[0], site[1]))
     settlement.farm_plots.append(farm)
+    register_farm_workplace(world, farm)
     world.log("Farm creation triggered by high food pressure.")
     world.log("A 2x2 farm plot is marked near the settlement.")
     return farm
+
+
+def register_farm_workplace(world: World, farm: FarmPlot):
+    settlement = world.settlement
+    if settlement is None:
+        return
+    farm_workplaces = settlement.workplaces_for_type(FARM_WORKPLACE)
+    if farm_workplaces:
+        workplace = farm_workplaces[0]
+        for tile in farm.tiles:
+            if tile not in workplace.tiles:
+                workplace.tiles.append(tile)
+        workplace.capacity = max(workplace.capacity, DEFAULT_CAPACITY[FARM_WORKPLACE])
+        return
+    settlement.workplaces.append(Workplace(
+        workplace_id=f"farm-{len(farm_workplaces)}",
+        workplace_type=FARM_WORKPLACE,
+        x=farm.origin_x,
+        y=farm.origin_y,
+        capacity=DEFAULT_CAPACITY[FARM_WORKPLACE],
+        tiles=list(farm.tiles),
+    ))
 
 
 def find_farm_site_near_settlement(world: World) -> tuple[int, int] | None:
@@ -205,13 +241,31 @@ def update_farms(world: World):
         return
 
     for farm in settlement.farm_plots:
-        if not farm.active or farm.food >= FARM_FOOD_CAP:
+        if not farm.active:
             continue
-        growth = daily_farm_growth(world, farm)
-        farm.growth += growth
-        while farm.growth >= FARM_GROWTH_THRESHOLD and farm.food < FARM_FOOD_CAP:
-            farm.growth -= FARM_GROWTH_THRESHOLD
-            farm.food += 1
+        update_farm_cycle(world, farm)
+
+
+def update_farm_cycle(world: World, farm: FarmPlot):
+    if world.season == "Winter":
+        if farm.food <= 0:
+            farm.crop_state = FIELD_DORMANT
+            farm.growth = 0
+        return
+
+    if world.season == "Spring":
+        if farm.crop_state == FIELD_DORMANT:
+            farm.crop_state = FIELD_UNPREPARED
+            farm.growth = 0
+        return
+
+    if world.season == "Summer" and farm.crop_state in (FIELD_PLANTED, FIELD_GROWING):
+        farm.crop_state = FIELD_GROWING
+        farm.growth = min(FARM_GROWTH_THRESHOLD, farm.growth + daily_farm_growth(world, farm))
+        return
+
+    if world.season == "Autumn" and farm.crop_state in (FIELD_PLANTED, FIELD_GROWING):
+        prepare_farm_harvest(world, farm)
 
 
 def daily_farm_growth(world: World, farm: FarmPlot) -> int:
@@ -224,11 +278,71 @@ def daily_farm_growth(world: World, farm: FarmPlot) -> int:
     return max(0, round(base * terrain_multiplier * event_multiplier))
 
 
+def farm_seed_cost(farm: FarmPlot) -> int:
+    return len(farm.tiles) * FARM_SEED_COST_PER_TILE
+
+
+def farm_max_food_yield(farm: FarmPlot) -> int:
+    return len(farm.tiles) * FARM_HARVEST_FOOD_PER_TILE
+
+
+def farm_seed_yield(farm: FarmPlot) -> int:
+    return len(farm.tiles) * FARM_HARVEST_SEEDS_PER_TILE
+
+
+def farm_needs_planting(world: World, farm: FarmPlot) -> bool:
+    return (
+        world.season == "Spring"
+        and farm.active
+        and farm.crop_state in (FIELD_UNPREPARED, FIELD_DORMANT)
+        and farm.food <= 0
+    )
+
+
+def farm_ready_to_harvest(farm: FarmPlot) -> bool:
+    return farm.active and farm.crop_state == FIELD_READY and farm.food > 0
+
+
+def farm_has_work(world: World, farm: FarmPlot) -> bool:
+    return farm_needs_planting(world, farm) or farm_ready_to_harvest(farm)
+
+
+def plant_farm(world: World, farm: FarmPlot) -> bool:
+    if not farm_needs_planting(world, farm):
+        return False
+    cost = farm_seed_cost(farm)
+    if world.colony_storage.withdraw_seeds(cost) < cost:
+        return False
+    farm.crop_state = FIELD_PLANTED
+    farm.growth = 0
+    farm.food = 0
+    farm.seed_yield = 0
+    return True
+
+
+def prepare_farm_harvest(world: World, farm: FarmPlot):
+    if farm.crop_state == FIELD_READY:
+        return
+    progress = max(0.25, min(1.0, farm.growth / FARM_GROWTH_THRESHOLD))
+    farm.food = min(FARM_FOOD_CAP, max(1, round(farm_max_food_yield(farm) * progress)))
+    farm.seed_yield = max(1, round(farm_seed_yield(farm) * progress))
+    farm.crop_state = FIELD_READY
+    farm.growth = FARM_GROWTH_THRESHOLD
+
+
 def harvest_farm(world: World, farm: FarmPlot, amount: int = 1) -> int:
+    if not farm_ready_to_harvest(farm):
+        return 0
     harvested = min(max(0, amount), farm.food)
     farm.food -= harvested
     if harvested > 0:
+        if farm.seed_yield > 0:
+            world.colony_storage.deposit_seeds(farm.seed_yield)
+            farm.seed_yield = 0
         farm.last_harvest_day = world.day
+    if farm.food <= 0:
+        farm.crop_state = FIELD_DORMANT if world.season == "Winter" else FIELD_UNPREPARED
+        farm.growth = 0
     return harvested
 
 
@@ -237,7 +351,7 @@ def choose_farm_target(world: World, agent: Agent) -> FarmPlot | None:
     if settlement is None:
         return None
 
-    farms = [farm for farm in settlement.farm_plots if farm.active and farm.food > 0]
+    farms = [farm for farm in settlement.farm_plots if farm_ready_to_harvest(farm)]
     if not farms:
         return None
 
@@ -258,6 +372,38 @@ def choose_farm_target(world: World, agent: Agent) -> FarmPlot | None:
         key=lambda farm: (
             min(abs(x - agent.x) + abs(y - agent.y) for x, y in farm.tiles),
             max(abs(farm.origin_x - settlement.x), abs(farm.origin_y - settlement.y)),
+            farm.origin_y,
+            farm.origin_x,
+        ),
+    )
+
+
+def choose_farm_work_target(world: World, agent: Agent) -> FarmPlot | None:
+    settlement = world.settlement
+    if settlement is None:
+        return None
+
+    farms = [
+        farm
+        for farm in settlement.farm_plots
+        if farm_has_work(world, farm)
+    ]
+    if not farms:
+        return None
+    farms = [
+        farm
+        for farm in farms
+        if farm_ready_to_harvest(farm)
+        or (farm_needs_planting(world, farm) and world.colony_storage.seed_reserve >= farm_seed_cost(farm))
+    ]
+    if not farms:
+        return None
+
+    return min(
+        farms,
+        key=lambda farm: (
+            0 if farm_ready_to_harvest(farm) else 1,
+            min(abs(x - agent.x) + abs(y - agent.y) for x, y in farm.tiles),
             farm.origin_y,
             farm.origin_x,
         ),

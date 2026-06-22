@@ -5,7 +5,7 @@ All worlds are hand-built (no random generation) so results are deterministic.
 """
 from src.world import World
 from src.tile import Tile
-from src.pathfinding import find_path
+from src.pathfinding import find_path, movement_cost
 from src.agent import Agent
 
 
@@ -155,3 +155,15 @@ def test_path_returns_empty_when_occupied_destination_is_avoided():
     path = find_path(world, (0, 0), (2, 0), avoid_occupied=True)
 
     assert path == []
+
+
+def test_pathfinding_prefers_path_tiles_without_forcing_them():
+    world = make_world(7, 3)
+    for x in range(7):
+        world.tiles[0][x].kind = "path"
+
+    path = find_path(world, (0, 1), (6, 1))
+
+    assert (3, 0) in path
+    assert path[-1] == (6, 1)
+    assert movement_cost("path") < movement_cost("grass")

@@ -1,8 +1,8 @@
 # Roadmap
 
-## North Star - Slow Autonomous Settlement Screensaver
+## North Star - Slow Autonomous Village Simulation
 
-Automated Colony is moving from an automated survival colony toward a slow autonomous generational settlement simulation.
+Automated Colony is moving from an automated survival colony toward a slow autonomous generational village simulation.
 
 The world should feel lived in.
 
@@ -11,7 +11,7 @@ The player should feel like they are observing a place with homes, paths, jobs, 
 The settlement should not feel like a blank map where every villager starts from scratch. The player is not founding every story. The player is arriving partway through ongoing village life.
 
 Long-term direction:
-- A slow autonomous settlement screensaver where villagers live, work, age, reproduce, die, remember, inherit traits, and gradually change the land around them, while natural forces also reshape the world.
+- A slow autonomous village simulation where generations of villagers live, work, form households, reproduce, inherit traits, reshape the land, and create emergent stories over long periods of time.
 - The project is not a colony manager. The observer watches the world unfold; they do not assign jobs, command households, place every building, or micromanage production.
 - Survival remains important, but the future emphasis is long-running village continuity, daily life, generational memory, and visible accumulated history.
 
@@ -204,7 +204,7 @@ Notes:
 - Death Memory v1 creates permanent Death Records when villagers die, records one readable world-history entry, and gives familiar villagers a temporary personal `Remembering: Name` line. This is memory and history flavor only; it does not add morale penalties, productivity penalties, graves, funerals, ghosts, resurrection, or legacy mechanics.
 - History Overlay v1 adds a read-only Chronicle opened with `H`. It shows recent history entries, active remembrance lines, and compact remembered-dead cards using story-facing language and readable season/year dates. It is not a death viewer, graveyard UI, debug log, or management tool.
 - Settlement Identity v1 gives villagers stable home and birth settlement fields, displays Home on character cards, and lets death history / Chronicle wording use names such as `Rowan of Oakvale`. This is belonging and future migration groundwork only; it adds no behavior bonuses, same-settlement familiarity changes, politics, factions, migration, or conflict.
-- Social Bond Labels v1 replace the old pair/family-label idea with non-romantic, non-family display labels derived from existing familiarity. Character cards may show labels such as Often Seen With, Trusted Neighbor, and Close Companion. These labels do not affect behavior, remembrance, influence, settlement membership, survival, or social-memory growth.
+- Social Bond Labels v1 replace the old pair/family-label idea with non-romantic, non-family display labels derived from existing familiarity. Character cards may show community labels such as Familiar, Friend, Close Friend, and Trusted Companion. These labels do not affect behavior, remembrance, influence, settlement membership, survival, or social-memory growth.
 - Do not add old-age death yet.
 - Do not add reproduction, children, romance, households, inheritance, or full family trees in v0.6. These are now explicit future architecture targets, starting with lived-in village and household foundations.
 - Do not let social systems override survival needs.
@@ -220,28 +220,41 @@ Notes:
 Goal: Make the default experience feel like arriving at an existing village already in progress, not watching blank-slate survivors found every story from scratch.
 
 Features:
-- [ ] Pre-seeded village start
-- [ ] Homes as village anchors
-- [ ] Workplace placeholders for farms, storage, workshops, and future professions
-- [ ] Daily schedule foundation
-- [ ] Household foundations without full reproduction yet
-- [ ] Pre-generated village paths or simple worn-path tiles
-- [ ] Mixed lifecycle starting population
-- [ ] Pre-existing roles, routines, relationships, social bonds, and memories
-- [ ] Starting village history / Chronicle seed entries
-- [ ] Architecture support for future reproduction, children, parents, inherited traits, aging progression, household membership, family history, births, and deaths
-- [ ] Scenario framing for different starting settlement maturity levels
-- [ ] Simulation level-of-detail planning for 30-60 villagers
+- [x] Pre-seeded village start Phase 1: central village location, visible homes, and home-distributed villagers
+- [x] Homes as village anchors
+- [x] Workplace placeholders for farms, storage, workshops, and future professions
+- [x] Daily schedule foundation
+- [x] Day progress HUD bar
+- [x] Seasonal wild food regeneration
+- [x] Food spoilage
+- [x] Farm-ready food economy foundations
+- [x] Crop fields
+- [x] Planting cycle
+- [x] Seasonal harvests
+- [x] Stored seed reserves
+- [x] Farm workplace specialization
+- [x] Household foundations without full reproduction yet
+- [x] Pre-generated village paths or simple worn-path tiles
+- [x] Mixed lifecycle starting population
+- [x] Pre-existing roles, routines, relationships, social bonds, and memories
+- [x] Starting village history / Chronicle seed entries
+- [x] Architecture support for future reproduction, children, parents, inherited traits, aging progression, household membership, family history, births, and deaths
+- [x] Scenario framing for different starting settlement maturity levels
+- [x] Simulation level-of-detail planning for 30-60 villagers
 
 Starting Scenarios:
-- Frontier Camp: closest to the current experience, with 10-20 villagers, early shelters, fewer buildings, and visible survival pressure.
-- Small Village: recommended v0.7 default, with 30-60 villagers, homes, farms, paths, storage, workplace placeholders, simple households, roles, routines, social bonds, and seed Chronicle entries.
-- Old Village: future scenario with established history, remembered dead, worn paths, older buildings, and a larger family network.
+- Pioneer Camp: a 0-2 year frontier start with 12-20 villagers, few homes, limited stores, sparse paths, and short Chronicle history.
+- Growing Village: the default v0.7 start, with 30-60 villagers, homes, farms, paths, storage, workplace placeholders, simple households, roles, routines, social bonds, and seed Chronicle entries.
+- Mature Settlement: a 20-50 year start with larger population, more homes, stronger social memory, older paths, and deeper Chronicle context.
+- Ancient Hamlet: a 50+ year start with old households, stronger traditions, dense social bonds, longer Chronicle history, and more mysterious folklore.
 - Market Town: future scenario with 100-200 villagers, districts, more professions, and delivery/resource networks.
 
 Notes:
 - The starting world generator should create an initial social fabric, not just terrain and resources.
 - The player should feel like the village existed before observation began.
+- Phase 1 of the pre-seeded village start creates 8-15 visible homes around the founded settlement center, then spawns the default 30-60 villager population on or beside those homes.
+- Multiple villagers may occupy the same tile, including at startup homes. Occupancy must not block spawning or core movement, which keeps future households from creating pathfinding deadlocks.
+- Paths, farms, storage expansion, social familiarity seeding, history seeding, schedules, households, reproduction, and delivery systems remain outside Phase 1.
 - Paths are high priority because they visually communicate that people live here.
 - v0.7 can begin with generated paths between homes, farms, storage, and workplaces before adding dynamic path wear.
 - Daily routines should be slow and readable: wake, eat, go to workplace, work, rest or socialize, return home, eat, household time, sleep.
@@ -249,26 +262,102 @@ Notes:
 - v0.7 should prepare for reproduction and inheritance without implementing them casually as population counters.
 - No micromanagement UI, job assignment, work orders, household controls, romance drama, politics, or formal leaders are added.
 
-## v0.8 - Generations and Household Life
+## v0.7.1 - Living Village
 
-Goal: Turn households and lifecycle labels into long-term population continuity, family memory, and generational history.
+Goal: Village Structure. Make the settlement legible as a living village with visible priorities, working housing construction, paths, households, relationships, and readable daily rhythms.
 
-Features:
-- [ ] Reproduction tied to households, identity, settlement capacity, and long-term continuity
-- [ ] Children
-- [ ] Parent links
-- [ ] Trait inheritance with variation
-- [ ] Aging from child to adult to elder
-- [ ] Birth events in the Chronicle
-- [ ] Death and remembrance across generations
-- [ ] Household continuity after births, deaths, and aging
-- [ ] Family history data without requiring a full family-tree UI
+### Settlement Visibility
+- [x] Settlement priorities panel
+- [x] Food current/target display
+- [x] Water current/target display
+- [x] Wood current/target display
+- [x] Housing current/target display
+
+### Housing & Construction
+- [x] Housing demand generation
+- [x] Builder assignment
+- [x] Construction site creation
+- [x] House completion increases capacity
+
+### Paths
+- [x] Pre-seeded village paths
+- [x] Path wear system
+- [x] Path traffic tracking
+- [x] Path-preferred pathfinding
+
+### Households
+- [x] Household data model
+- [x] Household assignment
+- [x] Household display in villager UI
+- [x] Household member display
+
+### Relationships
+- [x] Stranger relationship state
+- [x] Known relationship state
+- [x] Familiar relationship state
+- [x] Friend relationship state
+- [x] Relationship display in villager UI
+
+### Daily Rhythms
+- [x] Morning phase
+- [x] Day phase
+- [x] Evening phase
+- [x] Night phase
+- [x] Return-home behavior
+
+### Generational Foundations
+- [x] parent_ids support
+- [x] child_ids support
+- [x] generation support
+- [x] household_id support
+- [x] life stage architecture
 
 Notes:
+- v0.7.1 is the focused bridge from settlement simulation to village simulation.
+- Paths are the main remaining structural gap for Living Village.
+- Households remain village units at this milestone, not marriage, romance, reproduction, inheritance, family trees, or legal family membership.
+- Relationship states describe familiarity only and do not drive romance, reproduction, labor assignment, politics, or inheritance.
+- Reproduction, inheritance, children, family continuity, and generational history remain upcoming priorities for v0.8.
+
+## v0.8 - Generational Village
+
+Goal: Generational Systems. Add the smallest complete loop for children, reproduction, inherited traits, family tracking, and generational history.
+
+### Life Stages
+- [ ] Infant stage
+- [ ] Child stage
+- [ ] Adult stage
+- [ ] Elder stage
+- [ ] Age progression
+
+### Reproduction
+- [ ] Reproduction eligibility rules
+- [ ] Household-based reproduction
+- [ ] Child creation
+- [ ] Population balancing
+
+### Trait Inheritance
+- [ ] Parent trait selection
+- [ ] Trait inheritance system
+- [ ] Trait mutation/variation
+- [ ] Inherited personality traits
+
+### Family Tracking
+- [ ] Parent relationships
+- [ ] Child relationships
+- [ ] Family display in villager UI
+- [ ] Generation tracking
+
+### History
+- [ ] Birth events
+- [ ] Family history events
+- [ ] Generational history records
+- [ ] Household history records
+
+Notes:
+- v0.8 should stay intentionally small: prove the first generational loop before expanding it.
 - Reproduction should not be a simple population counter.
-- Children should inherit traits from parents, with room for variation.
-- A future inheritance model may let a child inherit one trait from one parent, blend tendencies from both parents, or rarely receive a new/random trait.
-- Traits should remain simple and display-first before they become deep behavior modifiers.
+- Children should inherit traits from parents with room for variation.
 - Old-age death should remain tied to renewal systems so villages do not collapse automatically.
 - Avoid pregnancy mechanics, inheritance law, romance drama, detailed domestic economy, and full family-tree UI unless a later design explicitly needs them.
 

@@ -12,7 +12,7 @@ def make_world(kinds):
     return world
 
 
-def test_can_move_to_rejects_blocked_terrain_and_occupied_tiles():
+def test_can_move_to_rejects_blocked_terrain_but_allows_shared_villager_tiles():
     world = make_world([
         ["grass", "water", "mountain"],
         ["grass", "grass", "grass"],
@@ -22,7 +22,7 @@ def test_can_move_to_rejects_blocked_terrain_and_occupied_tiles():
     assert world.can_move_to(0, 0)
     assert not world.can_move_to(1, 0)
     assert not world.can_move_to(2, 0)
-    assert not world.can_move_to(0, 1)
+    assert world.can_move_to(0, 1)
     assert not world.can_move_to(-1, 0)
     assert not world.can_move_to(3, 0)
 

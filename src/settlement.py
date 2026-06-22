@@ -10,6 +10,9 @@ from src.farming import FarmPlot
 from src.profiler import profiler
 from src.reservations import FOOD as FOOD_RESERVATION, WOOD as WOOD_RESERVATION
 from src.roles import BUILDER, FORAGER, GENERALIST, SCOUT
+from src.scenarios import DEFAULT_SCENARIO_KEY, scenario_for_key
+from src.village_paths import apply_path_wear, seed_village_paths
+from src.workplace import Workplace, create_workplaces
 from src.workshop import Workshop, create_workshops, is_workshop_tile
 
 FOOD = "food"
@@ -22,6 +25,55 @@ NEED_SHELTER = "shelter"
 NEED_WOOD = "wood"
 NEED_MATERIALS = "materials"
 SETTLEMENT_NEEDS = (NEED_SHELTER, NEED_WOOD, NEED_MATERIALS)
+
+
+@dataclass
+class Home:
+    x: int
+    y: int
+    home_id: str | None = None
+    household_id: str | None = None
+
+
+@dataclass
+class Household:
+    household_id: str
+    household_name: str
+    home_id: str | None = None
+    home_building_id: str | None = None
+    member_ids: list[str] = field(default_factory=list)
+    founder_ids: list[str] = field(default_factory=list)
+    founded_year: int = 1
+    household_head: str | None = None
+    cohabitation_days: int = 0
+    established_years: int = 0
+    generation_count: int = 1
+    historical_member_ids: list[str] = field(default_factory=list)
+    succession_history: list[dict[str, object]] = field(default_factory=list)
+
+    def __post_init__(self):
+        if self.home_building_id is None:
+            self.home_building_id = self.home_id
+        if self.home_id is None:
+            self.home_id = self.home_building_id
+
+    @property
+    def members(self) -> list[str]:
+        return self.member_ids
+
+    @property
+    def size(self) -> int:
+        return len(self.member_ids)
+
+    def add_member(self, member_id: str):
+        if member_id not in self.member_ids:
+            self.member_ids.append(member_id)
+        if member_id not in self.historical_member_ids:
+            self.historical_member_ids.append(member_id)
+        if not self.founder_ids:
+            self.founder_ids.append(member_id)
+        if self.household_head is None:
+            self.household_head = member_id
 
 
 @dataclass
@@ -59,9 +111,12 @@ class Settlement:
     wood_pressure: str = LOW
     water_pressure: str = LOW
     population: int = 0
+    homes: list[Home] = field(default_factory=list)
+    households: list[Household] = field(default_factory=list)
     stockpiles: list[Stockpile] = field(default_factory=list)
     workshops: list[Workshop] = field(default_factory=list)
     farm_plots: list[FarmPlot] = field(default_factory=list)
+    workplaces: list[Workplace] = field(default_factory=list)
     activity_heatmap: dict[tuple[int, int], int] = field(default_factory=dict)
     local_food: set[tuple[int, int]] = field(default_factory=set)
     local_wood: set[tuple[int, int]] = field(default_factory=set)
@@ -71,6 +126,13 @@ class Settlement:
     top_need: str | None = None
     need_updated_day: int | None = None
     carrying_capacity_report: object | None = None
+    planned_demands: dict[str, int] = field(default_factory=dict)
+    work_assignments: dict[str, str] = field(default_factory=dict)
+    construction_progress: dict[tuple[int, int], int] = field(default_factory=dict)
+    last_planned_day: int | None = None
+    scenario_key: str = DEFAULT_SCENARIO_KEY
+    maturity_label: str = "Growing Village"
+    age_years: int = 0
 
     def record_activity(self, x: int, y: int):
         pos = (x, y)
@@ -86,10 +148,64 @@ class Settlement:
                     return stockpile
             return None
 
+    def household_for(self, household_id: str | None) -> Household | None:
+        if household_id is None:
+            return None
+        for household in self.households:
+            if household.household_id == household_id:
+                return household
+        return None
+
+    def household_for_home(self, home_id: str | None) -> Household | None:
+        if home_id is None:
+            return None
+        for household in self.households:
+            if household.home_id == home_id or household.home_building_id == home_id:
+                return household
+        return None
+
+    def home_for_id(self, home_id: str | None) -> Home | None:
+        if home_id is None:
+            return None
+        for home in self.homes:
+            if home.home_id == home_id:
+                return home
+        return None
+
+    def workplace_for(self, workplace_id: str | None) -> Workplace | None:
+        if workplace_id is None:
+            return None
+        for workplace in self.workplaces:
+            if workplace.workplace_id == workplace_id:
+                return workplace
+        return None
+
+    def workplaces_for_type(self, workplace_type: str) -> list[Workplace]:
+        return [workplace for workplace in self.workplaces if workplace.workplace_type == workplace_type]
+
+    @property
+    def household_count(self) -> int:
+        return len(self.households)
+
+    @property
+    def average_household_size(self) -> float:
+        if not self.households:
+            return 0.0
+        return sum(household.size for household in self.households) / len(self.households)
+
+    @property
+    def largest_household_size(self) -> int:
+        if not self.households:
+            return 0
+        return max(household.size for household in self.households)
+
 
 def found_settlement(world) -> Settlement:
     x, y = central_founding_site(world)
     name = settlement_name(world)
+    radius = SETTLEMENT_RADIUS
+    scenario = scenario_for_key(getattr(getattr(world, "settings", None), "scenario", None))
+    age_years = scenario.age_years(world.seed)
     settlement = Settlement(
         name=name,
         x=x,
@@ -97,11 +213,134 @@ def found_settlement(world) -> Settlement:
         founded_day=world.day,
         founded_season=world.season,
         settlement_id=settlement_id_for(name, world.seed),
+        radius=radius,
         population=len(world.living_agents()),
+        scenario_key=scenario.key,
+        maturity_label=scenario.label,
+        age_years=age_years,
     )
+    settlement.homes = create_homes(world, settlement)
+    settlement.households = create_households(world, settlement)
     settlement.stockpiles = create_stockpiles(world, settlement)
     settlement.workshops = create_workshops(world, settlement)
+    settlement.workplaces = create_workplaces(world, settlement)
+    seed_village_paths(world, settlement)
+    apply_scenario_path_maturity(world, settlement)
     return settlement
+
+
+def create_homes(world, settlement: Settlement, rng: random.Random | None = None) -> list[Home]:
+    if rng is None:
+        rng = random.Random(f"{world.seed}|{settlement.settlement_id}|homes")
+
+    scenario = scenario_for_key(getattr(settlement, "scenario_key", None))
+    target_count = rng.randint(*scenario.home_count_range)
+    candidates = _home_candidates(world, settlement, rng)
+    homes: list[Home] = []
+
+    for x, y in candidates:
+        if any(max(abs(x - home.x), abs(y - home.y)) < 3 for home in homes):
+            continue
+
+        tile = world.tile_at(x, y)
+        tile.kind = "home"
+        tile.food = 0
+        tile.wood = 0
+        homes.append(Home(x, y, home_id=f"home-{len(homes)}"))
+
+        if len(homes) >= target_count:
+            return homes
+
+    return homes
+
+
+def create_households(world, settlement: Settlement, rng: random.Random | None = None) -> list[Household]:
+    if rng is None:
+        rng = random.Random(f"{world.seed}|{settlement.settlement_id}|households")
+
+    households = []
+    for index, home in enumerate(settlement.homes):
+        household_id = f"household-{index}"
+        established_years = household_established_years(rng, max_years=max(0, settlement.age_years))
+        home.household_id = household_id
+        households.append(Household(
+            household_id=household_id,
+            household_name=household_name(rng, index),
+            home_id=home.home_id,
+            home_building_id=home.home_id,
+            founded_year=getattr(world, "year", 1) - established_years,
+            established_years=established_years,
+        ))
+    return households
+
+
+def household_name(rng: random.Random, index: int) -> str:
+    roots = (
+        "Oak", "Rowan", "Willow", "Ash", "Moss", "Stone",
+        "Fern", "Hearth", "Brook", "Dawn", "Ember", "Wren",
+    )
+    suffixes = ("Hearth", "House", "Nook", "Hall", "Cottage", "Roost")
+    return f"{rng.choice(roots)} {rng.choice(suffixes)}"
+
+
+def household_established_years(rng: random.Random, max_years: int = 35) -> int:
+    if max_years <= 0:
+        return 0
+    if max_years <= 2:
+        return rng.randint(0, max_years)
+
+    roll = rng.random()
+    if roll < 0.25:
+        return min(max_years, rng.randint(0, 2))
+    if roll < 0.85:
+        low = min(3, max_years)
+        high = max(low, min(15, max_years))
+        return rng.randint(low, high)
+    low = min(16, max_years)
+    high = max(low, min(max_years, 60))
+    return rng.randint(low, high)
+
+
+def apply_scenario_path_maturity(world, settlement: Settlement):
+    scenario = scenario_for_key(getattr(settlement, "scenario_key", None))
+    multiplier = scenario.path_traffic_multiplier
+    if multiplier == 1.0:
+        return
+
+    for row in world.tiles:
+        for tile in row:
+            if tile.foot_traffic <= 0:
+                continue
+            tile.foot_traffic = max(1, int(tile.foot_traffic * multiplier))
+            apply_path_wear(tile)
+
+
+def _home_candidates(world, settlement: Settlement, rng: random.Random) -> list[tuple[int, int]]:
+    candidates: list[tuple[float, int, int, tuple[int, int]]] = []
+    for y in range(max(0, settlement.y - settlement.radius), min(world.height, settlement.y + settlement.radius + 1)):
+        for x in range(max(0, settlement.x - settlement.radius), min(world.width, settlement.x + settlement.radius + 1)):
+            distance = max(abs(x - settlement.x), abs(y - settlement.y))
+            if distance == 0 or distance > settlement.radius:
+                continue
+            if not is_valid_home_site(world, settlement, x, y):
+                continue
+            inner_bias = abs(distance - max(3, settlement.radius * 0.6))
+            candidates.append((inner_bias + rng.random() * 3.0, rng.randint(0, 9999), y, (x, y)))
+
+    return [pos for _, _, _, pos in sorted(candidates)]
+
+
+def is_valid_home_site(world, settlement: Settlement, x: int, y: int) -> bool:
+    if not (0 <= x < world.width and 0 <= y < world.height):
+        return False
+    if (x, y) == (settlement.x, settlement.y):
+        return False
+    tile = world.tile_at(x, y)
+    if not tile.walkable:
+        return False
+    if tile.kind in ("water", "mountain", "shelter"):
+        return False
+    return True
 
 
 def central_founding_site(world) -> tuple[int, int]:
@@ -184,6 +423,7 @@ def settlement_site_score(world, x: int, y: int, center_x: int | None = None, ce
 
 def create_stockpiles(world, settlement: Settlement) -> list[Stockpile]:
     used = {(settlement.x, settlement.y)}
+    used.update((home.x, home.y) for home in settlement.homes)
     stockpiles = []
     for stockpile_type in (FOOD, WOOD):
         pos = _nearest_stockpile_tile(world, settlement, used)
@@ -572,6 +812,13 @@ def is_stockpile_tile(world, x: int, y: int) -> bool:
         if settlement is None:
             return False
         return any(stockpile.x == x and stockpile.y == y for stockpile in settlement.stockpiles)
+
+
+def is_home_tile(world, x: int, y: int) -> bool:
+    settlement = world.settlement
+    if settlement is None:
+        return False
+    return any(home.x == x and home.y == y for home in settlement.homes)
 
 
 def is_adjacent_to_stockpile(world, x: int, y: int, stockpile_type: str) -> bool:

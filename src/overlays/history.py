@@ -20,7 +20,7 @@ class ChronicleLine:
 
 
 def chronicle_date(season: str | None, year: int | None, day: int | None = None) -> str:
-    if season and year:
+    if season and year is not None:
         return f"{season}, Year {year}"
     if day is not None:
         return f"Day {day}"

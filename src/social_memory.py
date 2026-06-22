@@ -12,6 +12,8 @@ STRANGER = "Stranger"
 SEEN = "Seen"
 ACQUAINTED = "Acquainted"
 FAMILIAR = "Familiar"
+KNOWN = "Known"
+FRIEND = "Friend"
 
 SEEN_THRESHOLD = 2
 ACQUAINTED_THRESHOLD = 10
@@ -25,6 +27,7 @@ class SocialMemoryEntry:
     display_name: str
     familiarity_score: int = 0
     last_seen_day: int = 0
+    relationship_types: list[str] | None = None
 
 
 def villager_key(agent: Agent) -> str:
@@ -38,6 +41,16 @@ def familiarity_level(score: int) -> str:
         return ACQUAINTED
     if score >= SEEN_THRESHOLD:
         return SEEN
+    return STRANGER
+
+
+def relationship_category(score: int) -> str:
+    if score >= FAMILIAR_THRESHOLD:
+        return FRIEND
+    if score >= ACQUAINTED_THRESHOLD:
+        return FAMILIAR
+    if score >= SEEN_THRESHOLD:
+        return KNOWN
     return STRANGER
 
 
@@ -57,12 +70,67 @@ def record_observation(observer: Agent, other: Agent, day: int):
 
 
 def update_social_memory(world: World, radius: int = SOCIAL_MEMORY_RADIUS):
+    from src.config import SOCIAL_MEMORY_MAX_OBSERVATIONS_PER_AGENT
+
     living_agents = world.living_agents()
-    for index, observer in enumerate(living_agents):
-        for other in living_agents[index + 1:]:
-            if chebyshev_distance(observer.x, observer.y, other.x, other.y) <= radius:
+    by_tile = {(agent.x, agent.y): [] for agent in living_agents}
+    for agent in living_agents:
+        by_tile[(agent.x, agent.y)].append(agent)
+
+    for observer in living_agents:
+        observed = 0
+        for other in nearby_agents(observer, by_tile, radius):
+            if other is observer:
+                continue
+            record_observation(observer, other, world.day)
+            observed += 1
+            if observed >= SOCIAL_MEMORY_MAX_OBSERVATIONS_PER_AGENT:
+                break
+
+
+def update_household_familiarity(world: World):
+    settlement = getattr(world, "settlement", None)
+    if settlement is None:
+        return
+
+    living_by_id = {
+        villager_key(agent): agent
+        for agent in world.living_agents()
+    }
+
+    for household in settlement.households:
+        members = [
+            living_by_id[member_id]
+            for member_id in household.member_ids
+            if member_id in living_by_id
+        ]
+        if not members:
+            continue
+
+        household.cohabitation_days += 1
+        for observer in members:
+            for other in members:
+                if other is observer:
+                    continue
                 record_observation(observer, other, world.day)
-                record_observation(other, observer, world.day)
+
+
+def nearby_agents(
+    observer: Agent,
+    by_tile: dict[tuple[int, int], list[Agent]],
+    radius: int,
+) -> list[Agent]:
+    nearby: list[tuple[int, str, Agent]] = []
+    for y in range(observer.y - radius, observer.y + radius + 1):
+        for x in range(observer.x - radius, observer.x + radius + 1):
+            distance = chebyshev_distance(observer.x, observer.y, x, y)
+            if distance > radius:
+                continue
+            for agent in by_tile.get((x, y), []):
+                nearby.append((distance, villager_key(agent), agent))
+
+    nearby.sort(key=lambda item: (item[0], item[1]))
+    return [agent for _, _, agent in nearby]
 
 
 def familiarity_summary(agent: Agent, limit: int = 3) -> list[str]:
@@ -74,6 +142,23 @@ def familiarity_summary(agent: Agent, limit: int = 3) -> list[str]:
     entries.sort(key=lambda entry: (-entry.familiarity_score, entry.display_name))
     return [
         f"{entry.display_name} ({familiarity_level(entry.familiarity_score)})"
+        for entry in entries[:limit]
+    ]
+
+
+def relationship_summary(agent: Agent, limit: int = 3) -> list[tuple[str, str]]:
+    memory = getattr(agent, "social_memory", None)
+    if not memory:
+        return []
+
+    entries = [
+        entry
+        for entry in memory.values()
+        if relationship_category(entry.familiarity_score) != STRANGER
+    ]
+    entries.sort(key=lambda entry: (-entry.familiarity_score, entry.display_name))
+    return [
+        (relationship_category(entry.familiarity_score), entry.display_name)
         for entry in entries[:limit]
     ]
 
