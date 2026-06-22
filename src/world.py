@@ -32,6 +32,7 @@ from src.simulation_lod import (
     LOD_5_HISTORY,
     tier_names,
 )
+from src.partnerships import update_partnerships
 from src.social_memory import update_household_familiarity, update_social_memory
 from src.social_seed import seed_preexisting_social_history
 from src.traits import trait_for_index
@@ -600,6 +601,7 @@ class World:
         update_social_memory(self)
         self.ensure_household_membership()
         update_household_familiarity(self)
+        update_partnerships(self)
         update_influence_peaks(self)
         self.record_lod_update(LOD_3_SOCIAL, time.perf_counter() - social_start)
 

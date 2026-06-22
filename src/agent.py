@@ -91,6 +91,9 @@ class Agent:
     children_ids: list[str] = field(default_factory=list)
     sibling_ids: list[str] = field(default_factory=list)
     partner_ids: list[str] = field(default_factory=list)
+    partner_id: str | None = None
+    partnership_start_year: int | None = None
+    partnership_duration: int = 0
     generation: int = 0
     lifecycle_record: LifecycleRecord = field(default_factory=LifecycleRecord)
     family_links: FamilyLinks = field(default_factory=FamilyLinks)
@@ -151,6 +154,11 @@ class Agent:
             if parent_id not in parent_ids:
                 parent_ids.append(parent_id)
         self.parent_ids = parent_ids
+
+        if self.partner_id and self.partner_id not in self.partner_ids:
+            self.partner_ids.append(self.partner_id)
+        if self.partner_ids and self.partner_id is None:
+            self.partner_id = self.partner_ids[0]
 
         self.family_links.mother_id = self.mother_id
         self.family_links.father_id = self.father_id

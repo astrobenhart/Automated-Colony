@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from src.generations import RELATIONSHIP_PARTNER
+
 if TYPE_CHECKING:
     from src.agent import Agent
     from src.world import World
@@ -158,9 +160,15 @@ def relationship_summary(agent: Agent, limit: int = 3) -> list[tuple[str, str]]:
     ]
     entries.sort(key=lambda entry: (-entry.familiarity_score, entry.display_name))
     return [
-        (relationship_category(entry.familiarity_score), entry.display_name)
+        (relationship_label(entry), entry.display_name)
         for entry in entries[:limit]
     ]
+
+
+def relationship_label(entry: SocialMemoryEntry) -> str:
+    if entry.relationship_types and RELATIONSHIP_PARTNER in entry.relationship_types:
+        return "Partner"
+    return relationship_category(entry.familiarity_score)
 
 
 def chebyshev_distance(ax: int, ay: int, bx: int, by: int) -> int:

@@ -346,6 +346,37 @@ Future v0.8 reproduction flow:
 
 This architecture does not implement reproduction, pregnancy, childbirth, marriages, genetics, inheritance logic, population growth, old-age death, or family-tree UI.
 
+## v0.8 Partnership Foundation
+
+Partnerships are the first v0.8 generational loop foundation.
+
+They are:
+- stable long-term pair bonds
+- derived from existing social familiarity
+- limited to one active partner per villager
+- evaluated as an infrequent daily social pass
+- recorded in villager memory and the Chronicle
+- lightly integrated with households when doing so does not disrupt existing stable homes
+
+They are not:
+- marriage
+- dating
+- romance drama
+- legal family structures
+- attraction mechanics
+- a reproduction or birth system
+
+Eligibility stays deliberately narrow:
+- living adult-stage villagers
+- same settlement
+- no current partner
+- no direct parent, child, or sibling relationship
+- sufficient existing familiarity from household, workplace, or routine history
+
+Household integration is conservative. Partners already sharing a household stay there. If one partner lacks a household or lives alone, they may join the other partner's household. Established multi-person households are not reshuffled just to force every pair into the same home.
+
+Future birth systems should use partnerships as one input into household-based renewal, not as a complete family simulation.
+
 ## Simulation Scale and Level of Detail
 
 Target scale:

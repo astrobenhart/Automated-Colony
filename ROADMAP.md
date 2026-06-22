@@ -363,8 +363,8 @@ Purpose:
 Create stable long-term pair bonds that can support later generational systems.
 
 Features:
-- [ ] Partnership formation
-- [ ] Household partnerships
+- [x] Partnership formation
+- [x] Household partnerships
 
 Notes:
 - Partnerships are social bonds, not romance simulation.

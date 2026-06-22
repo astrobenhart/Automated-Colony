@@ -38,6 +38,7 @@ def villager_detail_sections(agent, world=None) -> list[tuple[str, list[tuple[st
     return [
         ("Identity", identity_rows(agent, world)),
         ("Household", household_rows(agent, world)),
+        ("Partnership", partnership_rows(agent, world)),
         ("Status", status_rows(agent, world)),
         ("Relationships", relationship_rows(agent)),
         ("Bonds", bond_rows(agent)),
@@ -114,6 +115,32 @@ def household_member_names(household, world=None) -> str | None:
         return ", ".join(household.member_ids)
     names_by_id = {agent.agent_id or agent.name: agent.name for agent in world.agents}
     return ", ".join(names_by_id.get(member_id, member_id) for member_id in household.member_ids)
+
+
+def partnership_rows(agent, world=None) -> list[tuple[str, object]]:
+    partner_id = getattr(agent, "partner_id", None)
+    if not partner_id:
+        return [("Partner", "None")]
+    return [
+        ("Partner", partner_name(partner_id, world)),
+        ("Partnership", partnership_duration_label(agent)),
+    ]
+
+
+def partner_name(partner_id: str, world=None) -> str:
+    if world is None:
+        return partner_id
+    for agent in getattr(world, "agents", []):
+        if (agent.agent_id or agent.name) == partner_id:
+            return agent.name
+    return partner_id
+
+
+def partnership_duration_label(agent) -> str:
+    years = getattr(agent, "partnership_duration", 0)
+    if years == 1:
+        return "1 year"
+    return f"{years} years"
 
 
 def status_rows(agent, world=None) -> list[tuple[str, object]]:
