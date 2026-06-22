@@ -32,6 +32,8 @@ def test_villager_row_format_includes_identity_fields():
         1,
         role="Forager",
         lifecycle_stage="Adult",
+        age=43,
+        experience_level="Experienced",
         trait="Curious",
         current_action="Idle",
     )
@@ -142,6 +144,8 @@ def test_villager_detail_sections_include_player_facing_fields():
         1,
         role="Forager",
         lifecycle_stage="Adult",
+        age=43,
+        experience_level="Experienced",
         trait="Curious",
         hunger=12,
         thirst=8,
@@ -161,13 +165,16 @@ def test_villager_detail_sections_include_player_facing_fields():
     sections = dict(villager_detail_sections(agent))
 
     assert ("Name", "Ari") in sections["Identity"]
-    assert ("Role", "Forager · Adult") in sections["Identity"]
+    assert ("Age", 43) in sections["Identity"]
+    assert ("Stage", "Adult") in sections["Identity"]
+    assert ("Role", "Forager") in sections["Identity"]
+    assert ("Experience", "Experienced") in sections["Identity"]
     assert ("Trait", "Curious") in sections["Identity"]
     assert ("State", "Working") in sections["Status"]
     assert ("Influence", "Low") in sections["Status"]
     assert ("", "None") in sections["Household"]
     assert ("Friend", "Bryn") in sections["Relationships"]
-    assert ("Close Companion", "Bryn") in sections["Bonds"]
+    assert ("Close Friend", "Bryn") in sections["Bonds"]
 
 
 def test_villager_detail_sections_handle_missing_optional_fields():
@@ -223,7 +230,7 @@ def test_bond_card_display_uses_labels_and_names_not_raw_counts():
 
     sections = dict(villager_detail_sections(agent))
 
-    assert sections["Bonds"] == [("Close Companion", "Bryn")]
+    assert sections["Bonds"] == [("Close Friend", "Bryn")]
     assert "30" not in "\n".join(str(value) for _, value in sections["Bonds"])
 
 

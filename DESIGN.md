@@ -141,10 +141,17 @@ Core stability principle:
 - Generation systems should support continuity, not erase scarcity.
 
 v0.6 life and social foundations remain lightweight:
-- Adult and Elder are currently lifecycle labels.
+- v0.6 introduced Adult and Elder as lifecycle labels.
 - Traits are currently display-first.
 - Social memory, influence, remembrance, settlement identity, and social bond labels are observer-facing.
-- Lifecycle Labels v1 is static identity metadata. Villagers are assigned Adult or Elder when created, the label appears in selected-villager details, and there is no Adult-to-Elder progression or Elder-to-death rule.
+- Lifecycle Labels v1 was static identity metadata. Villagers were assigned Adult or Elder when created, the label appeared in selected-villager details, and there was no Adult-to-Elder progression or Elder-to-death rule.
+
+v0.7 mixed starting population:
+- Starting villagers now receive seeded ages, lifecycle stages, and experience labels.
+- Lifecycle stages are Young Adult, Adult, Older Adult, and Elder.
+- Experience labels are Novice, Experienced, and Veteran.
+- Household founding years and established-years metadata imply village history before observation begins.
+- These fields are still static startup metadata; there is no aging progression, child stage, old-age death, reproduction, or inheritance logic yet.
 
 v0.7 should not implement reproduction casually. It should prepare the settlement model, start generation, and identity/history layers so reproduction, children, parent links, inherited traits, and aging can arrive as coherent systems later.
 
@@ -449,9 +456,10 @@ Social bonds should describe familiarity before they imply family.
 Social Bond Labels v1 are display-only labels derived from existing social memory. They do not create a relationship simulation.
 
 Current labels:
-- Often Seen With
-- Trusted Neighbor
-- Close Companion
+- Familiar
+- Friend
+- Close Friend
+- Trusted Companion
 
 These labels are non-romantic and non-family. They must not imply partners, spouses, parents, children, siblings, couples, ancestry, reproduction, marriage, or pair bonding.
 
@@ -462,6 +470,27 @@ Bond labels are shown compactly on villager character cards and are capped to th
 Social Bond Labels do not affect AI, movement, pathfinding, gathering, building, farming, state labels, death/remembrance behavior, influence calculation, settlement membership, survival, social-memory growth, or any other gameplay behavior.
 
 In v0.6 these labels remain non-family and non-romantic. Household foundations, reproduction, ancestry, children, and parent-link systems should be designed explicitly through the lived-in settlement and generational roadmap rather than inferred from Social Bond Labels.
+
+## Pre-Existing Social History
+
+The v0.7 starting village seeds quiet prior life so villagers do not all begin as strangers.
+
+Seeded startup data:
+- years in role
+- routine age
+- workplace familiarity
+- household familiarity
+- personal memory snippets
+- social-memory familiarity from shared household, workplace, and role history
+
+Relationship strength is derived from shared history:
+- household members gain familiarity based on household established years
+- coworkers gain familiarity based on overlapping workplace routine
+- villagers with the same role may know a few long-running peers
+
+Starting memories are grounded in settlement activity, such as shared households, steady work routines, workplace history, and long-running role practice. They are not dramatic fabricated events.
+
+Pre-existing social history remains observer-facing. It does not affect AI, pathfinding, work assignment, gathering, building, farming, survival, reproduction, inheritance, romance, family trees, or player controls.
 
 ## Household Foundations
 

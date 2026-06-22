@@ -9,14 +9,20 @@ if TYPE_CHECKING:
     from src.agent import Agent
 
 
-OFTEN_SEEN_WITH = "Often Seen With"
-TRUSTED_NEIGHBOR = "Trusted Neighbor"
-CLOSE_COMPANION = "Close Companion"
+FAMILIAR_BOND = "Familiar"
+FRIEND_BOND = "Friend"
+CLOSE_FRIEND = "Close Friend"
+TRUSTED_COMPANION = "Trusted Companion"
+
+OFTEN_SEEN_WITH = FAMILIAR_BOND
+TRUSTED_NEIGHBOR = FRIEND_BOND
+CLOSE_COMPANION = CLOSE_FRIEND
 
 SOCIAL_BOND_LABELS = (
-    OFTEN_SEEN_WITH,
-    TRUSTED_NEIGHBOR,
-    CLOSE_COMPANION,
+    FAMILIAR_BOND,
+    FRIEND_BOND,
+    CLOSE_FRIEND,
+    TRUSTED_COMPANION,
 )
 
 
@@ -27,13 +33,15 @@ class SocialBond:
 
 
 def social_bond_label_for_score(score: int) -> str | None:
+    if score >= 45:
+        return TRUSTED_COMPANION
     level = familiarity_level(score)
     if level == FAMILIAR:
-        return CLOSE_COMPANION
+        return CLOSE_FRIEND
     if level == ACQUAINTED:
-        return TRUSTED_NEIGHBOR
+        return FRIEND_BOND
     if level == SEEN:
-        return OFTEN_SEEN_WITH
+        return FAMILIAR_BOND
     return None
 
 
@@ -54,10 +62,12 @@ def social_bonds(agent: Agent, limit: int = 3) -> list[SocialBond]:
 
 
 def bond_priority(label: str) -> int:
-    if label == CLOSE_COMPANION:
+    if label == TRUSTED_COMPANION:
         return 0
-    if label == TRUSTED_NEIGHBOR:
+    if label == CLOSE_FRIEND:
         return 1
-    if label == OFTEN_SEEN_WITH:
+    if label == FRIEND_BOND:
         return 2
+    if label == FAMILIAR_BOND:
+        return 3
     return 3

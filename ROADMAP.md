@@ -204,7 +204,7 @@ Notes:
 - Death Memory v1 creates permanent Death Records when villagers die, records one readable world-history entry, and gives familiar villagers a temporary personal `Remembering: Name` line. This is memory and history flavor only; it does not add morale penalties, productivity penalties, graves, funerals, ghosts, resurrection, or legacy mechanics.
 - History Overlay v1 adds a read-only Chronicle opened with `H`. It shows recent history entries, active remembrance lines, and compact remembered-dead cards using story-facing language and readable season/year dates. It is not a death viewer, graveyard UI, debug log, or management tool.
 - Settlement Identity v1 gives villagers stable home and birth settlement fields, displays Home on character cards, and lets death history / Chronicle wording use names such as `Rowan of Oakvale`. This is belonging and future migration groundwork only; it adds no behavior bonuses, same-settlement familiarity changes, politics, factions, migration, or conflict.
-- Social Bond Labels v1 replace the old pair/family-label idea with non-romantic, non-family display labels derived from existing familiarity. Character cards may show labels such as Often Seen With, Trusted Neighbor, and Close Companion. These labels do not affect behavior, remembrance, influence, settlement membership, survival, or social-memory growth.
+- Social Bond Labels v1 replace the old pair/family-label idea with non-romantic, non-family display labels derived from existing familiarity. Character cards may show community labels such as Familiar, Friend, Close Friend, and Trusted Companion. These labels do not affect behavior, remembrance, influence, settlement membership, survival, or social-memory growth.
 - Do not add old-age death yet.
 - Do not add reproduction, children, romance, households, inheritance, or full family trees in v0.6. These are now explicit future architecture targets, starting with lived-in village and household foundations.
 - Do not let social systems override survival needs.
@@ -235,8 +235,8 @@ Features:
 - [x] Farm workplace specialization
 - [x] Household foundations without full reproduction yet
 - [x] Pre-generated village paths or simple worn-path tiles
-- [ ] Mixed lifecycle starting population
-- [ ] Pre-existing roles, routines, relationships, social bonds, and memories
+- [x] Mixed lifecycle starting population
+- [x] Pre-existing roles, routines, relationships, social bonds, and memories
 - [ ] Starting village history / Chronicle seed entries
 - [ ] Architecture support for future reproduction, children, parents, inherited traits, aging progression, household membership, family history, births, and deaths
 - [ ] Scenario framing for different starting settlement maturity levels

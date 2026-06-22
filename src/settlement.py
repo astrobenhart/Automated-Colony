@@ -45,6 +45,7 @@ class Household:
     founded_year: int = 1
     household_head: str | None = None
     cohabitation_days: int = 0
+    established_years: int = 0
 
     def __post_init__(self):
         if self.home_building_id is None:
@@ -244,13 +245,15 @@ def create_households(world, settlement: Settlement, rng: random.Random | None =
     households = []
     for index, home in enumerate(settlement.homes):
         household_id = f"household-{index}"
+        established_years = household_established_years(rng)
         home.household_id = household_id
         households.append(Household(
             household_id=household_id,
             household_name=household_name(rng, index),
             home_id=home.home_id,
             home_building_id=home.home_id,
-            founded_year=getattr(world, "year", 1),
+            founded_year=getattr(world, "year", 1) - established_years,
+            established_years=established_years,
         ))
     return households
 
@@ -262,6 +265,15 @@ def household_name(rng: random.Random, index: int) -> str:
     )
     suffixes = ("Hearth", "House", "Nook", "Hall", "Cottage", "Roost")
     return f"{rng.choice(roots)} {rng.choice(suffixes)}"
+
+
+def household_established_years(rng: random.Random) -> int:
+    roll = rng.random()
+    if roll < 0.25:
+        return rng.randint(0, 2)
+    if roll < 0.85:
+        return rng.randint(3, 15)
+    return rng.randint(16, 35)
 
 
 def _home_candidates(world, settlement: Settlement, rng: random.Random) -> list[tuple[int, int]]:

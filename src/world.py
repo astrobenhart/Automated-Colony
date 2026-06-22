@@ -19,9 +19,10 @@ from src.seasons import (
     transition_progress,
 )
 from src.resource_ecology import apply_resource_ecology
-from src.lifecycle import lifecycle_stage_for_index
+from src.lifecycle import demographic_profiles, profile_for_stage, ADULT, OLDER_ADULT
 from src.roles import role_for_index
 from src.social_memory import update_household_familiarity, update_social_memory
+from src.social_seed import seed_preexisting_social_history
 from src.traits import trait_for_index
 from src.task_behavior import assign_daily_role, run_villager_task
 from src.settlement_planner import plan_settlement_work
@@ -147,6 +148,7 @@ class World:
 
         positions = self.initial_spawn_positions(amount)
         home_assignments = self.initial_home_assignments(amount)
+        profiles = demographic_profiles(amount, self.seed)
         home_settlement_id = self.settlement.settlement_id if self.settlement is not None else None
         home_settlement_name = self.settlement.name if self.settlement is not None else None
         for i, (x, y) in enumerate(positions):
@@ -155,12 +157,15 @@ class World:
             home_x, home_y = (home.x, home.y) if home is not None else (None, None)
             household = self.household_for_home(home.home_id if home is not None else None)
             rng = random.Random(f"{self.seed}|villager-idle|{i}")
+            profile = profiles[i]
             agent = Agent(
                 names[i % len(names)],
                 x,
                 y,
                 role=role_for_index(i),
-                lifecycle_stage=lifecycle_stage_for_index(i),
+                lifecycle_stage=profile.lifecycle_stage,
+                age=profile.age,
+                experience_level=profile.experience_level,
                 trait=trait_for_index(i),
                 agent_id=f"villager-{i}",
                 appearance_seed=appearance_seed,
@@ -181,6 +186,8 @@ class World:
             self.assign_agent_workplace(agent)
             self.agents.append(agent)
 
+        self.seed_household_age_variation()
+        seed_preexisting_social_history(self)
         self.update_settlement_population()
         self.log(f"{amount} villagers enter the world.")
 
@@ -298,6 +305,38 @@ class World:
                 home_household = self.household_for_home(getattr(agent, "home_id", None))
                 household = home_household or default_household
             self.add_agent_to_household(agent, household)
+
+    def seed_household_age_variation(self):
+        if self.settlement is None:
+            return
+
+        agents_by_id = {
+            agent.agent_id or agent.name: agent
+            for agent in self.agents
+        }
+        for household in self.settlement.households:
+            members = [
+                agents_by_id[member_id]
+                for member_id in household.member_ids
+                if member_id in agents_by_id
+            ]
+            if members:
+                head = max(members, key=lambda agent: (agent.age, agent.agent_id or agent.name))
+                household.household_head = head.agent_id or head.name
+            if len(members) < 2:
+                continue
+            if len({member.lifecycle_stage for member in members}) > 1:
+                continue
+
+            target_stage = OLDER_ADULT if members[0].lifecycle_stage == ADULT else ADULT
+            rng = random.Random(f"{self.seed}|{household.household_id}|age-spread")
+            profile = profile_for_stage(target_stage, rng)
+            adjusted_member = sorted(members, key=lambda agent: (agent.age, agent.agent_id or agent.name))[-1]
+            adjusted_member.lifecycle_stage = profile.lifecycle_stage
+            adjusted_member.age = profile.age
+            adjusted_member.experience_level = profile.experience_level
+            head = max(members, key=lambda agent: (agent.age, agent.agent_id or agent.name))
+            household.household_head = head.agent_id or head.name
 
     def assign_agent_workplace(self, agent):
         workplace = self.preferred_workplace_for_agent(agent)

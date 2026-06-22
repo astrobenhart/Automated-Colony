@@ -33,9 +33,39 @@ def test_households_group_multiple_villagers_as_village_units():
         assert household.household_name
         assert household.home_id is not None
         assert household.home_building_id == household.home_id
-        assert household.founded_year == world.year
+        assert household.established_years >= 0
+        assert household.founded_year == world.year - household.established_years
         assert household.household_head in household.member_ids
         assert household.founder_ids
+
+
+def test_households_have_implied_starting_history():
+    world = create_world(seed=179, agent_count=45)
+    household_ages = {household.established_years for household in world.settlement.households}
+
+    assert len(household_ages) > 1
+    assert any(age >= 3 for age in household_ages)
+
+
+def test_multi_member_households_prefer_age_variation():
+    world = create_world(seed=180, agent_count=45)
+    mixed_households = 0
+    multi_member_households = 0
+
+    for household in world.settlement.households:
+        members = [
+            agent
+            for agent in world.agents
+            if (agent.agent_id or agent.name) in household.member_ids
+        ]
+        if len(members) < 2:
+            continue
+        multi_member_households += 1
+        if len({member.lifecycle_stage for member in members}) > 1 or len({member.age for member in members}) > 1:
+            mixed_households += 1
+
+    assert multi_member_households
+    assert mixed_households == multi_member_households
 
 
 def test_homes_are_owned_by_households():
@@ -123,8 +153,10 @@ def test_villager_card_shows_household_home_members_and_relationships():
         for member in world.agents
         if (member.agent_id or member.name) in household.member_ids
     ]
-    agent.social_memory["friend"] = SocialMemoryEntry("friend", "Mara", familiarity_score=30, last_seen_day=3)
-    agent.social_memory["known"] = SocialMemoryEntry("known", "Tessa", familiarity_score=2, last_seen_day=3)
+    agent.social_memory = {
+        "friend": SocialMemoryEntry("friend", "Mara", familiarity_score=30, last_seen_day=3),
+        "known": SocialMemoryEntry("known", "Tessa", familiarity_score=2, last_seen_day=3),
+    }
 
     sections = dict(villager_detail_sections(agent, world))
 

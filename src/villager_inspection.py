@@ -41,6 +41,7 @@ def villager_detail_sections(agent, world=None) -> list[tuple[str, list[tuple[st
         ("Status", status_rows(agent, world)),
         ("Relationships", relationship_rows(agent)),
         ("Bonds", bond_rows(agent)),
+        ("Memories", memory_rows(agent)),
     ]
 
 
@@ -58,17 +59,13 @@ def compact_villager_rows(agent, world=None) -> list[tuple[str, object]]:
 
 
 def identity_rows(agent, world=None) -> list[tuple[str, object]]:
-    role_life = " · ".join(
-        str(value)
-        for value in (
-            getattr(agent, "role", None),
-            getattr(agent, "lifecycle_stage", None),
-        )
-        if value
-    )
     return present_rows([
         ("Name", getattr(agent, "name", None)),
-        ("Role", role_life),
+        ("Age", getattr(agent, "age", None)),
+        ("Stage", getattr(agent, "lifecycle_stage", None)),
+        ("Role", getattr(agent, "role", None)),
+        ("Experience", getattr(agent, "experience_level", None)),
+        ("Role Years", getattr(agent, "years_in_role", None)),
         ("Trait", getattr(agent, "trait", None)),
         ("Home", getattr(agent, "home_settlement_name", None)),
     ])
@@ -142,6 +139,13 @@ def bond_rows(agent) -> list[tuple[str, object]]:
     if not bonds:
         return [("", "None")]
     return [(bond.label, bond.name) for bond in bonds]
+
+
+def memory_rows(agent) -> list[tuple[str, object]]:
+    memories = getattr(agent, "personal_memories", None)
+    if not memories:
+        return [("", "None")]
+    return [("Memory", memory) for memory in memories[:3]]
 
 
 def present_rows(rows: list[tuple[str, object | None]]) -> list[tuple[str, object]]:

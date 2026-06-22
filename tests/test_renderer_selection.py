@@ -939,6 +939,7 @@ def test_selected_home_tile_shows_household_details(monkeypatch):
     assert ("Home", home.home_id) in rows
     assert ("Household", household.household_name) in rows
     assert ("Founded Year", household.founded_year) in rows
+    assert ("Household Age", household.established_years) in rows
     assert ("Size", len(household.member_ids)) in rows
     assert any(label == "Members" and value != "None" for label, value in rows)
 

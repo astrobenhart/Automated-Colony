@@ -907,6 +907,7 @@ class PygameRenderer:
             ("Household", household.household_name),
             ("Household ID", household.household_id),
             ("Founded Year", household.founded_year),
+            ("Household Age", household.established_years),
             ("Size", household.size),
             ("Head", self.household_member_name(household.household_head)),
             ("Members", self.household_member_names(household)),

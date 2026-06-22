@@ -29,7 +29,7 @@ from src.goals import (
     Goal,
 )
 from src.profiler import profiler
-from src.lifecycle import ADULT
+from src.lifecycle import ADULT, EXPERIENCED
 from src.roles import FOOD, WATER, WOOD, GENERALIST, discovery_radius, role_goal_bonus
 from src.social_memory import SocialMemoryEntry
 from src.traits import CALM
@@ -57,6 +57,12 @@ class Agent:
     current_goal: str = "Explore"
     role: str = GENERALIST
     lifecycle_stage: str = ADULT
+    age: int = 35
+    experience_level: str = EXPERIENCED
+    years_in_role: int = 0
+    routine_age: int = 0
+    household_familiarity: int = 0
+    workplace_familiarity: int = 0
     trait: str = CALM
     agent_id: str | None = None
     peak_influence_score: int = 0
@@ -90,6 +96,7 @@ class Agent:
     remembered_wood: set[tuple[int, int]] = field(default_factory=set, repr=False)
     remembered_shelters: set[tuple[int, int]] = field(default_factory=set, repr=False)
     social_memory: dict[str, SocialMemoryEntry] = field(default_factory=dict, repr=False)
+    personal_memories: list[str] = field(default_factory=list, repr=False)
 
     # Active path being followed (list of (x,y) steps, nearest first)
     current_path: list[tuple[int, int]] = field(default_factory=list, repr=False)
