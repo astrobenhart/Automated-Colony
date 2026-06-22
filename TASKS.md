@@ -6,6 +6,26 @@ No active task.
 
 ---
 
+## Release Notes
+
+### v0.7 - Lived-In Settlements
+
+Status: Released.
+
+Completed systems:
+- Pre-seeded lived-in settlements with homes, villagers, paths, workplaces, and visible village structure.
+- Household foundations, relationship labels, social bonds, seeded memories, daily rhythms, and Chronicle seed history.
+- Seasonal resource ecology, food spoilage, agriculture foundations, crop fields, seed reserves, and farm workplace specialization.
+- Settlement maturity scenarios for Pioneer Camp, Growing Village, Mature Settlement, and Ancient Hamlet starts.
+- Lifecycle, family, inheritance, household lineage, and history architecture for future generational systems.
+- Simulation LOD framework with hourly needs, daily planning/social updates, and developer-facing timing counters.
+
+Known limitations:
+- v0.7 does not implement reproduction, children, family trees, inheritance logic, natural old-age death, or save/load gameplay.
+- v0.8 should begin with the smallest complete generational loop before expanding society or storytelling systems.
+
+---
+
 ## Backlog
 
 ### TASK-75

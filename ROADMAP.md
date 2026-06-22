@@ -15,6 +15,35 @@ Long-term direction:
 - The project is not a colony manager. The observer watches the world unfold; they do not assign jobs, command households, place every building, or micromanage production.
 - Survival remains important, but the future emphasis is long-running village continuity, daily life, generational memory, and visible accumulated history.
 
+## Release Notes
+
+### v0.7 - Lived-In Settlements
+
+Status: Released.
+
+Major gameplay additions:
+- Pre-seeded lived-in settlements with visible homes, workplaces, paths, households, and villagers distributed around the village.
+- Daily village rhythms, day progress HUD, settlement maturity scenarios, and compact colony health visibility.
+- Seasonal food ecology, food spoilage, agriculture foundations, crop fields, seed reserves, and farm workplace specialization.
+- Household foundations, relationship states, social bonds, seeded routines, memories, and starting Chronicle entries.
+
+Major architectural additions:
+- Generic workplace foundation for storage, farms, workshops, and village center.
+- Path traffic and wear system with path-preferred pathfinding.
+- Lifecycle, family, inheritance, household lineage, and death-history structures prepared for v0.8.
+- Simulation LOD framework separating visual, task, needs, social, planner, and history update tiers.
+
+Performance improvements:
+- Rotating villager task updates.
+- Hourly needs updates with pre-LOD balance preserved.
+- Daily settlement planning and social updates.
+- Developer-facing LOD timing counters through `World.lod_stats` and `World.lod_report()`.
+
+Known limitations:
+- No reproduction, children, inheritance logic, marriage, romance, family trees, or natural old-age death yet.
+- Save/load is not a full gameplay system yet; generation records are JSON-safe foundations only.
+- Full 10/30/50-year tick-level validation remains expensive; daily/calendar long-run validation is stable.
+
 ## v0.1 - Basic Simulation
 
 Goal: Create a runnable automated Pygame colony simulation.
@@ -321,38 +350,34 @@ Notes:
 
 ## v0.8 - Generational Village
 
-Goal: Generational Systems. Add the smallest complete loop for children, reproduction, inherited traits, family tracking, and generational history.
+Goal: Add the smallest complete generational loop: partnerships, reproduction, children, aging, inheritance, family relationships, and Chronicle continuity.
 
-### Life Stages
-- [ ] Infant stage
-- [ ] Child stage
-- [ ] Adult stage
-- [ ] Elder stage
-- [ ] Age progression
-
-### Reproduction
-- [ ] Reproduction eligibility rules
-- [ ] Household-based reproduction
-- [ ] Child creation
-- [ ] Population balancing
-
-### Trait Inheritance
-- [ ] Parent trait selection
-- [ ] Trait inheritance system
-- [ ] Trait mutation/variation
-- [ ] Inherited personality traits
-
-### Family Tracking
-- [ ] Parent relationships
-- [ ] Child relationships
-- [ ] Family display in villager UI
-- [ ] Generation tracking
-
-### History
+### Generations
+- [ ] Partnership formation
+- [ ] Household partnerships
+- [ ] Reproduction system
+- [ ] Pregnancy system
 - [ ] Birth events
-- [ ] Family history events
-- [ ] Generational history records
-- [ ] Household history records
+- [ ] Child lifecycle
+- [ ] Aging progression
+- [ ] Workforce entry
+- [ ] Family relationships
+- [ ] Family memories
+- [ ] Trait inheritance
+- [ ] Household succession
+- [ ] Natural death from aging
+- [ ] Family chronicle integration
+
+### Society
+- [ ] Family trees
+- [ ] Multi-generation households
+- [ ] Inheritance of homes
+- [ ] Family reputation
+
+### Storytelling
+- [ ] Birth chronicle entries
+- [ ] Family milestone events
+- [ ] Generational history tracking
 
 Notes:
 - v0.8 should stay intentionally small: prove the first generational loop before expanding it.
