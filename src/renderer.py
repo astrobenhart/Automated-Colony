@@ -43,6 +43,7 @@ from src.task_behavior import (
 )
 from src.agent import Agent
 from src.profiler import profiler
+from src.simulation_lod import LOD_0_VISUAL
 from src.ui_overlays import OverlayManager
 from src.village_paths import is_path_like, path_border_edges
 from src.villager_inspection import compact_villager_rows
@@ -276,6 +277,9 @@ class PygameRenderer:
                     f"villager_ms={self.world.last_villager_ms:.2f} "
                     f"path_calls={self.world.pathfinding_calls}"
                 )
+            if hasattr(self.world, "record_lod_update"):
+                elapsed_seconds = time.perf_counter() - render_start
+                self.world.record_lod_update(LOD_0_VISUAL, elapsed_seconds)
 
     def draw_world(self):
         start_x, start_y, end_x, end_y = self.visible_tile_bounds()
@@ -650,6 +654,8 @@ class PygameRenderer:
             f"Pop      {population}",
         ]
         if settlement is not None:
+            lines.append(f"Settlement {settlement.maturity_label}")
+            lines.append(f"Age      {settlement.age_years} Years")
             lines.append(f"Homes    {self.home_count()}")
             if settlement.household_count:
                 lines.append(f"Households {settlement.household_count}")
@@ -801,7 +807,7 @@ class PygameRenderer:
         lines = self.colony_summary_lines()
         for index, line in enumerate(lines):
             color = COLORS["warning"] if self.is_colony_warning_line(line) else COLORS["text"]
-            if index in (1, 2, 3):
+            if line.startswith(("Settlement", "Age", "Homes", "Households", "Avg Home")):
                 color = COLORS["muted"]
             y = self.draw_text_line(line, x, y, width, bottom_y, color=color)
         return y
@@ -835,6 +841,8 @@ class PygameRenderer:
                 settlement = self.world.settlement
                 details.extend([
                     ("Settlement", settlement.name),
+                    ("Maturity", settlement.maturity_label),
+                    ("Age", f"{settlement.age_years} Years"),
                     ("Pop", settlement.population),
                     ("Households", settlement.household_count),
                     ("Avg HH Size", round(settlement.average_household_size, 1)),

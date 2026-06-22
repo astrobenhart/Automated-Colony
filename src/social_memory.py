@@ -27,6 +27,7 @@ class SocialMemoryEntry:
     display_name: str
     familiarity_score: int = 0
     last_seen_day: int = 0
+    relationship_types: list[str] | None = None
 
 
 def villager_key(agent: Agent) -> str:

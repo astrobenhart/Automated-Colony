@@ -28,6 +28,7 @@ from src.goals import (
     ExploreGoal,
     Goal,
 )
+from src.generations import FamilyLinks, FamilyMemoryRecord, InheritanceProfile, LifecycleRecord
 from src.profiler import profiler
 from src.lifecycle import ADULT, EXPERIENCED
 from src.roles import FOOD, WATER, WOOD, GENERALIST, discovery_radius, role_goal_bonus
@@ -79,9 +80,21 @@ class Agent:
     home_y: int | None = None
     birth_settlement_id: str | None = None
     birth_settlement_name: str | None = None
+    birth_year: int | None = None
+    birth_day: int | None = None
+    death_year: int | None = None
+    death_day: int | None = None
+    mother_id: str | None = None
+    father_id: str | None = None
     parent_ids: list[str] = field(default_factory=list)
     child_ids: list[str] = field(default_factory=list)
+    children_ids: list[str] = field(default_factory=list)
+    sibling_ids: list[str] = field(default_factory=list)
+    partner_ids: list[str] = field(default_factory=list)
     generation: int = 0
+    lifecycle_record: LifecycleRecord = field(default_factory=LifecycleRecord)
+    family_links: FamilyLinks = field(default_factory=FamilyLinks)
+    inheritance_profile: InheritanceProfile = field(default_factory=InheritanceProfile)
     render_from_x: float | None = field(default=None, repr=False)
     render_from_y: float | None = field(default=None, repr=False)
     render_target_x: float | None = field(default=None, repr=False)
@@ -97,6 +110,7 @@ class Agent:
     remembered_shelters: set[tuple[int, int]] = field(default_factory=set, repr=False)
     social_memory: dict[str, SocialMemoryEntry] = field(default_factory=dict, repr=False)
     personal_memories: list[str] = field(default_factory=list, repr=False)
+    family_memories: list[FamilyMemoryRecord] = field(default_factory=list, repr=False)
 
     # Active path being followed (list of (x,y) steps, nearest first)
     current_path: list[tuple[int, int]] = field(default_factory=list, repr=False)
@@ -116,15 +130,57 @@ class Agent:
     no_progress_ticks: int = 0
 
     def __post_init__(self):
+        self.sync_generation_architecture()
         self.sync_render_position()
+
+    @property
+    def deceased(self) -> bool:
+        return not self.alive
+
+    def sync_generation_architecture(self):
+        if self.children_ids and not self.child_ids:
+            self.child_ids.extend(self.children_ids)
+        if self.child_ids and not self.children_ids:
+            self.children_ids.extend(self.child_ids)
+
+        parent_ids = []
+        for parent_id in (self.mother_id, self.father_id):
+            if parent_id and parent_id not in parent_ids:
+                parent_ids.append(parent_id)
+        for parent_id in self.parent_ids:
+            if parent_id not in parent_ids:
+                parent_ids.append(parent_id)
+        self.parent_ids = parent_ids
+
+        self.family_links.mother_id = self.mother_id
+        self.family_links.father_id = self.father_id
+        self.family_links.parent_ids = list(self.parent_ids)
+        self.family_links.children_ids = list(self.children_ids)
+        self.family_links.sibling_ids = list(self.sibling_ids)
+        self.family_links.partner_ids = list(self.partner_ids)
+
+        self.lifecycle_record.birth_year = self.birth_year
+        self.lifecycle_record.birth_day = self.birth_day
+        self.lifecycle_record.death_year = self.death_year
+        self.lifecycle_record.death_day = self.death_day
+
+        if self.trait and self.trait not in self.inheritance_profile.personality_traits:
+            self.inheritance_profile.personality_traits.append(self.trait)
+        if self.role and self.role not in self.inheritance_profile.work_preferences:
+            self.inheritance_profile.work_preferences.append(self.role)
+        if self.appearance_seed is not None:
+            self.inheritance_profile.appearance_traits["appearance_seed"] = self.appearance_seed
+        if self.appearance_type is not None:
+            self.inheritance_profile.appearance_traits["appearance_type"] = self.appearance_type
 
     def discovery_radius(self, resource_type: str) -> int:
         return discovery_radius(self.role, resource_type)
 
-    def update_needs(self):
-        self.hunger += HUNGER_RATE
-        self.thirst += THIRST_RATE
-        self.fatigue += FATIGUE_RATE
+    def update_needs(self, ticks: float = 1):
+        scale = max(0, ticks)
+        self.hunger += HUNGER_RATE * scale
+        self.thirst += THIRST_RATE * scale
+        self.fatigue += FATIGUE_RATE * scale
 
     def sync_render_position(self):
         self.render_from_x = float(self.x)

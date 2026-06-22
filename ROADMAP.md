@@ -237,15 +237,16 @@ Features:
 - [x] Pre-generated village paths or simple worn-path tiles
 - [x] Mixed lifecycle starting population
 - [x] Pre-existing roles, routines, relationships, social bonds, and memories
-- [ ] Starting village history / Chronicle seed entries
-- [ ] Architecture support for future reproduction, children, parents, inherited traits, aging progression, household membership, family history, births, and deaths
-- [ ] Scenario framing for different starting settlement maturity levels
-- [ ] Simulation level-of-detail planning for 30-60 villagers
+- [x] Starting village history / Chronicle seed entries
+- [x] Architecture support for future reproduction, children, parents, inherited traits, aging progression, household membership, family history, births, and deaths
+- [x] Scenario framing for different starting settlement maturity levels
+- [x] Simulation level-of-detail planning for 30-60 villagers
 
 Starting Scenarios:
-- Frontier Camp: closest to the current experience, with 10-20 villagers, early shelters, fewer buildings, and visible survival pressure.
-- Small Village: recommended v0.7 default, with 30-60 villagers, homes, farms, paths, storage, workplace placeholders, simple households, roles, routines, social bonds, and seed Chronicle entries.
-- Old Village: future scenario with established history, remembered dead, worn paths, older buildings, and a larger family network.
+- Pioneer Camp: a 0-2 year frontier start with 12-20 villagers, few homes, limited stores, sparse paths, and short Chronicle history.
+- Growing Village: the default v0.7 start, with 30-60 villagers, homes, farms, paths, storage, workplace placeholders, simple households, roles, routines, social bonds, and seed Chronicle entries.
+- Mature Settlement: a 20-50 year start with larger population, more homes, stronger social memory, older paths, and deeper Chronicle context.
+- Ancient Hamlet: a 50+ year start with old households, stronger traditions, dense social bonds, longer Chronicle history, and more mysterious folklore.
 - Market Town: future scenario with 100-200 villagers, districts, more professions, and delivery/resource networks.
 
 Notes:

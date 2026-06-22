@@ -3,12 +3,24 @@ from __future__ import annotations
 import random
 from dataclasses import dataclass
 
-YOUNG_ADULT = "Young Adult"
-ADULT = "Adult"
-OLDER_ADULT = "Older Adult"
-ELDER = "Elder"
+from src.scenarios import ANCIENT_HAMLET, MATURE_SETTLEMENT, PIONEER_CAMP
+from src.generations import (
+    FUTURE_LIFE_STAGES,
+    LIFE_STAGE_ADULT,
+    LIFE_STAGE_CHILD,
+    LIFE_STAGE_ELDER,
+    LIFE_STAGE_OLDER_ADULT,
+    LIFE_STAGE_YOUNG_ADULT,
+)
+
+CHILD = LIFE_STAGE_CHILD
+YOUNG_ADULT = LIFE_STAGE_YOUNG_ADULT
+ADULT = LIFE_STAGE_ADULT
+OLDER_ADULT = LIFE_STAGE_OLDER_ADULT
+ELDER = LIFE_STAGE_ELDER
 
 LIFECYCLE_STAGES = (YOUNG_ADULT, ADULT, OLDER_ADULT, ELDER)
+SUPPORTED_LIFECYCLE_STAGES = FUTURE_LIFE_STAGES
 
 NOVICE = "Novice"
 EXPERIENCED = "Experienced"
@@ -32,7 +44,7 @@ class DemographicProfile:
 
 
 def is_valid_lifecycle_stage(stage: str) -> bool:
-    return stage in LIFECYCLE_STAGES
+    return stage in SUPPORTED_LIFECYCLE_STAGES
 
 
 def is_valid_experience_level(level: str) -> bool:
@@ -63,27 +75,43 @@ def age_for_index(index: int) -> int:
     return cycle[index % len(cycle)]
 
 
-def demographic_profiles(count: int, seed: object | None = None) -> list[DemographicProfile]:
+def demographic_profiles(
+    count: int,
+    seed: object | None = None,
+    scenario_key: str | None = None,
+) -> list[DemographicProfile]:
     if count <= 0:
         return []
 
-    rng = random.Random(f"{seed}|demographics|{count}")
-    stages = lifecycle_stage_distribution(count)
+    rng = random.Random(f"{seed}|demographics|{scenario_key}|{count}")
+    stages = lifecycle_stage_distribution(count, scenario_key=scenario_key)
     rng.shuffle(stages)
     return [profile_for_stage(stage, rng) for stage in stages]
 
 
-def lifecycle_stage_distribution(count: int) -> list[str]:
+def lifecycle_stage_distribution(count: int, scenario_key: str | None = None) -> list[str]:
     if count <= 0:
         return []
 
-    elder_count = 1 if count >= 10 else max(0, round(count * 0.05))
-    young_count = max(1, round(count * 0.25))
-    older_count = max(1, round(count * 0.18)) if count >= 6 else 0
+    young_ratio, older_ratio, elder_ratio = lifecycle_ratios_for_scenario(scenario_key)
+    elder_count = round(count * elder_ratio)
+    if count >= 10 and elder_ratio > 0:
+        elder_count = max(1, elder_count)
+    young_count = max(1, round(count * young_ratio))
+    older_count = max(1, round(count * older_ratio)) if count >= 6 and older_ratio > 0 else 0
     adult_count = count - young_count - older_count - elder_count
     if adult_count < 1:
         adult_count = 1
         young_count = max(0, young_count - 1)
+    while young_count + adult_count + older_count + elder_count > count:
+        if young_count > 1:
+            young_count -= 1
+        elif older_count > 0:
+            older_count -= 1
+        elif elder_count > 0:
+            elder_count -= 1
+        else:
+            adult_count -= 1
 
     return (
         [YOUNG_ADULT] * young_count
@@ -91,6 +119,16 @@ def lifecycle_stage_distribution(count: int) -> list[str]:
         + [OLDER_ADULT] * older_count
         + [ELDER] * elder_count
     )
+
+
+def lifecycle_ratios_for_scenario(scenario_key: str | None) -> tuple[float, float, float]:
+    if scenario_key == PIONEER_CAMP:
+        return 0.35, 0.08, 0.02
+    if scenario_key == MATURE_SETTLEMENT:
+        return 0.16, 0.25, 0.10
+    if scenario_key == ANCIENT_HAMLET:
+        return 0.12, 0.30, 0.15
+    return 0.25, 0.18, 0.05
 
 
 def profile_for_stage(stage: str, rng: random.Random) -> DemographicProfile:

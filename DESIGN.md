@@ -118,9 +118,10 @@ Starting village fabric may include:
 - fields and paths showing prior human activity
 
 Starting scenarios:
-- Frontier Camp: closest to the current experience, with 10-20 villagers, fewer buildings, and visible survival pressure.
-- Small Village: recommended v0.7 default, with 30-60 villagers, homes, farms, paths, workplaces, simple households, existing routines, and social bonds.
-- Old Village: future scenario with established history, remembered dead, worn paths, older buildings, and larger family networks.
+- Pioneer Camp: a 0-2 year frontier start with 12-20 villagers, fewer buildings, limited stores, and visible survival pressure.
+- Growing Village: recommended v0.7 default, with 30-60 villagers, homes, farms, paths, workplaces, simple households, existing routines, and social bonds.
+- Mature Settlement: a 20-50 year start with established infrastructure, stronger social memory, older paths, and deeper Chronicle context.
+- Ancient Hamlet: a 50+ year start with old households, long Chronicle history, stronger traditions, and more unresolved folklore.
 - Market Town: future scenario with 100-200 villagers, districts, more professions, and delivery networks.
 
 Current v0.7 Phase 1 implementation:
@@ -290,6 +291,60 @@ Trait inheritance direction:
 - a child may blend tendencies from both parents
 - there may be a small chance of a new/random trait
 - traits should remain simple and display-first before deeply changing behavior
+
+## Generational Architecture Foundation
+
+v0.7 adds generation-ready data structures without enabling reproduction.
+
+Villager lifecycle model:
+- birth year and birth day
+- current age
+- lifecycle stage
+- death year and death day
+- alive/deceased status
+- lifecycle history record for future age progression
+
+Family structure model:
+- mother ID
+- father ID
+- parent IDs
+- child / children IDs
+- sibling IDs
+- partner IDs
+- generation number
+
+Household lineage model:
+- founder IDs
+- household head
+- founding year
+- generation count
+- historical member IDs
+- succession history
+
+Inheritance architecture:
+- personality traits
+- work preferences
+- social tendencies
+- appearance traits
+
+Memory and relationship extension:
+- future relationship types include acquaintance, friend, household member, parent, child, sibling, and partner
+- future family memory categories include parent, child, sibling, household elder, and family loss
+- current social memory remains score-based and display-only
+
+Chronicle support:
+- future categories include births, family events, and household succession
+- death records preserve household, home, generation, parent, child, sibling, birth year, and death year fields
+
+Future v0.8 reproduction flow:
+1. Advance ages on a scheduled cadence.
+2. Move villagers through lifecycle stages.
+3. Evaluate household-based reproduction eligibility.
+4. Create a child with parent IDs, household ID, generation, inherited trait profile, and birth Chronicle entry.
+5. Add household historical membership and family memories.
+6. Keep old-age death disabled until renewal is stable.
+
+This architecture does not implement reproduction, pregnancy, childbirth, marriages, genetics, inheritance logic, population growth, old-age death, or family-tree UI.
 
 ## Simulation Scale and Level of Detail
 
@@ -560,11 +615,24 @@ Current Chronicle content includes:
 - active remembrance lines such as `Ari is remembering Rowan.`
 - remembered dead from permanent Death Records
 
+Starting Chronicle seed entries include:
+- settlement foundation and early development
+- household founding and oldest-household notes
+- workplace and infrastructure establishment
+- population milestones appropriate to starting population
+- environmental hardship or abundance
+- grounded local stories tied to existing villagers
+- one uncommon unresolved mystery
+
 History entries should use readable player-facing language and season/year dates where possible, such as `Summer, Year 2`, instead of raw ticks or debug counters.
 
 Remembered dead are shown as compact story cards with name, role, lifecycle stage, influence label, cause of death, date, and remembered-by names when available.
 
-Future Chronicle content may include settlement founding, first farms, first workshops, shortages, influential villagers, visitors, mysteries, migrations, leaders, ruins, and legends. Those event types should slot into the same Chronicle structure later, but are not implemented in v1.
+Seeded Chronicle entries are stored in `WorldHistory` before normal simulation events are appended. The History overlay sorts all entries chronologically, so startup history and later events form one continuous record.
+
+Mystery entries are atmospheric only. They have no explanation, no monsters, no combat, and no direct magical mechanics.
+
+Future Chronicle content may include births, deaths, partnerships, household continuity, inheritance, magical events, major settlement developments, influential villagers, visitors, mysteries, migrations, leaders, ruins, and legends. Those event types should slot into the same Chronicle structure later.
 
 ## Appearance System
 
@@ -1159,6 +1227,65 @@ Non-goals for the current roadmap:
 - Kingdoms
 
 These may become future possibilities, but the next design step is village formation, not large-scale states.
+
+## Starting Scenario Maturity
+
+Starting scenarios change initial conditions, not simulation rules. Every settlement still uses the same planner, households, workplaces, paths, relationships, chronicle, ecology, and villager task systems after generation.
+
+Implemented scenario levels:
+- Pioneer Camp: 0-2 years old, 12-20 villagers, 4-7 homes, limited reserves, sparse path wear, shorter chronicle, and lighter social bonds.
+- Growing Village: 5-15 years old and the default v0.7 experience, preserving the 30-60 villager start and 8-15 home cluster.
+- Mature Settlement: 20-50 years old, larger housing footprint, stronger workplace and household familiarity, more chronicle entries, and more worn village routes.
+- Ancient Hamlet: 50-90 years old, older demographics, long-established households, strong social bonds, denser local stories, and several unresolved folklore entries.
+
+Scenario scaling affects:
+- population and home counts
+- settlement age and household founding years
+- age distribution and experience flavor
+- initial reserves for non-default starts
+- pre-seeded path wear
+- relationship strength derived from shared history
+- chronicle density, including environmental history, local stories, and mystery entries
+
+Design boundaries:
+- no separate rulesets per scenario
+- no scripted success or failure states
+- no reproduction, inheritance, children, family trees, or generational turnover yet
+- mysterious events remain unresolved history and do not add magic mechanics
+- Growing Village remains the stable default for current v0.7 balance and tests
+
+## Simulation Level of Detail
+
+Simulation LOD keeps the village visually lively while moving slow-changing systems away from the hot loop.
+
+Implemented tiers:
+- LOD 0 Visual Systems: movement interpolation, animation state, renderer feedback. Runs every render frame or tick.
+- LOD 1 Active Task Execution: walking, hauling, harvesting, building, eating, sleeping, and workplace actions. Runs every simulation tick for the active rotating villager batch.
+- LOD 2 Needs Systems: hunger, thirst, fatigue, and wildlife updates. Runs hourly with elapsed-tick scaling so per-day balance stays stable.
+- LOD 3 Social Systems: relationship growth, household familiarity, workplace familiarity, and influence peaks. Runs daily.
+- LOD 4 Settlement Planning: resource targets, workforce balancing, housing demand, workplace demand, farms, ecology, storage spoilage, and path decay. Runs daily or event-driven.
+- LOD 5 Historical Systems: chronicle entries, remembrance expiry, demographic records, family history, and future summaries. Runs event-driven or as daily cleanup.
+
+Developer instrumentation:
+- `World.lod_stats` stores calls, last duration, total duration, and average duration per LOD tier.
+- `World.lod_report()` returns rows sorted by total cost.
+- Renderer frames record LOD 0 timing without adding player-facing HUD clutter.
+
+Future generational cadence:
+- Aging: daily or seasonal, not per tick.
+- Birth eligibility: daily or seasonal household pass.
+- Child creation: event-driven.
+- Death checks for age/illness/accidents: daily or event-driven.
+- Trait inheritance: only when a child is created.
+- Family tree updates: event-driven on birth, death, household split, partnership, or adoption.
+- Chronicle birth/death/family entries: event-driven.
+- Demographic reports: daily, seasonal, or overlay-requested only.
+
+Design boundaries:
+- do not attach slow systems to movement or rendering loops
+- do not recompute settlement-wide social, family, or planner state per tick
+- keep active visible work responsive even as background systems slow down
+- prefer event-driven updates whenever a future system changes rarely
 
 ## Design Priorities
 

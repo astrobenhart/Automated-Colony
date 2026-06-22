@@ -816,7 +816,8 @@ def test_colony_summary_excludes_debug_fields():
     assert "Rad" not in summary
     assert "Claims" not in summary
     assert "Cap" not in summary
-    assert "Settle" not in summary
+    assert "Settlement Growing Village" in summary
+    assert "Age      0 Years" in summary
 
 
 def test_colony_summary_omits_planner_diagnostics_and_targets():

@@ -34,6 +34,16 @@ class DeathRecord:
     home_settlement_name: str | None = None
     birth_settlement_id: str | None = None
     birth_settlement_name: str | None = None
+    birth_year: int | None = None
+    death_year: int | None = None
+    mother_id: str | None = None
+    father_id: str | None = None
+    parent_ids: list[str] = field(default_factory=list)
+    child_ids: list[str] = field(default_factory=list)
+    sibling_ids: list[str] = field(default_factory=list)
+    household_id: str | None = None
+    home_id: str | None = None
+    generation: int = 0
     remembered_by: list[str] = field(default_factory=list)
 
 
@@ -44,6 +54,9 @@ def record_death(world: World, agent: Agent, cause_of_death: str) -> DeathRecord
         return existing
 
     remembered_by = remembered_villagers(world, agent)
+    agent.death_year = world.year
+    agent.death_day = world.day
+    agent.sync_generation_architecture()
     record = DeathRecord(
         name=getattr(agent, "name", "Villager"),
         villager_id=villager_id,
@@ -62,6 +75,16 @@ def record_death(world: World, agent: Agent, cause_of_death: str) -> DeathRecord
         home_settlement_name=getattr(agent, "home_settlement_name", None),
         birth_settlement_id=getattr(agent, "birth_settlement_id", None),
         birth_settlement_name=getattr(agent, "birth_settlement_name", None),
+        birth_year=getattr(agent, "birth_year", None),
+        death_year=world.year,
+        mother_id=getattr(agent, "mother_id", None),
+        father_id=getattr(agent, "father_id", None),
+        parent_ids=list(getattr(agent, "parent_ids", [])),
+        child_ids=list(getattr(agent, "child_ids", [])),
+        sibling_ids=list(getattr(agent, "sibling_ids", [])),
+        household_id=getattr(agent, "household_id", None),
+        home_id=getattr(agent, "home_id", None),
+        generation=getattr(agent, "generation", 0),
         remembered_by=remembered_by,
     )
     world.death_records.append(record)

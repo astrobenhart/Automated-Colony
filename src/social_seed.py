@@ -5,6 +5,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from src.lifecycle import EXPERIENCED, VETERAN
+from src.scenarios import scenario_for_key
 from src.social_memory import SocialMemoryEntry, villager_key
 from src.workplace import FARM, STORAGE, VILLAGE_CENTER, WORKSHOP
 
@@ -33,9 +34,10 @@ def seed_preexisting_social_history(world: World):
 
 
 def seed_role_and_routine_history(world: World, agents: list[Agent]):
+    settlement_age = max(0, getattr(getattr(world, "settlement", None), "age_years", 0))
     for agent in agents:
         rng = random.Random(f"{world.seed}|{villager_key(agent)}|role-history")
-        working_years = max(0, getattr(agent, "age", 18) - 18)
+        working_years = min(max(0, getattr(agent, "age", 18) - 18), settlement_age)
         agent.years_in_role = role_years_for(agent, working_years, rng)
         agent.routine_age = routine_years_for(agent, working_years, rng)
         agent.workplace_familiarity = min(agent.years_in_role, agent.routine_age)
@@ -94,7 +96,7 @@ def seed_household_relationships(world: World, agents_by_id: dict[str, Agent]):
             member.household_familiarity = years
             add_memory(member, f"Shared {household.household_name} for {years} years.")
 
-        score = household_score(years)
+        score = scale_score(world, household_score(years))
         for observer in members:
             for other in members:
                 if observer is other:
@@ -122,7 +124,7 @@ def seed_workplace_relationships(world: World, agents_by_id: dict[str, Agent]):
                 if observer is other:
                     continue
                 years = min(observer.workplace_familiarity, other.workplace_familiarity)
-                seed_relationship(observer, other, workplace_score(years), world.day)
+                seed_relationship(observer, other, scale_score(world, workplace_score(years)), world.day)
 
 
 def seed_role_relationships(world: World, agents: list[Agent]):
@@ -139,7 +141,7 @@ def seed_role_relationships(world: World, agents: list[Agent]):
                 if observer is other:
                     continue
                 years = min(observer.years_in_role, other.years_in_role)
-                seed_relationship(observer, other, role_peer_score(years), world.day)
+                seed_relationship(observer, other, scale_score(world, role_peer_score(years)), world.day)
             if observer.years_in_role >= 3:
                 add_memory(observer, f"Worked alongside other {role} villagers for years.")
 
@@ -154,6 +156,12 @@ def workplace_score(years: int) -> int:
 
 def role_peer_score(years: int) -> int:
     return min(18, 2 + max(0, years))
+
+
+def scale_score(world: World, score: int) -> int:
+    settlement = getattr(world, "settlement", None)
+    scenario = scenario_for_key(getattr(settlement, "scenario_key", None))
+    return max(0, min(70, round(score * scenario.social_depth)))
 
 
 def seed_relationship(observer: Agent, other: Agent, score: int, day: int):

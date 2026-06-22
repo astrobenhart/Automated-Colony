@@ -9,6 +9,7 @@ from src.colony_memory import ColonyMemory
 from src.colony_storage import ColonyStorage
 from src.environment_events import update_environment_events
 from src.farming import maybe_create_farm, update_farms
+from src.history_seed import seed_starting_chronicle
 from src.influence import update_influence_peaks
 from src.death_memory import DeathRecord, expire_remembrances
 from src.seasons import (
@@ -21,6 +22,16 @@ from src.seasons import (
 from src.resource_ecology import apply_resource_ecology
 from src.lifecycle import demographic_profiles, profile_for_stage, ADULT, OLDER_ADULT
 from src.roles import role_for_index
+from src.scenarios import scenario_for_key, starting_population_for_scenario
+from src.simulation_lod import (
+    LODProfileStat,
+    LOD_1_TASKS,
+    LOD_2_NEEDS,
+    LOD_3_SOCIAL,
+    LOD_4_PLANNING,
+    LOD_5_HISTORY,
+    tier_names,
+)
 from src.social_memory import update_household_familiarity, update_social_memory
 from src.social_seed import seed_preexisting_social_history
 from src.traits import trait_for_index
@@ -81,6 +92,9 @@ class World:
     last_settlement_ms: float = 0.0
     last_updated_villagers: int = 0
     pathfinding_calls: int = 0
+    lod_stats: dict[str, LODProfileStat] = field(
+        default_factory=lambda: {tier: LODProfileStat() for tier in tier_names()}
+    )
 
     @property
     def season(self) -> str:
@@ -148,7 +162,8 @@ class World:
 
         positions = self.initial_spawn_positions(amount)
         home_assignments = self.initial_home_assignments(amount)
-        profiles = demographic_profiles(amount, self.seed)
+        scenario_key = getattr(self.settlement, "scenario_key", None)
+        profiles = demographic_profiles(amount, self.seed, scenario_key=scenario_key)
         home_settlement_id = self.settlement.settlement_id if self.settlement is not None else None
         home_settlement_name = self.settlement.name if self.settlement is not None else None
         for i, (x, y) in enumerate(positions):
@@ -178,6 +193,8 @@ class World:
                 home_y=home_y,
                 birth_settlement_id=home_settlement_id,
                 birth_settlement_name=home_settlement_name,
+                birth_year=self.year - profile.age,
+                birth_day=1,
                 idle_until_tick=rng.randint(0, 3),
                 home_wander_radius=rng.randint(HOME_WANDER_MIN_RADIUS, HOME_WANDER_MAX_RADIUS),
             )
@@ -471,6 +488,7 @@ class World:
             villager_start = time.perf_counter()
             updated_count = self.update_villagers_for_tick()
             villager_seconds = time.perf_counter() - villager_start
+            self.record_lod_update(LOD_1_TASKS, villager_seconds)
             self.log_performance_tick(tick_start, villager_seconds, settlement_seconds, updated_count)
 
     def update_villagers_for_tick(self) -> int:
@@ -491,7 +509,6 @@ class World:
         return updates
 
     def update_villager(self, agent: Agent):
-        agent.update_needs()
         if run_villager_task(agent, self):
             agent.die_if_needed(self)
             return
@@ -518,7 +535,23 @@ class World:
         self.last_updated_villagers = updated_count
 
     def run_hourly_updates(self):
+        from src.config import TICKS_PER_HOUR
+
+        needs_start = time.perf_counter()
+        self.update_needs_for_lod(TICKS_PER_HOUR)
         update_wildlife(self, random)
+        self.record_lod_update(LOD_2_NEEDS, time.perf_counter() - needs_start)
+
+    def update_needs_for_lod(self, elapsed_ticks: int):
+        living = self.living_agents()
+        if not living:
+            return
+
+        from src.config import MAX_UPDATES_PER_TICK
+        active_fraction = min(MAX_UPDATES_PER_TICK, len(living)) / len(living)
+        scaled_ticks = elapsed_ticks * active_fraction
+        for agent in living:
+            agent.update_needs(scaled_ticks)
 
     def run_daily_settlement_updates(self):
         settlement_start = time.perf_counter()
@@ -527,31 +560,52 @@ class World:
         self.update_resource_pressures()
         self.update_carrying_capacity()
         self.record_settlement_activity()
-        self.log_settlement_performance(time.perf_counter() - settlement_start)
+        elapsed = time.perf_counter() - settlement_start
+        self.log_settlement_performance(elapsed)
+        self.record_lod_update(LOD_4_PLANNING, elapsed)
 
     def log_settlement_performance(self, seconds: float):
         self.last_settlement_ms = seconds * 1000
 
     def run_startup_settlement_updates(self):
         self.run_daily_settlement_updates()
+        plan_start = time.perf_counter()
         self.plan_settlement_work()
+        self.record_lod_update(LOD_4_PLANNING, time.perf_counter() - plan_start)
 
     def run_daily_updates(self):
+        from src.config import TICKS_PER_HOUR
+
+        needs_start = time.perf_counter()
+        self.update_needs_for_lod(TICKS_PER_HOUR)
+        update_wildlife(self, random)
+        self.record_lod_update(LOD_2_NEEDS, time.perf_counter() - needs_start)
+
+        planning_start = time.perf_counter()
         update_environment_events(self, random)
         decay_foot_traffic(self)
         self.age_stored_food()
         self.regrow_resources()
         update_farms(self)
+        self.record_lod_update(LOD_4_PLANNING, time.perf_counter() - planning_start)
+
         self.run_daily_settlement_updates()
+        planning_start = time.perf_counter()
         maybe_create_farm(self)
         self.update_carrying_capacity()
         self.plan_settlement_work()
+        self.record_lod_update(LOD_4_PLANNING, time.perf_counter() - planning_start)
+
+        social_start = time.perf_counter()
         update_social_memory(self)
         self.ensure_household_membership()
         update_household_familiarity(self)
         update_influence_peaks(self)
+        self.record_lod_update(LOD_3_SOCIAL, time.perf_counter() - social_start)
+
+        history_start = time.perf_counter()
         expire_remembrances(self)
-        update_wildlife(self, random)
+        self.record_lod_update(LOD_5_HISTORY, time.perf_counter() - history_start)
 
     def assign_daily_roles(self):
         for agent in self.living_agents():
@@ -559,6 +613,17 @@ class World:
 
     def plan_settlement_work(self):
         plan_settlement_work(self)
+
+    def record_lod_update(self, tier: str, seconds: float):
+        stat = self.lod_stats.setdefault(tier, LODProfileStat())
+        stat.record(seconds)
+
+    def lod_report(self) -> list[tuple[str, int, float, float, float]]:
+        rows = [
+            (tier, stat.calls, stat.last_seconds, stat.average_seconds, stat.total_seconds)
+            for tier, stat in self.lod_stats.items()
+        ]
+        return sorted(rows, key=lambda row: row[4], reverse=True)
 
     def advance_day(self):
         self.day += 1
@@ -747,6 +812,27 @@ def create_world(
     )
     world.generate()
     world.establish_settlement()
-    world.spawn_agents(agent_count if agent_count is not None else STARTING_AGENTS)
+    scenario = scenario_for_key(effective_settings.scenario)
+    starting_agents = starting_population_for_scenario(
+        scenario,
+        effective_settings.seed,
+        agent_count,
+        STARTING_AGENTS,
+    )
+    apply_scenario_reserves(world, scenario)
+    world.spawn_agents(starting_agents)
     world.run_startup_settlement_updates()
+    seed_starting_chronicle(world)
     return world
+
+
+def apply_scenario_reserves(world: World, scenario):
+    reserve = scenario.reserve
+    if reserve.food:
+        world.colony_storage.deposit_food(reserve.food)
+    if reserve.water:
+        world.colony_storage.deposit_water(reserve.water)
+    if reserve.wood:
+        world.colony_storage.deposit_wood(reserve.wood)
+    if reserve.seeds is not None:
+        world.colony_storage.seed_reserve = reserve.seeds

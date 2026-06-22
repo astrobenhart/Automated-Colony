@@ -10,7 +10,8 @@ from src.farming import FarmPlot
 from src.profiler import profiler
 from src.reservations import FOOD as FOOD_RESERVATION, WOOD as WOOD_RESERVATION
 from src.roles import BUILDER, FORAGER, GENERALIST, SCOUT
-from src.village_paths import seed_village_paths
+from src.scenarios import DEFAULT_SCENARIO_KEY, scenario_for_key
+from src.village_paths import apply_path_wear, seed_village_paths
 from src.workplace import Workplace, create_workplaces
 from src.workshop import Workshop, create_workshops, is_workshop_tile
 
@@ -46,6 +47,9 @@ class Household:
     household_head: str | None = None
     cohabitation_days: int = 0
     established_years: int = 0
+    generation_count: int = 1
+    historical_member_ids: list[str] = field(default_factory=list)
+    succession_history: list[dict[str, object]] = field(default_factory=list)
 
     def __post_init__(self):
         if self.home_building_id is None:
@@ -64,6 +68,8 @@ class Household:
     def add_member(self, member_id: str):
         if member_id not in self.member_ids:
             self.member_ids.append(member_id)
+        if member_id not in self.historical_member_ids:
+            self.historical_member_ids.append(member_id)
         if not self.founder_ids:
             self.founder_ids.append(member_id)
         if self.household_head is None:
@@ -124,6 +130,9 @@ class Settlement:
     work_assignments: dict[str, str] = field(default_factory=dict)
     construction_progress: dict[tuple[int, int], int] = field(default_factory=dict)
     last_planned_day: int | None = None
+    scenario_key: str = DEFAULT_SCENARIO_KEY
+    maturity_label: str = "Growing Village"
+    age_years: int = 0
 
     def record_activity(self, x: int, y: int):
         pos = (x, y)
@@ -195,6 +204,8 @@ def found_settlement(world) -> Settlement:
     x, y = central_founding_site(world)
     name = settlement_name(world)
     radius = SETTLEMENT_RADIUS
+    scenario = scenario_for_key(getattr(getattr(world, "settings", None), "scenario", None))
+    age_years = scenario.age_years(world.seed)
     settlement = Settlement(
         name=name,
         x=x,
@@ -204,6 +215,9 @@ def found_settlement(world) -> Settlement:
         settlement_id=settlement_id_for(name, world.seed),
         radius=radius,
         population=len(world.living_agents()),
+        scenario_key=scenario.key,
+        maturity_label=scenario.label,
+        age_years=age_years,
     )
     settlement.homes = create_homes(world, settlement)
     settlement.households = create_households(world, settlement)
@@ -211,6 +225,7 @@ def found_settlement(world) -> Settlement:
     settlement.workshops = create_workshops(world, settlement)
     settlement.workplaces = create_workplaces(world, settlement)
     seed_village_paths(world, settlement)
+    apply_scenario_path_maturity(world, settlement)
     return settlement
 
 
@@ -218,7 +233,8 @@ def create_homes(world, settlement: Settlement, rng: random.Random | None = None
     if rng is None:
         rng = random.Random(f"{world.seed}|{settlement.settlement_id}|homes")
 
-    target_count = rng.randint(8, 15)
+    scenario = scenario_for_key(getattr(settlement, "scenario_key", None))
+    target_count = rng.randint(*scenario.home_count_range)
     candidates = _home_candidates(world, settlement, rng)
     homes: list[Home] = []
 
@@ -245,7 +261,7 @@ def create_households(world, settlement: Settlement, rng: random.Random | None =
     households = []
     for index, home in enumerate(settlement.homes):
         household_id = f"household-{index}"
-        established_years = household_established_years(rng)
+        established_years = household_established_years(rng, max_years=max(0, settlement.age_years))
         home.household_id = household_id
         households.append(Household(
             household_id=household_id,
@@ -267,13 +283,36 @@ def household_name(rng: random.Random, index: int) -> str:
     return f"{rng.choice(roots)} {rng.choice(suffixes)}"
 
 
-def household_established_years(rng: random.Random) -> int:
+def household_established_years(rng: random.Random, max_years: int = 35) -> int:
+    if max_years <= 0:
+        return 0
+    if max_years <= 2:
+        return rng.randint(0, max_years)
+
     roll = rng.random()
     if roll < 0.25:
-        return rng.randint(0, 2)
+        return min(max_years, rng.randint(0, 2))
     if roll < 0.85:
-        return rng.randint(3, 15)
-    return rng.randint(16, 35)
+        low = min(3, max_years)
+        high = max(low, min(15, max_years))
+        return rng.randint(low, high)
+    low = min(16, max_years)
+    high = max(low, min(max_years, 60))
+    return rng.randint(low, high)
+
+
+def apply_scenario_path_maturity(world, settlement: Settlement):
+    scenario = scenario_for_key(getattr(settlement, "scenario_key", None))
+    multiplier = scenario.path_traffic_multiplier
+    if multiplier == 1.0:
+        return
+
+    for row in world.tiles:
+        for tile in row:
+            if tile.foot_traffic <= 0:
+                continue
+            tile.foot_traffic = max(1, int(tile.foot_traffic * multiplier))
+            apply_path_wear(tile)
 
 
 def _home_candidates(world, settlement: Settlement, rng: random.Random) -> list[tuple[int, int]]:
