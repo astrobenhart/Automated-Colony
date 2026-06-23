@@ -68,15 +68,26 @@ def identity_rows(agent, world=None) -> list[tuple[str, object]]:
         ("Experience", getattr(agent, "experience_level", None)),
         ("Role Years", getattr(agent, "years_in_role", None)),
         ("Trait", getattr(agent, "trait", None)),
+        ("Parents", parent_names(agent, world)),
         ("Home", getattr(agent, "home_settlement_name", None)),
     ])
 
 
 def household_rows(agent, world=None) -> list[tuple[str, object]]:
     household = household_for_agent(agent, world)
+    occupancy = None
+    house_size = None
+    if household is not None and world is not None:
+        from src.residential import household_status
+
+        status = household_status(world, household)
+        occupancy = f"{status.occupants} / {status.capacity}"
+        house_size = f"{status.house_tiles} Tile" if status.house_tiles == 1 else f"{status.house_tiles} Tiles"
     rows = [
         ("Household", household.household_name if household is not None else getattr(agent, "household_id", None)),
         ("Home", home_label(agent, world)),
+        ("Occupants", occupancy),
+        ("House Size", house_size),
         ("Members", household_member_names(household, world) if household is not None else None),
     ]
     return present_rows(rows) or [("", "None")]
@@ -141,6 +152,19 @@ def partnership_duration_label(agent) -> str:
     if years == 1:
         return "1 year"
     return f"{years} years"
+
+
+def parent_names(agent, world=None) -> str | None:
+    parent_ids = list(getattr(agent, "parent_ids", []) or [])
+    for parent_id in (getattr(agent, "parent_a_id", None), getattr(agent, "parent_b_id", None)):
+        if parent_id and parent_id not in parent_ids:
+            parent_ids.append(parent_id)
+    if not parent_ids:
+        return None
+    if world is None:
+        return ", ".join(parent_ids)
+    names_by_id = {other.agent_id or other.name: other.name for other in getattr(world, "agents", [])}
+    return ", ".join(names_by_id.get(parent_id, parent_id) for parent_id in parent_ids)
 
 
 def status_rows(agent, world=None) -> list[tuple[str, object]]:

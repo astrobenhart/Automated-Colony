@@ -4,7 +4,7 @@ import random
 from typing import TYPE_CHECKING
 
 from src.building_placement import find_build_site_near_settlement
-from src.building_priorities import SHELTER, shelter_wood_cost_for_agent
+from src.building_priorities import LEGACY_SHELTER, SHELTER, shelter_wood_cost_for_agent
 from src.config import (
     AGENT_FOOD_CARRY_CAPACITY,
     AGENT_WATER_CARRY_CAPACITY,
@@ -27,6 +27,7 @@ from src.config import (
     SEASON_PHASE_BOUNDARIES,
 )
 from src.roles import WOOD
+from src.lifecycle import CHILD
 from src.farming import (
     choose_farm_work_target,
     farm_needs_planting,
@@ -95,6 +96,9 @@ STATE_HARVESTING_FARM = "harvesting_farm"
 def assign_daily_role(agent: Agent, world: World):
     if not agent.alive:
         return
+    if getattr(agent, "lifecycle_stage", None) == CHILD:
+        agent.daily_role = None
+        return
     agent.daily_role = assignment_for(world, agent) or WORK_FOOD
     if agent.task_state == "":
         agent.task_state = STATE_IDLE
@@ -103,6 +107,11 @@ def assign_daily_role(agent: Agent, world: World):
 def run_villager_task(agent: Agent, world: World) -> bool:
     if not agent.alive:
         return False
+
+    if getattr(agent, "lifecycle_stage", None) == CHILD:
+        if _handle_needs(agent, world):
+            return True
+        return _run_child_home_state(agent, world)
 
     if agent.daily_role is None:
         assign_daily_role(agent, world)
@@ -131,6 +140,16 @@ def run_villager_task(agent: Agent, world: World) -> bool:
         return _run_support_task(agent, world)
 
     return False
+
+
+def _run_child_home_state(agent: Agent, world: World) -> bool:
+    if village_phase(world) == PHASE_NIGHT:
+        return _return_home_or_sleep(agent, world, urgent=False)
+    agent.current_action = "At home"
+    agent.current_goal = "Grow"
+    agent.task_state = STATE_IDLE
+    agent.daily_role = None
+    return True
 
 
 def village_phase(world: World) -> str:
@@ -645,7 +664,7 @@ def _run_construction_task(agent: Agent, world: World) -> bool:
             agent.current_target = None
             agent.current_path = []
             return True
-        return _move_to_target(agent, world, target, "Moving to build site", "Build shelter")
+        return _move_to_target(agent, world, target, "Moving to build site", "Build house")
 
     if agent.task_state == STATE_BUILDING:
         return _build_shelter(agent, world)
@@ -661,14 +680,14 @@ def _build_shelter(agent: Agent, world: World) -> bool:
     if world.settlement is None:
         agent.task_state = STATE_IDLE
         return False
-    if world.tile_at(*target).kind == SHELTER:
+    if world.tile_at(*target).kind in (SHELTER, LEGACY_SHELTER):
         world.settlement.construction_progress.pop(target, None)
         agent.task_target = None
         agent.task_state = STATE_IDLE
         return True
 
     agent.current_action = "Building"
-    agent.current_goal = "Build shelter"
+    agent.current_goal = "Build house"
     progress = world.settlement.construction_progress.get(target, 0) + 1
     world.settlement.construction_progress[target] = progress
     agent.task_timer = max(0, TASK_BUILD_TICKS - progress)
@@ -693,7 +712,9 @@ def _build_shelter(agent: Agent, world: World) -> bool:
     if world.colony_storage.building_materials > 0:
         world.colony_storage.withdraw_building_materials(1)
 
-    world.tile_at(*target).kind = SHELTER
+    from src.residential import complete_residential_construction
+
+    complete_residential_construction(world, target[0], target[1])
     world.settlement.construction_progress.pop(target, None)
     agent.task_target = None
     agent.current_target = None
@@ -701,7 +722,7 @@ def _build_shelter(agent: Agent, world: World) -> bool:
     agent.task_state = STATE_IDLE
     agent.task_timer = 0
     agent.reset_stuck()
-    world.log(f"{agent.name} builds a shelter.")
+    world.log(f"{agent.name} builds a house.")
     return True
 
 

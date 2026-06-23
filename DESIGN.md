@@ -377,6 +377,94 @@ Household integration is conservative. Partners already sharing a household stay
 
 Future birth systems should use partnerships as one input into household-based renewal, not as a complete family simulation.
 
+## v0.8 Birth Foundation
+
+Births are the second v0.8 generational loop foundation.
+
+They follow the simple loop:
+- partnership
+- shared household
+- birth
+- child villager enters the world
+
+Births require:
+- both partners alive
+- an established partnership
+- shared household membership
+- adult-stage parents
+- same settlement membership
+- available housing space
+- basic food and water reserves
+
+The birth pass runs daily with low probability and a cap on new children per day. It is resource-aware, but it is not a population-balancing system and does not create children to fill labor shortages.
+
+Children are real villagers with parent IDs, household membership, generation number, inherited trait identity, memories, and Chronicle birth entries. They do not enter the workforce yet; child lifecycle, aging, and workforce entry are Phase 3 work.
+
+This phase still does not implement pregnancy, gestation timers, fertility simulation, childbirth risks, child jobs, aging progression, inheritance law, family trees, or family reputation.
+
+## Residential Growth Model
+
+Housing growth is household-driven.
+
+The settlement no longer maintains artificial reserve beds for possible future births. Instead, residential demand emerges from actual household state:
+- a household has no residence
+- a household is overcrowded and can expand
+- a partnered adult pair in an overcrowded max-size household can split into a new household
+
+Each house tile provides physical household capacity. A household's capacity is the number of connected house tiles assigned to that household multiplied by the house-tile capacity constant. Households may temporarily exceed capacity; overcrowding creates pressure to expand or split rather than immediate failure.
+
+House expansion rules:
+- expansion must create a new house tile orthogonally adjacent to an existing house tile owned by the household
+- diagonal expansion does not count
+- each household has a maximum number of house tiles
+- expansion uses normal construction work and resource costs
+
+When a household reaches maximum physical size, partnered adult members may eventually found a new household. New households begin with a single house tile; future growth happens through the same expansion path.
+
+Developer diagnostics on the settlement track:
+- overcrowded households
+- homeless households
+- household split candidates
+- house expansion candidates
+- total house tiles
+- total house capacity
+
+Birth requirements remain strict and household-based. Births can create manageable overcrowding when a household has room to expand, which lets the village respond physically after family growth instead of pre-building spare capacity.
+
+## Residential System Transition
+
+The active residential model is now House.
+
+A house represents:
+- a household residence
+- living space
+- family space
+- population capacity
+
+Earlier versions used shelter as the survival-era residential concept. That distinction no longer maps cleanly to households, partnerships, births, parent links, Chronicle history, or future inheritance and succession.
+
+New residential construction creates houses and registers them with the settlement home list. Housing capacity is calculated from houses, with legacy shelter tiles still counted for backwards compatibility until a future save migration can convert or retire them.
+
+Planner and UI language should use housing, houses, and housing capacity. Legacy code names such as `BuildShelterAction`, `needed_shelters`, or `shelter_capacity` may remain temporarily as compatibility aliases, but they should be treated as migration debt rather than current design language.
+
+## Settlement Diagnostics Window
+
+The Diagnostics overlay is a development and balancing tool toggled with `D`.
+
+It is read-only and intentionally separate from the compact right-hand colony panel. The panel remains player-facing and at-a-glance; diagnostics exposes internal state for debugging households, partnerships, births, housing, resources, workforce, mood pressure, and performance.
+
+Diagnostics sections include:
+- population and generations
+- household and housing pressure
+- partnership eligibility and duration
+- birth attempts, successes, eligible pairs, and current blockers
+- resource storage, targets, and estimated flow
+- workforce assignment counts
+- derived mood pressure from needs and overcrowding
+- simulation/render/pathfinding performance counters
+
+The window should remain lightweight. Expensive historical analysis, family-tree rendering, inheritance reports, and detailed production ledgers should be added as explicit future diagnostics rather than folded into the right panel.
+
 ## Simulation Scale and Level of Detail
 
 Target scale:

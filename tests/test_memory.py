@@ -21,8 +21,8 @@ def test_agent_memory_scanning():
     world.tiles[5][0].kind = "forest"
     world.tiles[5][0].wood = 4
 
-    # Shelter at (0, 0) -> Chebyshev distance dx=5, dy=5 -> In range
-    world.tiles[0][0].kind = "shelter"
+    # Home at (0, 0) -> Chebyshev distance dx=5, dy=5 -> In range
+    world.tiles[0][0].kind = "home"
 
     # Place resources out of scout discovery range
     # Food at (12, 5) -> Chebyshev distance dx=7, dy=0 -> Out of range

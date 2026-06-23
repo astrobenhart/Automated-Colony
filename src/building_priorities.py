@@ -13,16 +13,21 @@ from src.config import (
     SHELTER_CAPACITY,
     SHELTER_CAPACITY_BUFFER,
 )
+from src.residential import residential_demand, update_residential_diagnostics
 
 if TYPE_CHECKING:
     from src.agent import Agent
     from src.world import World
 
 
-SHELTER = "shelter"
+HOUSE = "home"
+LEGACY_SHELTER = "shelter"
+# Compatibility alias for older code/tests/imports. New construction uses houses.
+SHELTER = HOUSE
 WOOD = "wood"
 MATERIALS = "materials"
-SHELTER_WOOD_COST = 3
+HOUSE_WOOD_COST = 3
+SHELTER_WOOD_COST = HOUSE_WOOD_COST
 
 
 @dataclass(frozen=True)
@@ -31,6 +36,9 @@ class BuildingPriority:
     existing_count: int
     needed_count: int
     wood_cost: int
+    target_household_id: str | None = None
+    demand_type: str | None = None
+    build_site: tuple[int, int] | None = None
 
     @property
     def missing_count(self) -> int:
@@ -42,32 +50,45 @@ class BuildingPriority:
 
 
 def housing_structures(world: World) -> int:
-    return world.count_tiles(SHELTER) + world.count_tiles("home")
+    return world.count_tiles(HOUSE) + world.count_tiles(LEGACY_SHELTER)
 
 
 def housing_capacity(world: World) -> int:
     return housing_structures(world) * SHELTER_CAPACITY
 
 
-def needed_shelters(world: World) -> int:
+def needed_houses(world: World) -> int:
+    current_houses = housing_structures(world)
+    demand = residential_demand(world)
+    if demand is not None:
+        return current_houses + 1
     living_count = len(world.living_agents())
     if living_count == 0:
         return 0
-    return ceil(living_count / SHELTER_CAPACITY)
+    return max(current_houses, ceil(living_count / SHELTER_CAPACITY))
+
+
+def needed_shelters(world: World) -> int:
+    """Compatibility alias for older callers; new planning treats these as houses."""
+    return needed_houses(world)
 
 
 def highest_priority(world: World) -> BuildingPriority | None:
     update_settlement_needs(world)
 
-    existing_shelters = housing_structures(world)
-    required_shelters = needed_shelters(world)
+    existing_houses = housing_structures(world)
+    demand = residential_demand(world)
+    required_houses = existing_houses + 1 if demand is not None else needed_houses(world)
 
-    if existing_shelters < required_shelters:
+    if existing_houses < required_houses:
         return BuildingPriority(
             building_type=SHELTER,
-            existing_count=existing_shelters,
-            needed_count=required_shelters,
+            existing_count=existing_houses,
+            needed_count=required_houses,
             wood_cost=SHELTER_WOOD_COST,
+            target_household_id=demand.household_id if demand is not None else None,
+            demand_type=demand.demand_type if demand is not None else "new_house",
+            build_site=demand.build_site if demand is not None else None,
         )
 
     return None
@@ -76,6 +97,10 @@ def highest_priority(world: World) -> BuildingPriority | None:
 def needs_shelter(world: World) -> bool:
     priority = highest_priority(world)
     return priority is not None and priority.building_type == SHELTER
+
+
+def needs_house(world: World) -> bool:
+    return needs_shelter(world)
 
 
 def should_gather_wood_for_construction(agent: Agent, world: World) -> bool:
@@ -110,6 +135,7 @@ def update_settlement_needs(world: World, force: bool = False):
     scores = settlement_need_scores(world)
     settlement.need_scores = scores
     settlement.top_need = stable_top_need(settlement.top_need, scores)
+    update_residential_diagnostics(world)
     settlement.need_updated_day = world.day
 
 
@@ -123,13 +149,16 @@ def settlement_need_scores(world: World) -> dict[str, float]:
 
 def shelter_need_score(world: World) -> float:
     living = len(world.living_agents())
-    existing_shelters = housing_structures(world)
     capacity = housing_capacity(world)
-    required_shelters = needed_shelters(world)
-    missing_shelters = max(0, required_shelters - existing_shelters)
+    existing_houses = housing_structures(world)
+    required_houses = needed_houses(world)
+    missing_houses = max(0, required_houses - existing_houses)
+    demand = residential_demand(world)
 
-    if missing_shelters > 0:
-        score = 70 + missing_shelters * 20 + max(0, living - capacity) * 5
+    if demand is not None:
+        score = demand.score + max(0, living - capacity) * 5
+    elif missing_houses > 0:
+        score = 70 + missing_houses * 20 + max(0, living - capacity) * 5
     elif capacity - living < SHELTER_CAPACITY_BUFFER:
         score = 25
     else:
@@ -143,13 +172,12 @@ def shelter_need_score(world: World) -> float:
 def wood_need_score(world: World) -> float:
     stored_wood = world.colony_storage.wood
     stored_materials = world.colony_storage.building_materials
-    existing_shelters = housing_structures(world)
-    missing_shelters = max(0, needed_shelters(world) - existing_shelters)
+    missing_houses = 1 if residential_demand(world) is not None else 0
     workshop_exists = world.workshop_at_anywhere()
 
     score = max(0, DESIRED_WOOD_RESERVE - stored_wood) * 5
-    if missing_shelters > 0:
-        construction_need = missing_shelters * SHELTER_WOOD_COST
+    if missing_houses > 0:
+        construction_need = missing_houses * SHELTER_WOOD_COST
         if stored_wood + stored_materials < construction_need:
             score += 45
         else:
@@ -168,10 +196,9 @@ def materials_need_score(world: World) -> float:
     if stored_materials >= DESIRED_BUILDING_MATERIALS or stored_wood <= 0:
         return 0.0
 
-    existing_shelters = housing_structures(world)
-    missing_shelters = max(0, needed_shelters(world) - existing_shelters)
+    missing_houses = 1 if residential_demand(world) is not None else 0
     score = (DESIRED_BUILDING_MATERIALS - stored_materials) * 10
-    score += 25 if missing_shelters > 0 else 10
+    score += 25 if missing_houses > 0 else 10
     return float(score)
 
 

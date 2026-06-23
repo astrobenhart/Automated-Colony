@@ -378,8 +378,8 @@ Purpose:
 Introduce population renewal.
 
 Features:
-- [ ] Reproduction system
-- [ ] Birth events
+- [x] Reproduction system
+- [x] Birth events
 
 Notes:
 - Births should emerge from established partnerships.
@@ -446,6 +446,8 @@ Notes:
 - Prioritize simulation behavior over UI complexity.
 - Avoid pregnancy mechanics, inheritance law systems, romance drama, politics, detailed domestic economies, and complex social simulation.
 - Focus on partnerships, births, children, aging, trait inheritance, succession, natural death, and village renewal.
+- Residential planning should use houses and housing capacity. Legacy shelter terminology remains only for completed-history notes and compatibility debt.
+- Residential growth should emerge from households, overcrowding, house expansion, and new household formation rather than artificial future housing reserves.
 - Family trees and family reputation are secondary to proving long-term village continuity.
 
 Success Criteria:

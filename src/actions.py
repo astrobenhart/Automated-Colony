@@ -279,7 +279,7 @@ class SeekWoodStockpileAction(Action):
 
 
 class BuildShelterAction(Action):
-    name = "Building shelter"
+    name = "Building house"
 
     def can_do(self, agent: Agent, world: World) -> bool:
         tile = world.tile_at(agent.x, agent.y)
@@ -308,13 +308,14 @@ class BuildShelterAction(Action):
         from src.building_priorities import shelter_wood_cost_for_agent
 
         wood_cost = shelter_wood_cost_for_agent(agent, world)
-        tile = world.tile_at(agent.x, agent.y)
-        tile.kind = "shelter"
+        from src.residential import complete_residential_construction
+
+        complete_residential_construction(world, agent.x, agent.y)
         agent.wood -= wood_cost
         if world.colony_storage.building_materials > 0:
             world.colony_storage.withdraw_building_materials(1)
         world.reservations.release(BUILD_SITE, (agent.x, agent.y), agent)
-        world.log(f"{agent.name} builds a shelter.")
+        world.log(f"{agent.name} builds a house.")
 
 
 class SeekBuildSiteAction(Action):
@@ -347,7 +348,7 @@ class SleepAction(Action):
     name = "Sleeping"
 
     def can_do(self, agent: Agent, world: World) -> bool:
-        return agent.fatigue > 40 and world.tile_at(agent.x, agent.y).kind == "shelter"
+        return agent.fatigue > 40 and world.tile_at(agent.x, agent.y).kind in ("home", "shelter")
 
     def score(self, agent: Agent, world: World) -> int:
         return agent.fatigue * 2
@@ -356,7 +357,7 @@ class SleepAction(Action):
         super().execute(agent, world)
         agent.reset_stuck()
         agent.fatigue = 0
-        world.log(f"{agent.name} sleeps in a shelter.")
+        world.log(f"{agent.name} sleeps at home.")
 
 
 class UseWorkshopAction(Action):
@@ -833,8 +834,8 @@ class SeekWoodAction(Action):
 
 
 class SeekShelterAction(Action):
-    """Move toward a remembered shelter so the agent can sleep."""
-    name = "Seeking shelter"
+    """Move toward a remembered home so the agent can sleep."""
+    name = "Seeking home"
 
     def can_do(self, agent: Agent, world: World) -> bool:
         if agent.fatigue <= 40:
@@ -842,7 +843,7 @@ class SeekShelterAction(Action):
         memory = _shared_memory(agent.remembered_shelters, world.colony_memory.known_shelters)
         if not memory:
             return False
-        return world.tile_at(agent.x, agent.y).kind != "shelter"
+        return world.tile_at(agent.x, agent.y).kind not in ("home", "shelter")
 
     def score(self, agent: Agent, world: World) -> int:
         return agent.fatigue * 2  # Same urgency as SleepAction.

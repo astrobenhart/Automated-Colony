@@ -172,7 +172,7 @@ def test_agent_can_choose_shelter_building():
 
     action = agent.choose_action(world)
 
-    assert agent.current_goal == "Build shelter"
+    assert agent.current_goal == "Build house"
     assert isinstance(action, BuildShelterAction)
 
 
@@ -202,7 +202,7 @@ def test_build_shelter_goal_unavailable_when_capacity_met():
     assert world.count_tiles("shelter") == 1
     assert not goal.can_do(agent, world)
     assert goal.score(agent, world) == 0
-    assert agent.current_goal != "Build shelter"
+    assert agent.current_goal != "Build house"
     assert not isinstance(action, BuildShelterAction)
 
 
@@ -252,7 +252,7 @@ def test_unavailable_survival_goal_does_not_block_building():
 
     action = agent.choose_action(world)
 
-    assert agent.current_goal == "Build shelter"
+    assert agent.current_goal == "Build house"
     assert isinstance(action, BuildShelterAction)
 
 

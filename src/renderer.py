@@ -26,6 +26,7 @@ from src.config import (
 )
 from src.environment_events import active_event_names, environmental_tile_color
 from src.farming import FIELD_DORMANT, FIELD_GROWING, FIELD_PLANTED, FIELD_READY, FIELD_UNPREPARED, farm_border_edges
+from src.overlays.diagnostics import DIAGNOSTICS_OVERLAY, DiagnosticsOverlay
 from src.overlays.history import HISTORY_OVERLAY, HistoryOverlay
 from src.overlays.villagers import VILLAGERS_OVERLAY, VillagersOverlay
 from src.resource_ecology import max_food, max_wood
@@ -126,6 +127,9 @@ class PygameRenderer:
         self._agent_tile_counts: dict[tuple[int, int], int] = {}
         self._agent_tile_drawn: dict[tuple[int, int], int] = {}
         self.frame_count = 0
+        self.last_render_ms = 0.0
+        self.last_sim_ms = 0.0
+        self.last_sim_ticks = 0
 
     def register_overlays(self):
         self.overlay_manager.register_overlay(
@@ -142,6 +146,14 @@ class PygameRenderer:
             lambda: HistoryOverlay(
                 self.world,
                 self.ui_manager,
+            ),
+        )
+        self.overlay_manager.register_overlay(
+            DIAGNOSTICS_OVERLAY,
+            lambda: DiagnosticsOverlay(
+                self.world,
+                self.ui_manager,
+                self.diagnostics_metrics,
             ),
         )
 
@@ -175,6 +187,17 @@ class PygameRenderer:
 
     def toggle_history_overlay(self):
         self.overlay_manager.toggle_overlay(HISTORY_OVERLAY)
+
+    def toggle_diagnostics_overlay(self):
+        self.overlay_manager.toggle_overlay(DIAGNOSTICS_OVERLAY)
+
+    def diagnostics_metrics(self) -> dict[str, object]:
+        return {
+            "last_render_ms": self.last_render_ms,
+            "last_sim_ms": self.last_sim_ms,
+            "sim_ticks": self.last_sim_ticks,
+            "fps": self.clock.get_fps(),
+        }
 
     def selected_villager(self):
         return self.selected_agent
@@ -258,6 +281,8 @@ class PygameRenderer:
     def draw(self, paused: bool, sim_speed: int, last_sim_ms: float = 0.0, sim_ticks: int = 0):
         with profiler.time("renderer update"):
             render_start = time.perf_counter()
+            self.last_sim_ms = last_sim_ms
+            self.last_sim_ticks = sim_ticks
             self.validate_selection()
             self.clamp_camera()
             self.screen.fill((0, 0, 0))
@@ -268,11 +293,11 @@ class PygameRenderer:
 
             pygame.display.flip()
             self.frame_count += 1
+            self.last_render_ms = (time.perf_counter() - render_start) * 1000
             if PERFORMANCE_LOGGING and self.frame_count % PERFORMANCE_LOG_INTERVAL_FRAMES == 0:
-                elapsed_ms = (time.perf_counter() - render_start) * 1000
                 print(
                     f"perf render frame={self.frame_count} paused={paused} speed={sim_speed} "
-                    f"render_ms={elapsed_ms:.2f} sim_ms={last_sim_ms:.2f} sim_ticks={sim_ticks} "
+                    f"render_ms={self.last_render_ms:.2f} sim_ms={last_sim_ms:.2f} sim_ticks={sim_ticks} "
                     f"world_tick_ms={self.world.last_tick_ms:.2f} "
                     f"villager_ms={self.world.last_villager_ms:.2f} "
                     f"path_calls={self.world.pathfinding_calls}"
@@ -571,7 +596,7 @@ class PygameRenderer:
 
         y += self.panel_gap
         y = self.draw_section_header("Controls", content_x, y, content_width, bottom_y)
-        controls = "WASD pan | V villagers | H history | Space pause | Up/Down speed | R restart | Esc quit"
+        controls = "WAS/Arrows pan | D diagnostics | V villagers | H history | Space pause | Up/Down speed | R restart | Esc quit"
         y = self.draw_wrapped_text(controls, content_x, y, content_width, bottom_y, COLORS["muted"])
 
         y += self.panel_gap
@@ -705,7 +730,7 @@ class PygameRenderer:
         priority = self.world.building_priority()
         housing_structures = self.world.count_tiles("shelter") + self.world.count_tiles("home")
         housing_current = housing_structures * SHELTER_CAPACITY
-        housing_target = self.world.needed_shelters() * SHELTER_CAPACITY
+        housing_target = self.world.needed_houses() * SHELTER_CAPACITY
         wood_target = DESIRED_WOOD_RESERVE + (priority.wood_needed if priority is not None else 0)
         food_target = population * SETTLEMENT_FOOD_TARGET_DAYS
         water_target = population * SETTLEMENT_WATER_TARGET_DAYS
@@ -767,11 +792,11 @@ class PygameRenderer:
         if settlement is None:
             return "Unknown"
         report = settlement.carrying_capacity_report
-        if report is not None and report.status == "Shelter Strained":
+        if report is not None and report.status == "Housing Shortage":
             return "Strained"
         housing_structures = self.world.count_tiles("shelter") + self.world.count_tiles("home")
         housing_current = housing_structures * SHELTER_CAPACITY
-        housing_target = self.world.needed_shelters() * SHELTER_CAPACITY
+        housing_target = self.world.needed_houses() * SHELTER_CAPACITY
         if housing_current >= housing_target:
             return "Stable"
         return "Strained"
@@ -795,8 +820,8 @@ class PygameRenderer:
                 reasons.append("No active farms")
         elif report.status == "Water Strained":
             reasons.append("Limited local water")
-        elif report.status == "Shelter Strained":
-            reasons.append("Shelter space short")
+        elif report.status == "Housing Shortage":
+            reasons.append("Housing capacity short")
 
         if not reasons:
             reasons.append(report.reason)
@@ -911,12 +936,16 @@ class PygameRenderer:
         if household is None:
             return rows
 
+        from src.residential import household_status
+
+        status = household_status(self.world, household)
         rows.extend([
             ("Household", household.household_name),
             ("Household ID", household.household_id),
             ("Founded Year", household.founded_year),
             ("Household Age", household.established_years),
-            ("Size", household.size),
+            ("Occupants", f"{status.occupants} / {status.capacity}"),
+            ("House Size", f"{status.house_tiles} Tile" if status.house_tiles == 1 else f"{status.house_tiles} Tiles"),
             ("Head", self.household_member_name(household.household_head)),
             ("Members", self.household_member_names(household)),
         ])

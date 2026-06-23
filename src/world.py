@@ -2,8 +2,9 @@ import random
 import time
 from dataclasses import dataclass, field
 
-from src.building_priorities import highest_priority, needed_shelters, update_settlement_needs
+from src.building_priorities import highest_priority, needed_houses, needed_shelters, update_settlement_needs
 from src.appearance import appearance_seed_for, appearance_type_for_seed
+from src.births import update_births
 from src.carrying_capacity import carrying_capacity_report
 from src.colony_memory import ColonyMemory
 from src.colony_storage import ColonyStorage
@@ -93,6 +94,10 @@ class World:
     last_settlement_ms: float = 0.0
     last_updated_villagers: int = 0
     pathfinding_calls: int = 0
+    birth_attempts_total: int = 0
+    successful_births_total: int = 0
+    birth_attempts_by_year: dict[int, int] = field(default_factory=dict)
+    successful_births_by_year: dict[int, int] = field(default_factory=dict)
     lod_stats: dict[str, LODProfileStat] = field(
         default_factory=lambda: {tier: LODProfileStat() for tier in tier_names()}
     )
@@ -602,6 +607,7 @@ class World:
         self.ensure_household_membership()
         update_household_familiarity(self)
         update_partnerships(self)
+        update_births(self)
         update_influence_peaks(self)
         self.record_lod_update(LOD_3_SOCIAL, time.perf_counter() - social_start)
 
@@ -757,8 +763,14 @@ class World:
     def needed_shelters(self):
         return needed_shelters(self)
 
+    def needed_houses(self):
+        return needed_houses(self)
+
     def needs_more_shelters(self):
         return self.building_priority() is not None
+
+    def needs_more_houses(self):
+        return self.needs_more_shelters()
 
     def building_priority(self):
         return highest_priority(self)

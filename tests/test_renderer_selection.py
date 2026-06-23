@@ -786,7 +786,7 @@ def test_colony_summary_uses_compact_population_without_capacity_denominator():
         population=9,
         capacity=12,
         status="Stable",
-        reason="Current shelter, food, and water can support the living population.",
+        reason="Current housing, food, and water can support the living population.",
     )
     renderer = make_renderer(world)
 
@@ -806,7 +806,7 @@ def test_colony_summary_excludes_debug_fields():
         population=1,
         capacity=3,
         status="Stable",
-        reason="Current shelter, food, and water can support the living population.",
+        reason="Current housing, food, and water can support the living population.",
     )
     renderer = make_renderer(world)
 
@@ -941,7 +941,8 @@ def test_selected_home_tile_shows_household_details(monkeypatch):
     assert ("Household", household.household_name) in rows
     assert ("Founded Year", household.founded_year) in rows
     assert ("Household Age", household.established_years) in rows
-    assert ("Size", len(household.member_ids)) in rows
+    assert any(label == "Occupants" and str(len(household.member_ids)) in str(value) for label, value in rows)
+    assert any(label == "House Size" and "Tile" in str(value) for label, value in rows)
     assert any(label == "Members" and value != "None" for label, value in rows)
 
 
@@ -963,7 +964,7 @@ def test_colony_reason_lines_are_capped_and_hidden_when_stable():
         population=9,
         capacity=12,
         status="Stable",
-        reason="Current shelter, food, and water can support the living population.",
+        reason="Current housing, food, and water can support the living population.",
     )
 
     assert renderer.colony_reason_lines() == []
