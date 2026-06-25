@@ -29,6 +29,7 @@ VETERAN = "Veteran"
 EXPERIENCE_LEVELS = (NOVICE, EXPERIENCED, VETERAN)
 
 AGE_RANGES = {
+    CHILD: (0, 17),
     YOUNG_ADULT: (18, 29),
     ADULT: (30, 49),
     OLDER_ADULT: (50, 64),
@@ -52,6 +53,8 @@ def is_valid_experience_level(level: str) -> bool:
 
 
 def lifecycle_stage_for_age(age: int) -> str:
+    if age < AGE_RANGES[YOUNG_ADULT][0]:
+        return CHILD
     if age < AGE_RANGES[ADULT][0]:
         return YOUNG_ADULT
     if age < AGE_RANGES[OLDER_ADULT][0]:

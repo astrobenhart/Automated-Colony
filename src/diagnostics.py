@@ -12,6 +12,8 @@ from src.births import (
 )
 from src.config import SETTLEMENT_FOOD_TARGET_DAYS, SETTLEMENT_WATER_TARGET_DAYS
 from src.generations import BIRTH
+from src.lifecycle import CHILD
+from src.lifecycle_progression import days_until_adulthood
 from src.partnerships import partnership_candidates
 from src.residential import all_household_statuses, residential_demand
 from src.roles import BUILDER, FORAGER, GENERALIST
@@ -28,6 +30,9 @@ class DiagnosticSection:
 def diagnostics_sections(world, renderer_metrics: dict[str, object] | None = None) -> list[DiagnosticSection]:
     return [
         DiagnosticSection("Population", population_rows(world)),
+        DiagnosticSection("Children", children_rows(world)),
+        DiagnosticSection("Adults", adults_rows(world)),
+        DiagnosticSection("Lifecycle", lifecycle_rows(world)),
         DiagnosticSection("Households", household_rows(world)),
         DiagnosticSection("Housing", housing_rows(world)),
         DiagnosticSection("Partnerships", partnership_rows(world)),
@@ -41,8 +46,8 @@ def diagnostics_sections(world, renderer_metrics: dict[str, object] | None = Non
 
 def population_rows(world) -> list[tuple[str, object]]:
     living = world.living_agents()
-    children = [agent for agent in living if getattr(agent, "lifecycle_stage", None) == "Child"]
-    adults = [agent for agent in living if getattr(agent, "lifecycle_stage", None) != "Child"]
+    children = [agent for agent in living if getattr(agent, "lifecycle_stage", None) == CHILD]
+    adults = [agent for agent in living if getattr(agent, "lifecycle_stage", None) != CHILD]
     ages = [getattr(agent, "age", 0) for agent in living]
     oldest = max(living, key=lambda agent: (getattr(agent, "age", 0), agent.name), default=None)
     generations = {getattr(agent, "generation", 0) for agent in living}
@@ -58,6 +63,49 @@ def population_rows(world) -> list[tuple[str, object]]:
         ("Oldest Villager", oldest.name if oldest is not None else "None"),
         ("Generation Count", len(generations)),
     ]
+
+
+def children_rows(world) -> list[tuple[str, object]]:
+    children = [agent for agent in world.living_agents() if getattr(agent, "lifecycle_stage", None) == CHILD]
+    ages = [getattr(agent, "age", 0) for agent in children]
+    upcoming_days = [
+        days
+        for days in (days_until_adulthood(world, agent) for agent in children)
+        if days is not None
+    ]
+    upcoming_transitions = sum(1 for days in upcoming_days if days <= 30)
+
+    return [
+        ("Total Children", len(children)),
+        ("Average Child Age", f"{(sum(ages) / len(ages)):.1f}" if ages else "0.0"),
+        ("Youngest Child", min(ages) if ages else "None"),
+        ("Oldest Child", max(ages) if ages else "None"),
+        ("Upcoming Adult Transitions", upcoming_transitions),
+    ]
+
+
+def adults_rows(world) -> list[tuple[str, object]]:
+    living = world.living_agents()
+    adults = [agent for agent in living if getattr(agent, "lifecycle_stage", None) != CHILD]
+    workforce_eligible = [agent for agent in adults if getattr(agent, "alive", False) and getattr(agent, "role", None)]
+
+    return [
+        ("Total Adults", len(adults)),
+        ("Workforce Eligible", len(workforce_eligible)),
+        ("Recently Joined Workforce", getattr(world, "adults_this_year", {}).get(world.year, 0)),
+    ]
+
+
+def lifecycle_rows(world) -> list[tuple[str, object]]:
+    return [
+        ("Adults This Year", getattr(world, "adults_this_year", {}).get(world.year, 0)),
+        ("Births This Year", getattr(world, "successful_births_by_year", {}).get(world.year, 0)),
+        ("Deaths This Year", deaths_this_year(world)),
+    ]
+
+
+def deaths_this_year(world) -> int:
+    return sum(1 for record in getattr(world, "death_records", []) if getattr(record, "year", None) == world.year)
 
 
 def household_rows(world) -> list[tuple[str, object]]:

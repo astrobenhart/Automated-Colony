@@ -13,6 +13,7 @@ from src.farming import maybe_create_farm, update_farms
 from src.history_seed import seed_starting_chronicle
 from src.influence import update_influence_peaks
 from src.death_memory import DeathRecord, expire_remembrances
+from src.lifecycle_progression import update_lifecycle_progression
 from src.seasons import (
     day_of_season,
     next_season_index,
@@ -98,6 +99,7 @@ class World:
     successful_births_total: int = 0
     birth_attempts_by_year: dict[int, int] = field(default_factory=dict)
     successful_births_by_year: dict[int, int] = field(default_factory=dict)
+    adults_this_year: dict[int, int] = field(default_factory=dict)
     lod_stats: dict[str, LODProfileStat] = field(
         default_factory=lambda: {tier: LODProfileStat() for tier in tier_names()}
     )
@@ -135,6 +137,12 @@ class World:
         from src.config import DAYS_PER_SEASON, SEASONS
         days_per_year = DAYS_PER_SEASON * len(SEASONS)
         return ((self.day - 1) // days_per_year) + 1
+
+    @property
+    def day_of_year(self) -> int:
+        from src.config import DAYS_PER_SEASON, SEASONS
+        days_per_year = DAYS_PER_SEASON * len(SEASONS)
+        return ((self.day - 1) % days_per_year) + 1
 
     def generate(self, seed: int | None = None):
         if seed is not None:
@@ -603,6 +611,7 @@ class World:
         self.record_lod_update(LOD_4_PLANNING, time.perf_counter() - planning_start)
 
         social_start = time.perf_counter()
+        update_lifecycle_progression(self)
         update_social_memory(self)
         self.ensure_household_membership()
         update_household_familiarity(self)

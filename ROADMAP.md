@@ -392,9 +392,9 @@ Purpose:
 Allow villagers to progress through life stages.
 
 Features:
-- [ ] Child lifecycle
-- [ ] Aging progression
-- [ ] Workforce entry
+- [x] Child lifecycle
+- [x] Aging progression
+- [x] Workforce entry
 
 Notes:
 - Children remain members of their household.

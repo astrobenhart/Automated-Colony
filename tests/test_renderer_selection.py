@@ -9,6 +9,7 @@ from src.carrying_capacity import CarryingCapacityReport
 from src.config import (
     COLORS,
     DEBUG_DRAW_GRID,
+    FOREST_SEASON_TRANSITION_DAYS,
     SYMBOL_LABELS,
     TILE_SIZE,
     TERRAIN_LABELS,
@@ -20,6 +21,12 @@ from src.renderer import PHASE_BAR_COLORS, PygameRenderer, VILLAGER_TILE_OFFSETS
 from src.renderer import color_for_role
 from src.renderer import is_food_visible_to_player
 from src.renderer import is_wood_visible_to_player
+from src.forest_rendering import (
+    FOREST_SEASON_PALETTES,
+    forest_subcell_colors,
+    forest_transition_day,
+    forest_visual_season,
+)
 from src.overlays.villagers import VILLAGERS_OVERLAY
 from src.roles import BUILDER, FORAGER, GENERALIST, ROLES, SCOUT
 from src.seasons import seasonal_tile_color
@@ -430,7 +437,118 @@ def test_forest_terrain_remains_visible_when_wood_resource_is_unknown():
     renderer.draw_world()
 
     terrain_pixel = renderer.screen.get_at((1 * TILE_SIZE + 1, 1 * TILE_SIZE + 1))[:3]
-    assert terrain_pixel == renderer.tile_color("forest")
+    visual_season = forest_visual_season(world.seed, 1, 1, world.season, world.day_of_season)
+    assert terrain_pixel in FOREST_SEASON_PALETTES[visual_season]
+
+
+def test_forest_tile_draws_deterministic_subcell_canopy():
+    world = make_world(width=3, height=3)
+    world.seed = 99
+    world.tiles[1][1].kind = "forest"
+    renderer = make_renderer(world)
+
+    renderer.draw_world()
+    first_pixels = [
+        renderer.screen.get_at((1 * TILE_SIZE + 1, 1 * TILE_SIZE + 1))[:3],
+        renderer.screen.get_at((1 * TILE_SIZE + TILE_SIZE - 2, 1 * TILE_SIZE + 1))[:3],
+        renderer.screen.get_at((1 * TILE_SIZE + 1, 1 * TILE_SIZE + TILE_SIZE - 2))[:3],
+        renderer.screen.get_at((1 * TILE_SIZE + TILE_SIZE - 2, 1 * TILE_SIZE + TILE_SIZE - 2))[:3],
+    ]
+    renderer.invalidate_map_cache()
+    renderer.draw_world()
+    second_pixels = [
+        renderer.screen.get_at((1 * TILE_SIZE + 1, 1 * TILE_SIZE + 1))[:3],
+        renderer.screen.get_at((1 * TILE_SIZE + TILE_SIZE - 2, 1 * TILE_SIZE + 1))[:3],
+        renderer.screen.get_at((1 * TILE_SIZE + 1, 1 * TILE_SIZE + TILE_SIZE - 2))[:3],
+        renderer.screen.get_at((1 * TILE_SIZE + TILE_SIZE - 2, 1 * TILE_SIZE + TILE_SIZE - 2))[:3],
+    ]
+
+    assert first_pixels == second_pixels
+    assert len(set(first_pixels)) > 1
+
+
+def test_forest_subcell_palette_changes_by_season():
+    spring = forest_subcell_colors(7, 1, 1, "Spring", FOREST_SEASON_TRANSITION_DAYS + 1)
+    autumn = forest_subcell_colors(7, 1, 1, "Autumn", FOREST_SEASON_TRANSITION_DAYS + 1)
+    winter = forest_subcell_colors(7, 1, 1, "Winter", FOREST_SEASON_TRANSITION_DAYS + 1)
+
+    assert spring != autumn
+    assert autumn != winter
+    assert all(color in FOREST_SEASON_PALETTES["Spring"] for color in spring)
+    assert all(color in FOREST_SEASON_PALETTES["Autumn"] for color in autumn)
+    assert all(color in FOREST_SEASON_PALETTES["Winter"] for color in winter)
+
+
+def test_summer_forest_trunks_are_rare_in_deterministic_palette():
+    trunk = (104, 70, 42)
+    samples = [
+        color
+        for x in range(20)
+        for y in range(20)
+        for color in forest_subcell_colors(11, x, y, "Summer", FOREST_SEASON_TRANSITION_DAYS + 1)
+    ]
+
+    assert samples.count(trunk) / len(samples) < 0.05
+
+
+def test_forest_appearance_is_stable_throughout_same_season_day():
+    colors = [
+        forest_subcell_colors(21, 1, 1, "Spring", day)
+        for day in range(FOREST_SEASON_TRANSITION_DAYS + 1, FOREST_SEASON_TRANSITION_DAYS + 8)
+    ]
+
+    assert len(set(colors)) == 1
+
+
+def test_forest_transition_day_is_deterministic_and_spread_across_window():
+    days = {
+        forest_transition_day(31, x, y, "Autumn")
+        for x in range(8)
+        for y in range(8)
+    }
+
+    assert min(days) >= 1
+    assert max(days) <= FOREST_SEASON_TRANSITION_DAYS
+    assert len(days) > 1
+
+
+def test_forest_visual_season_waits_until_tile_transition_day():
+    seed = 41
+    tile_x = 3
+    tile_y = 5
+    season = "Autumn"
+    transition_day = forest_transition_day(seed, tile_x, tile_y, season)
+
+    if transition_day > 1:
+        assert forest_visual_season(seed, tile_x, tile_y, season, transition_day - 1) == "Summer"
+    assert forest_visual_season(seed, tile_x, tile_y, season, transition_day) == season
+
+
+def test_forest_transition_cache_changes_only_during_transition_days():
+    world = make_world(width=3, height=3)
+    world.seed = 14
+    world.tiles[1][1].kind = "forest"
+    renderer = make_renderer(world)
+    original_rebuild = renderer.rebuild_map_surface
+    rebuilds = []
+
+    def spy_rebuild(start_x, start_y, end_x, end_y):
+        rebuilds.append((world.day_of_season, world.tick))
+        original_rebuild(start_x, start_y, end_x, end_y)
+
+    renderer.rebuild_map_surface = spy_rebuild
+
+    renderer.draw_world()
+    world.tick += 1
+    renderer.draw_world()
+    world.day += 1
+    renderer.draw_world()
+    world.day += FOREST_SEASON_TRANSITION_DAYS + 2
+    renderer.draw_world()
+    world.day += 1
+    renderer.draw_world()
+
+    assert rebuilds == [(1, 0), (2, 1), (FOREST_SEASON_TRANSITION_DAYS + 4, 1)]
 
 
 def test_resource_visibility_uses_colony_memory_not_agent_personal_memory(monkeypatch):
@@ -613,7 +731,7 @@ def test_renderer_reuses_cached_map_surface_between_world_ticks(monkeypatch):
     assert len(rebuilds) == 1
 
 
-def test_renderer_invalidates_cached_map_surface_when_world_tick_changes(monkeypatch):
+def test_renderer_keeps_cached_map_surface_within_same_visual_tick_bucket(monkeypatch):
     world = make_world(width=3, height=3)
     renderer = make_renderer(world)
     rebuilds = []
@@ -629,7 +747,7 @@ def test_renderer_invalidates_cached_map_surface_when_world_tick_changes(monkeyp
     world.tick += 1
     renderer.draw_world()
 
-    assert rebuilds == [0, 1]
+    assert rebuilds == [0]
 
 
 def test_role_colors_are_bright_for_screensaver_readability():

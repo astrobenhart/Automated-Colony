@@ -26,6 +26,7 @@ from src.config import (
 )
 from src.environment_events import active_event_names, environmental_tile_color
 from src.farming import FIELD_DORMANT, FIELD_GROWING, FIELD_PLANTED, FIELD_READY, FIELD_UNPREPARED, farm_border_edges
+from src.forest_rendering import forest_subcell_colors, forest_transition_cache_key
 from src.overlays.diagnostics import DIAGNOSTICS_OVERLAY, DiagnosticsOverlay
 from src.overlays.history import HISTORY_OVERLAY, HistoryOverlay
 from src.overlays.villagers import VILLAGERS_OVERLAY, VillagersOverlay
@@ -319,7 +320,7 @@ class PygameRenderer:
             start_y,
             end_x,
             end_y,
-            self.world.tick,
+            forest_transition_cache_key(self.world),
             self.world.season,
             self.world.next_season,
             round(self.world.transition_progress, 3),
@@ -357,7 +358,10 @@ class PygameRenderer:
                     TILE_SIZE,
                 )
 
-                pygame.draw.rect(self._draw_target, self.tile_color(tile.kind), rect)
+                if tile.kind == "forest":
+                    self.draw_forest_tile(screen_x, screen_y, x, y)
+                else:
+                    pygame.draw.rect(self._draw_target, self.tile_color(tile.kind), rect)
                 if is_path_like(tile.kind):
                     self.draw_path_border(screen_x, screen_y, x, y)
                 if DEBUG_DRAW_GRID:
@@ -398,6 +402,26 @@ class PygameRenderer:
                 if workshop:
                     self.draw_centered_symbol("T", screen_x, screen_y, COLORS["workshop"])
         self._draw_target = previous_target
+
+    def draw_forest_tile(self, screen_x: int, screen_y: int, tile_x: int, tile_y: int):
+        pixel_x = screen_x * TILE_SIZE
+        pixel_y = screen_y * TILE_SIZE
+        half = max(1, TILE_SIZE // 2)
+        colors = forest_subcell_colors(
+            self.world.seed,
+            tile_x,
+            tile_y,
+            self.world.season,
+            self.world.day_of_season,
+        )
+        rects = (
+            pygame.Rect(pixel_x, pixel_y, half, half),
+            pygame.Rect(pixel_x + half, pixel_y, TILE_SIZE - half, half),
+            pygame.Rect(pixel_x, pixel_y + half, half, TILE_SIZE - half),
+            pygame.Rect(pixel_x + half, pixel_y + half, TILE_SIZE - half, TILE_SIZE - half),
+        )
+        for rect, color in zip(rects, colors):
+            pygame.draw.rect(self._draw_target, environmental_tile_color(color, "forest", self.world.active_environment_events), rect)
 
     def draw_agents(self, start_x: int, start_y: int, end_x: int, end_y: int):
         self._agent_tile_counts.clear()

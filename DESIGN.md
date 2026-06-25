@@ -152,7 +152,7 @@ v0.7 mixed starting population:
 - Lifecycle stages are Young Adult, Adult, Older Adult, and Elder.
 - Experience labels are Novice, Experienced, and Veteran.
 - Household founding years and established-years metadata imply village history before observation begins.
-- These fields are still static startup metadata; there is no aging progression, child stage, old-age death, reproduction, or inheritance logic yet.
+- In v0.7 these fields were static startup metadata; aging progression, children, births, and inheritance were left for v0.8 generational systems.
 
 v0.7 should not implement reproduction casually. It should prepare the settlement model, start generation, and identity/history layers so reproduction, children, parent links, inherited traits, and aging can arrive as coherent systems later.
 
@@ -398,9 +398,26 @@ Births require:
 
 The birth pass runs daily with low probability and a cap on new children per day. It is resource-aware, but it is not a population-balancing system and does not create children to fill labor shortages.
 
-Children are real villagers with parent IDs, household membership, generation number, inherited trait identity, memories, and Chronicle birth entries. They do not enter the workforce yet; child lifecycle, aging, and workforce entry are Phase 3 work.
+Children are real villagers with parent IDs, household membership, generation number, inherited trait identity, memories, and Chronicle birth entries. They are dependents until lifecycle progression moves them into adult-stage village life.
 
-This phase still does not implement pregnancy, gestation timers, fertility simulation, childbirth risks, child jobs, aging progression, inheritance law, family trees, or family reputation.
+The birth phase does not implement pregnancy, gestation timers, fertility simulation, childbirth risks, child jobs, inheritance law, family trees, or family reputation.
+
+## v0.8 Lifecycle Progression
+
+Lifecycle progression is the third v0.8 generational loop foundation.
+
+It follows the simple loop:
+- child villager exists in a household
+- child consumes food, water, and housing capacity
+- daily lifecycle pass updates age from birth date
+- child reaches adulthood
+- new adult becomes eligible for work and future partnerships
+
+Children are members of their household and remain tied to the same home. They do not gather resources, build, farm, form partnerships, or receive profession-specific work while they are children. Their daily behavior remains lightweight: stay near home, satisfy emergency needs, and age normally.
+
+The aging pass runs daily. Starting adults keep their seeded ages, while children born during simulation age from `birth_year` and `birth_day`. When a child reaches the adulthood threshold, the villager enters the adult-stage population as a Young Adult, preserves inherited traits and household membership, and becomes eligible for existing workforce assignment.
+
+Lifecycle events are intentionally low-volume. A child reaching adulthood creates a personal memory, parent memories when parent links exist, and a Chronicle family entry for later-generation villagers. No education system, apprenticeship path, child profession, elder transition, old-age death, inheritance law, or family tree visualization is implemented in this phase.
 
 ## Residential Growth Model
 
@@ -455,6 +472,7 @@ It is read-only and intentionally separate from the compact right-hand colony pa
 
 Diagnostics sections include:
 - population and generations
+- child, adult, and lifecycle transition counts
 - household and housing pressure
 - partnership eligibility and duration
 - birth attempts, successes, eligible pairs, and current blockers
@@ -808,6 +826,24 @@ Rendering rules:
 - Forest terrain remains visible even when harvestable wood on that forest tile is unknown.
 - Farms, stockpiles, shelters, workshops, the settlement center, villagers, and wildlife remain visible.
 - Colony memory is the source of truth for resource visibility.
+
+## Living Forest Rendering
+
+Forest rendering is visual only. A forest tile remains one simulation tile, one pathfinding tile, and one harvestable wood/food resource node.
+
+Each visible forest tile is rendered as a 2x2 canopy made of deterministic subcells. Subcell colours are derived from world seed, tile coordinates, and the tile's current visual season. No frame-randomness is used, so forests do not flicker.
+
+Seasonal forest palettes:
+- Spring: cohesive green shades with uncommon fresh growth accents
+- Summer: dense dark/bright greens with rare trunk-brown subcells
+- Autumn: green, yellow, orange, red, and muted brown transitions
+- Winter: brown, dark brown, grey-brown, with occasional evergreen green
+
+Forest appearance is stable within a season. When a new season begins, each forest tile receives a deterministic transition day within the first few days of that season based on world seed, tile coordinates, and season. Until its assigned day, the tile keeps the previous season's canopy. On its assigned day, it switches once to the new season palette.
+
+The cached map surface is rebuilt only when the visible camera region, season transition state, environmental state, discovery counts, or structure counts change. Villager rendering remains dynamic and independent of the terrain cache.
+
+Future biome presentation can reuse the same pattern for young forest, mature forest, ancient forest, harvested forest, burned forest, or magical forest states without adding new simulation behaviour.
 
 ## Role-Based Resource Discovery
 
