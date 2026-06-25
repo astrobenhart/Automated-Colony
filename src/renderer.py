@@ -27,6 +27,12 @@ from src.config import (
 from src.environment_events import active_event_names, environmental_tile_color
 from src.farming import FIELD_DORMANT, FIELD_GROWING, FIELD_PLANTED, FIELD_READY, FIELD_UNPREPARED, farm_border_edges
 from src.forest_rendering import forest_subcell_colors, forest_transition_cache_key
+from src.grass_rendering import (
+    GrassMoistureTransitionState,
+    grass_moisture_mode_for_events,
+    grass_subcell_colors,
+    grass_transition_cache_key,
+)
 from src.overlays.diagnostics import DIAGNOSTICS_OVERLAY, DiagnosticsOverlay
 from src.overlays.history import HISTORY_OVERLAY, HistoryOverlay
 from src.overlays.villagers import VILLAGERS_OVERLAY, VillagersOverlay
@@ -49,6 +55,12 @@ from src.simulation_lod import LOD_0_VISUAL
 from src.ui_overlays import OverlayManager
 from src.village_paths import is_path_like, path_border_edges
 from src.villager_inspection import compact_villager_rows
+from src.water_rendering import (
+    WaterTransitionState,
+    water_subcell_colors,
+    water_transition_cache_key,
+    weather_state_for_events,
+)
 from src.workplace import FARM, STORAGE, VILLAGE_CENTER, WORKSHOP
 from src.world import World
 
@@ -127,6 +139,8 @@ class PygameRenderer:
         self._draw_target = self.screen
         self._agent_tile_counts: dict[tuple[int, int], int] = {}
         self._agent_tile_drawn: dict[tuple[int, int], int] = {}
+        self.grass_transition_state = GrassMoistureTransitionState()
+        self.water_transition_state = WaterTransitionState()
         self.frame_count = 0
         self.last_render_ms = 0.0
         self.last_sim_ms = 0.0
@@ -160,6 +174,8 @@ class PygameRenderer:
 
     def set_world(self, world: World):
         self.world = world
+        self.grass_transition_state = GrassMoistureTransitionState()
+        self.water_transition_state = WaterTransitionState()
         self.clear_selection()
         self.overlay_manager.close_all()
         self.clamp_camera()
@@ -315,16 +331,20 @@ class PygameRenderer:
 
     def map_cache_state(self, start_x: int, start_y: int, end_x: int, end_y: int):
         settlement = self.world.settlement
+        self.update_grass_transition_state()
+        self.update_water_transition_state()
         return (
             start_x,
             start_y,
             end_x,
             end_y,
             forest_transition_cache_key(self.world),
+            grass_transition_cache_key(self.grass_transition_state, self.world.tick),
+            water_transition_cache_key(self.water_transition_state, self.world.tick),
             self.world.season,
             self.world.next_season,
             round(self.world.transition_progress, 3),
-            len(self.world.active_environment_events),
+            self.environment_event_cache_state(),
             len(self.world.colony_memory.known_food),
             len(self.world.colony_memory.known_wood),
             len(settlement.farm_plots) if settlement is not None else 0,
@@ -332,6 +352,29 @@ class PygameRenderer:
             len(settlement.workshops) if settlement is not None else 0,
             len(settlement.homes) if settlement is not None else 0,
             len(settlement.workplaces) if settlement is not None else 0,
+        )
+
+    def update_grass_transition_state(self):
+        self.grass_transition_state.update(
+            grass_moisture_mode_for_events(self.world.active_environment_events),
+            self.world.tick,
+        )
+
+    def update_water_transition_state(self):
+        self.water_transition_state.update(
+            weather_state_for_events(self.world.active_environment_events),
+            self.world.tick,
+        )
+
+    def environment_event_cache_state(self):
+        return tuple(
+            sorted(
+                (
+                    getattr(event, "effect_type", None),
+                    getattr(event, "remaining_days", None),
+                )
+                for event in self.world.active_environment_events
+            )
         )
 
     def draw_cached_map(self, start_x: int, start_y: int, end_x: int, end_y: int):
@@ -358,7 +401,11 @@ class PygameRenderer:
                     TILE_SIZE,
                 )
 
-                if tile.kind == "forest":
+                if tile.kind == "grass":
+                    self.draw_grass_tile(screen_x, screen_y, x, y)
+                elif tile.kind == "water":
+                    self.draw_water_tile(screen_x, screen_y, x, y)
+                elif tile.kind == "forest":
                     self.draw_forest_tile(screen_x, screen_y, x, y)
                 else:
                     pygame.draw.rect(self._draw_target, self.tile_color(tile.kind), rect)
@@ -422,6 +469,57 @@ class PygameRenderer:
         )
         for rect, color in zip(rects, colors):
             pygame.draw.rect(self._draw_target, environmental_tile_color(color, "forest", self.world.active_environment_events), rect)
+
+    def draw_water_tile(self, screen_x: int, screen_y: int, tile_x: int, tile_y: int):
+        pixel_x = screen_x * TILE_SIZE
+        pixel_y = screen_y * TILE_SIZE
+        half = max(1, TILE_SIZE // 2)
+        colors = water_subcell_colors(
+            self.world.seed,
+            tile_x,
+            tile_y,
+            self.water_transition_state,
+            self.world.tick,
+        )
+        rects = (
+            pygame.Rect(pixel_x, pixel_y, half, half),
+            pygame.Rect(pixel_x + half, pixel_y, TILE_SIZE - half, half),
+            pygame.Rect(pixel_x, pixel_y + half, half, TILE_SIZE - half),
+            pygame.Rect(pixel_x + half, pixel_y + half, TILE_SIZE - half, TILE_SIZE - half),
+        )
+        for rect, color in zip(rects, colors):
+            pygame.draw.rect(self._draw_target, color, rect)
+
+    def draw_grass_tile(self, screen_x: int, screen_y: int, tile_x: int, tile_y: int):
+        pixel_x = screen_x * TILE_SIZE
+        pixel_y = screen_y * TILE_SIZE
+        half = max(1, TILE_SIZE // 2)
+        colors = grass_subcell_colors(
+            self.world.seed,
+            tile_x,
+            tile_y,
+            self.world.season,
+            self.tile_moisture(tile_x, tile_y),
+            self.grass_transition_state,
+            self.world.tick,
+        )
+        rects = (
+            pygame.Rect(pixel_x, pixel_y, half, half),
+            pygame.Rect(pixel_x + half, pixel_y, TILE_SIZE - half, half),
+            pygame.Rect(pixel_x, pixel_y + half, half, TILE_SIZE - half),
+            pygame.Rect(pixel_x + half, pixel_y + half, TILE_SIZE - half, TILE_SIZE - half),
+        )
+        for rect, color in zip(rects, colors):
+            pygame.draw.rect(self._draw_target, color, rect)
+
+    def tile_moisture(self, tile_x: int, tile_y: int) -> float | None:
+        moisture_map = getattr(self.world, "moisture_map", None)
+        if not moisture_map or tile_y >= len(moisture_map):
+            return None
+        row = moisture_map[tile_y]
+        if tile_x >= len(row):
+            return None
+        return row[tile_x]
 
     def draw_agents(self, start_x: int, start_y: int, end_x: int, end_y: int):
         self._agent_tile_counts.clear()

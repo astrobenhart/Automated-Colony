@@ -10,13 +10,17 @@ from src.config import (
     COLORS,
     DEBUG_DRAW_GRID,
     FOREST_SEASON_TRANSITION_DAYS,
+    GRASS_MOISTURE_TRANSITION_HOURS,
     SYMBOL_LABELS,
     TILE_SIZE,
+    TICKS_PER_HOUR,
     TERRAIN_LABELS,
     TICKS_PER_DAY,
+    WATER_WEATHER_TRANSITION_HOURS,
     VIEWPORT_HEIGHT,
     VIEWPORT_WIDTH,
 )
+from src.environment_events import create_environment_event
 from src.renderer import PHASE_BAR_COLORS, PygameRenderer, VILLAGER_TILE_OFFSETS
 from src.renderer import color_for_role
 from src.renderer import is_food_visible_to_player
@@ -27,12 +31,35 @@ from src.forest_rendering import (
     forest_transition_day,
     forest_visual_season,
 )
+from src.grass_rendering import (
+    DRY,
+    GRASS_MOISTURE_PALETTES,
+    HEAVY_RAIN as GRASS_HEAVY_RAIN,
+    NORMAL,
+    WET,
+    GrassMoistureTransitionState,
+    grass_moisture_state,
+    grass_subcell_colors,
+    grass_transition_tick,
+    grass_visual_moisture_mode,
+)
 from src.overlays.villagers import VILLAGERS_OVERLAY
 from src.roles import BUILDER, FORAGER, GENERALIST, ROLES, SCOUT
 from src.seasons import seasonal_tile_color
 from src.settlement import Settlement
 from src.farming import FIELD_READY, FarmPlot
 from src.tile import Tile
+from src.water_rendering import (
+    CLEAR,
+    HEAVY_RAIN,
+    RAIN,
+    WATER_WEATHER_PALETTES,
+    WaterTransitionState,
+    water_subcell_colors,
+    water_transition_tick,
+    water_visual_weather,
+    weather_state_for_events,
+)
 from src.world import World, create_world
 
 
@@ -208,7 +235,7 @@ def test_adjacent_tiles_draw_without_grid_gap():
     renderer.draw_world()
 
     boundary_pixel = renderer.screen.get_at((TILE_SIZE, TILE_SIZE // 2))[:3]
-    assert boundary_pixel == renderer.tile_color("grass")
+    assert boundary_pixel in GRASS_MOISTURE_PALETTES[world.season][NORMAL]
 
 
 def test_selection_highlight_aligns_with_camera_offset():
@@ -425,7 +452,7 @@ def test_terrain_remains_visible_when_food_resource_is_unknown():
     renderer.draw_world()
 
     terrain_pixel = renderer.screen.get_at((1 * TILE_SIZE + 1, 1 * TILE_SIZE + 1))[:3]
-    assert terrain_pixel == renderer.tile_color("grass")
+    assert terrain_pixel in GRASS_MOISTURE_PALETTES[world.season][NORMAL]
 
 
 def test_forest_terrain_remains_visible_when_wood_resource_is_unknown():
@@ -549,6 +576,213 @@ def test_forest_transition_cache_changes_only_during_transition_days():
     renderer.draw_world()
 
     assert rebuilds == [(1, 0), (2, 1), (FOREST_SEASON_TRANSITION_DAYS + 4, 1)]
+
+
+def grass_tile_pixels(renderer, tile_x: int = 1, tile_y: int = 1):
+    return [
+        renderer.screen.get_at((tile_x * TILE_SIZE + 1, tile_y * TILE_SIZE + 1))[:3],
+        renderer.screen.get_at((tile_x * TILE_SIZE + TILE_SIZE - 2, tile_y * TILE_SIZE + 1))[:3],
+        renderer.screen.get_at((tile_x * TILE_SIZE + 1, tile_y * TILE_SIZE + TILE_SIZE - 2))[:3],
+        renderer.screen.get_at((tile_x * TILE_SIZE + TILE_SIZE - 2, tile_y * TILE_SIZE + TILE_SIZE - 2))[:3],
+    ]
+
+
+def test_grass_tile_draws_deterministic_subcell_surface():
+    world = make_world(width=3, height=3)
+    world.seed = 99
+    world.tiles[1][1].kind = "grass"
+    world.moisture_map = [[0.5 for _ in range(3)] for _ in range(3)]
+    renderer = make_renderer(world)
+
+    renderer.draw_world()
+    first_pixels = grass_tile_pixels(renderer)
+    renderer.invalidate_map_cache()
+    renderer.draw_world()
+    second_pixels = grass_tile_pixels(renderer)
+
+    assert first_pixels == second_pixels
+    assert len(set(first_pixels)) > 1
+    assert all(color in GRASS_MOISTURE_PALETTES[world.season][NORMAL] for color in first_pixels)
+
+
+def test_grass_moisture_palette_changes_by_state_and_season():
+    dry_summer = grass_subcell_colors(7, 1, 1, "Summer", 0.2, GrassMoistureTransitionState(), world_tick=0)
+    wet_summer = grass_subcell_colors(
+        7,
+        1,
+        1,
+        "Summer",
+        0.2,
+        GrassMoistureTransitionState(previous_mode=GRASS_HEAVY_RAIN, current_mode=GRASS_HEAVY_RAIN),
+        world_tick=0,
+    )
+    wet_winter = grass_subcell_colors(
+        7,
+        1,
+        1,
+        "Winter",
+        0.2,
+        GrassMoistureTransitionState(previous_mode=GRASS_HEAVY_RAIN, current_mode=GRASS_HEAVY_RAIN),
+        world_tick=0,
+    )
+
+    assert dry_summer != wet_summer
+    assert wet_summer != wet_winter
+    assert all(color in GRASS_MOISTURE_PALETTES["Summer"][DRY] for color in dry_summer)
+    assert all(color in GRASS_MOISTURE_PALETTES["Summer"][WET] for color in wet_summer)
+    assert all(color in GRASS_MOISTURE_PALETTES["Winter"][WET] for color in wet_winter)
+
+
+def test_grass_moisture_state_uses_base_moisture_when_clear():
+    assert grass_moisture_state(0.2, "clear") == DRY
+    assert grass_moisture_state(0.5, "clear") == NORMAL
+    assert grass_moisture_state(0.8, "clear") == WET
+    assert grass_moisture_state(0.2, GRASS_HEAVY_RAIN) == WET
+
+
+def test_grass_transition_tick_is_deterministic_and_spread_across_window():
+    ticks = {
+        grass_transition_tick(31, x, y, GRASS_HEAVY_RAIN, transition_id=1)
+        for x in range(8)
+        for y in range(8)
+    }
+
+    assert min(ticks) >= 0
+    assert max(ticks) <= GRASS_MOISTURE_TRANSITION_HOURS * TICKS_PER_HOUR
+    assert len(ticks) > 1
+
+
+def test_grass_visual_moisture_mode_waits_until_tile_transition_tick():
+    state = GrassMoistureTransitionState(
+        previous_mode="clear",
+        current_mode=GRASS_HEAVY_RAIN,
+        transition_start_tick=100,
+        transition_id=2,
+    )
+    tile_x = 3
+    tile_y = 5
+    transition_tick = grass_transition_tick(41, tile_x, tile_y, GRASS_HEAVY_RAIN, transition_id=2)
+
+    if transition_tick > 0:
+        assert grass_visual_moisture_mode(41, tile_x, tile_y, state, 100 + transition_tick - 1) == "clear"
+    assert grass_visual_moisture_mode(41, tile_x, tile_y, state, 100 + transition_tick) == GRASS_HEAVY_RAIN
+
+
+def test_grass_moisture_cache_changes_during_weather_transition():
+    world = make_world(width=3, height=3)
+    world.seed = 14
+    world.tiles[1][1].kind = "grass"
+    renderer = make_renderer(world)
+    original_rebuild = renderer.rebuild_map_surface
+    rebuilds = []
+
+    def spy_rebuild(start_x, start_y, end_x, end_y):
+        rebuilds.append((renderer.grass_transition_state.current_mode, world.tick))
+        original_rebuild(start_x, start_y, end_x, end_y)
+
+    renderer.rebuild_map_surface = spy_rebuild
+
+    renderer.draw_world()
+    world.tick += 1
+    renderer.draw_world()
+    world.active_environment_events.append(create_environment_event("heavy_rain", duration_days=2))
+    renderer.draw_world()
+    world.tick += 1
+    renderer.draw_world()
+
+    assert rebuilds == [("clear", 0), (GRASS_HEAVY_RAIN, 1), (GRASS_HEAVY_RAIN, 2)]
+
+
+def water_tile_pixels(renderer, tile_x: int = 1, tile_y: int = 1):
+    return [
+        renderer.screen.get_at((tile_x * TILE_SIZE + 1, tile_y * TILE_SIZE + 1))[:3],
+        renderer.screen.get_at((tile_x * TILE_SIZE + TILE_SIZE - 2, tile_y * TILE_SIZE + 1))[:3],
+        renderer.screen.get_at((tile_x * TILE_SIZE + 1, tile_y * TILE_SIZE + TILE_SIZE - 2))[:3],
+        renderer.screen.get_at((tile_x * TILE_SIZE + TILE_SIZE - 2, tile_y * TILE_SIZE + TILE_SIZE - 2))[:3],
+    ]
+
+
+def test_water_tile_draws_deterministic_subcell_surface():
+    world = make_world(width=3, height=3)
+    world.seed = 99
+    world.tiles[1][1].kind = "water"
+    renderer = make_renderer(world)
+
+    renderer.draw_world()
+    first_pixels = water_tile_pixels(renderer)
+    renderer.invalidate_map_cache()
+    renderer.draw_world()
+    second_pixels = water_tile_pixels(renderer)
+
+    assert first_pixels == second_pixels
+    assert len(set(first_pixels)) > 1
+    assert all(color in WATER_WEATHER_PALETTES[CLEAR] for color in first_pixels)
+
+
+def test_water_weather_palette_changes_by_weather_state():
+    clear = water_subcell_colors(7, 1, 1, WaterTransitionState(current_state=CLEAR), world_tick=0)
+    rain = water_subcell_colors(7, 1, 1, WaterTransitionState(previous_state=RAIN, current_state=RAIN), world_tick=0)
+    heavy = water_subcell_colors(7, 1, 1, WaterTransitionState(previous_state=HEAVY_RAIN, current_state=HEAVY_RAIN), world_tick=0)
+
+    assert clear != rain
+    assert rain != heavy
+    assert all(color in WATER_WEATHER_PALETTES[CLEAR] for color in clear)
+    assert all(color in WATER_WEATHER_PALETTES[RAIN] for color in rain)
+    assert all(color in WATER_WEATHER_PALETTES[HEAVY_RAIN] for color in heavy)
+
+
+def test_weather_state_detects_heavy_rain_event():
+    assert weather_state_for_events([]) == CLEAR
+    assert weather_state_for_events([create_environment_event("heavy_rain", duration_days=2)]) == HEAVY_RAIN
+
+
+def test_water_transition_tick_is_deterministic_and_spread_across_window():
+    state = HEAVY_RAIN
+    ticks = {
+        water_transition_tick(31, x, y, state, transition_id=1)
+        for x in range(8)
+        for y in range(8)
+    }
+
+    assert min(ticks) >= 0
+    assert max(ticks) <= WATER_WEATHER_TRANSITION_HOURS * TICKS_PER_HOUR
+    assert len(ticks) > 1
+
+
+def test_water_visual_weather_waits_until_tile_transition_tick():
+    state = WaterTransitionState(previous_state=CLEAR, current_state=HEAVY_RAIN, transition_start_tick=100, transition_id=2)
+    tile_x = 3
+    tile_y = 5
+    transition_tick = water_transition_tick(41, tile_x, tile_y, HEAVY_RAIN, transition_id=2)
+
+    if transition_tick > 0:
+        assert water_visual_weather(41, tile_x, tile_y, state, 100 + transition_tick - 1) == CLEAR
+    assert water_visual_weather(41, tile_x, tile_y, state, 100 + transition_tick) == HEAVY_RAIN
+
+
+def test_water_weather_cache_changes_during_weather_transition():
+    world = make_world(width=3, height=3)
+    world.seed = 14
+    world.tiles[1][1].kind = "water"
+    renderer = make_renderer(world)
+    original_rebuild = renderer.rebuild_map_surface
+    rebuilds = []
+
+    def spy_rebuild(start_x, start_y, end_x, end_y):
+        rebuilds.append((renderer.water_transition_state.current_state, world.tick))
+        original_rebuild(start_x, start_y, end_x, end_y)
+
+    renderer.rebuild_map_surface = spy_rebuild
+
+    renderer.draw_world()
+    world.tick += 1
+    renderer.draw_world()
+    world.active_environment_events.append(create_environment_event("heavy_rain", duration_days=2))
+    renderer.draw_world()
+    world.tick += 1
+    renderer.draw_world()
+
+    assert rebuilds == [(CLEAR, 0), (HEAVY_RAIN, 1), (HEAVY_RAIN, 2)]
 
 
 def test_resource_visibility_uses_colony_memory_not_agent_personal_memory(monkeypatch):

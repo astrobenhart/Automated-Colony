@@ -845,6 +845,48 @@ The cached map surface is rebuilt only when the visible camera region, season tr
 
 Future biome presentation can reuse the same pattern for young forest, mature forest, ancient forest, harvested forest, burned forest, or magical forest states without adding new simulation behaviour.
 
+## Living Water Rendering
+
+Water rendering is visual only. A water tile remains one simulation tile, one unwalkable pathfinding tile, and one stable water source for villager behaviour.
+
+Each visible water tile is rendered as a 2x2 surface made of deterministic subcells. Subcell colours are derived from world seed, tile coordinates, and the tile's current visual weather state. No frame-randomness is used, so lakes, rivers, and ponds do not flicker.
+
+Initial water weather palettes:
+- Clear: deep blue, blue, and light blue with subtle variation
+- Rain: lighter blues, muted reflection tones, and occasional grey-blue subcells
+- Heavy Rain: brighter highlights, darker pockets, and cooler disturbed-water tones
+
+Weather state is renderer-facing and derived from active environmental events. Heavy rain events render water as Heavy Rain. Future rain-like event types can render as Rain without changing tile semantics.
+
+When water weather changes, each water tile receives a deterministic transition tick over a short in-game-hours window based on world seed, tile coordinates, weather state, and transition id. Until its assigned tick, it keeps the previous weather palette. On its assigned tick, it switches once to the new weather palette.
+
+The cached map surface is rebuilt only when the visible camera region, seasonal transition state, water weather transition state, environmental state, discovery counts, or structure counts change. This keeps water responsive to weather without continuous animation or per-frame work.
+
+Future environmental presentation can reuse the same pattern for storms, drought shoreline tinting, frozen water, flooding, or magical corruption without changing pathfinding or water availability.
+
+## Living Grass Rendering
+
+Grass rendering is visual only. A grass tile remains one simulation tile, one ordinary walkable terrain tile, and keeps the same pathfinding, building, resource, and save behaviour.
+
+Each visible grass tile is rendered as a 2x2 surface made of deterministic subcells. Subcell colours are derived from world seed, tile coordinates, season, base moisture from the generated moisture map, and the current visual moisture mode. No frame-randomness is used, so grass does not flicker.
+
+Grass visual moisture states:
+- Dry: yellow-green, brown-green, and dry patch tones
+- Normal: medium seasonal greens
+- Wet: deeper, richer greens or darker dormant tones
+
+Seasonal grass palettes:
+- Spring: rich greens, bright new growth, and healthy vegetation
+- Summer: medium greens, faded tones, and occasional dry highlights
+- Autumn: muted greens, yellow-green, and brown-green
+- Winter: brown, muted green, and dormant vegetation
+
+Environmental events modify visual moisture without changing gameplay. Heavy rain and future rain-like events push grass toward Wet. Drought pushes grass toward Dry. Clear weather returns grass to its base moisture state from the world moisture map.
+
+When visual moisture mode changes, each grass tile receives a deterministic transition tick over a short in-game-hours window based on world seed, tile coordinates, moisture mode, and transition id. Until its assigned tick, it keeps the previous moisture palette. On its assigned tick, it switches once to the new palette.
+
+Future terrain presentation can reuse this pattern for irrigation, snow cover, burnt terrain, overgrazed grass, marsh expansion, magical corruption, or farmland visual progression without changing movement or resource rules.
+
 ## Role-Based Resource Discovery
 
 Role-based discovery exists to influence colony knowledge growth.
