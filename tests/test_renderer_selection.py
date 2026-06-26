@@ -11,6 +11,11 @@ from src.config import (
     DEBUG_DRAW_GRID,
     FOREST_SEASON_TRANSITION_DAYS,
     GRASS_MOISTURE_TRANSITION_HOURS,
+    RENDER_DETAIL_HIGH,
+    RENDER_DETAIL_LOW,
+    RENDER_DETAIL_MEDIUM,
+    RENDER_DETAIL_ULTRA,
+    TERRAIN_RENDER_DETAIL,
     TILE_SIZE,
     TICKS_PER_HOUR,
     TERRAIN_LABELS,
@@ -50,13 +55,21 @@ from src.farming import FIELD_DORMANT, FIELD_GROWING, FIELD_PLANTED, FIELD_READY
 from src.terrain_rendering import (
     CONSTRUCTION_PALETTES,
     FARM_STAGE_PALETTES,
+    MASTER_VEGETATION_PALETTES,
+    MICROTILE_RESOLUTION_BY_DETAIL,
     PATH_PALETTES,
     GameplayVisualState,
+    MicrotileGrid,
+    TerrainNeighbourhood,
     TerrainRenderContext,
+    TerrainPaletteManager,
     TerrainRenderer,
     TerrainVisualModifier,
+    TERRAIN_TRANSITION_PRIORITY,
     construction_visual_stage,
     crop_visual_stage,
+    farm_stage_palette,
+    palette_spread,
 )
 from src.tile import Tile
 from src.village_paths import DIRT_PATH, PATH, TRAMPLED_GRASS, WORN_GRASS
@@ -82,6 +95,10 @@ def make_world(width: int = 3, height: int = 3) -> World:
 
 def make_renderer(world: World) -> PygameRenderer:
     return PygameRenderer(world)
+
+
+def _test_color_distance(a, b) -> int:
+    return abs(a[0] - b[0]) + abs(a[1] - b[1]) + abs(a[2] - b[2])
 
 
 def teardown_function():
@@ -246,7 +263,8 @@ def test_adjacent_tiles_draw_without_grid_gap():
     renderer.draw_world()
 
     boundary_pixel = renderer.screen.get_at((TILE_SIZE, TILE_SIZE // 2))[:3]
-    assert boundary_pixel in GRASS_MOISTURE_PALETTES[world.season][NORMAL]
+    assert boundary_pixel != COLORS["grid"]
+    assert boundary_pixel in renderer.terrain_renderer.microtile_colors_for(renderer.terrain_render_context(1, 0))
 
 
 def test_selection_highlight_aligns_with_camera_offset():
@@ -333,7 +351,7 @@ def test_map_and_tile_inspector_use_same_visual_state_source():
         water_state=renderer.water_transition_state,
         base_moisture=renderer.tile_moisture(0, 0),
     )
-    assert map_pixel in renderer.terrain_renderer.subcell_colors_for(context)
+    assert map_pixel in renderer.terrain_renderer.microtile_colors_for(context)
     assert ("Season", renderer.terrain_renderer.visual_state_for(context).season) in renderer.tile_inspector_rows(0, 0)
 
 
@@ -381,8 +399,324 @@ def test_terrain_pattern_generation_is_deterministic():
         water_state=WaterTransitionState(),
     )
 
-    assert renderer.subcell_colors_for(context) == renderer.subcell_colors_for(context)
-    assert len(renderer.subcell_colors_for(context)) == 4
+    assert renderer.microtile_colors_for(context) == renderer.microtile_colors_for(context)
+    assert len(renderer.microtile_colors_for(context)) == MICROTILE_RESOLUTION_BY_DETAIL[TERRAIN_RENDER_DETAIL] ** 2
+
+
+def test_renderer_detail_levels_map_to_microtile_resolution():
+    assert MICROTILE_RESOLUTION_BY_DETAIL[RENDER_DETAIL_LOW] == 1
+    assert MICROTILE_RESOLUTION_BY_DETAIL[RENDER_DETAIL_MEDIUM] == 2
+    assert MICROTILE_RESOLUTION_BY_DETAIL[RENDER_DETAIL_HIGH] == 3
+    assert MICROTILE_RESOLUTION_BY_DETAIL[RENDER_DETAIL_ULTRA] == 5
+    assert TERRAIN_RENDER_DETAIL == RENDER_DETAIL_HIGH
+
+
+def test_microtile_grid_covers_tile_without_fixed_size_assumption():
+    grid = MicrotileGrid(RENDER_DETAIL_HIGH)
+    rects = grid.rects_for(pygame.Rect(0, 0, TILE_SIZE, TILE_SIZE))
+
+    assert len(rects) == 9
+    assert rects[0].rect.topleft == (0, 0)
+    assert rects[-1].rect.bottomright == (TILE_SIZE, TILE_SIZE)
+    assert sum(rect.rect.width * rect.rect.height for rect in rects) == TILE_SIZE * TILE_SIZE
+
+
+def test_pattern_generation_scales_with_render_detail_without_palette_changes():
+    world = make_world(width=1, height=1)
+    world.seed = 123
+    context = TerrainRenderContext(
+        world=world,
+        tile=world.tiles[0][0],
+        tile_x=0,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+    )
+
+    low = TerrainRenderer(detail_level=RENDER_DETAIL_LOW).microtile_pattern_for(context)
+    high = TerrainRenderer(detail_level=RENDER_DETAIL_HIGH).microtile_pattern_for(context)
+    ultra = TerrainRenderer(detail_level=RENDER_DETAIL_ULTRA).microtile_pattern_for(context)
+
+    assert low.resolution == 1
+    assert high.resolution == 3
+    assert ultra.resolution == 5
+    assert len(low.colors) == 1
+    assert len(high.colors) == 9
+    assert len(ultra.colors) == 25
+
+
+def test_pygame_renderer_defaults_to_high_detail():
+    renderer = make_renderer(make_world(width=1, height=1))
+
+    assert renderer.terrain_renderer.detail_level == RENDER_DETAIL_HIGH
+    assert renderer.terrain_renderer.microtile_grid.resolution == 3
+
+
+def test_map_cache_tracks_render_detail_changes():
+    renderer = make_renderer(make_world(width=1, height=1))
+    high_key = renderer.map_cache_state(0, 0, 1, 1)
+
+    renderer.terrain_renderer.set_detail_level(RENDER_DETAIL_LOW)
+
+    assert renderer.map_cache_state(0, 0, 1, 1) != high_key
+
+
+def test_neighbourhood_analysis_reads_immediate_tiles_only():
+    world = make_world(width=3, height=3)
+    world.tiles[0][1] = Tile("forest")
+    world.tiles[1][2] = Tile("water")
+    world.tiles[2][0] = Tile(PATH)
+
+    neighbourhood = TerrainNeighbourhood.from_world(world, 1, 1)
+
+    assert neighbourhood.kind_at("n") == "forest"
+    assert neighbourhood.kind_at("e") == "water"
+    assert neighbourhood.kind_at("sw") == PATH
+    assert neighbourhood.kind_at("nw") == "grass"
+    assert TerrainNeighbourhood.from_world(world, 0, 0).kind_at("nw") is None
+
+
+def test_terrain_transition_priorities_keep_water_dominant():
+    assert TERRAIN_TRANSITION_PRIORITY["water"] > TERRAIN_TRANSITION_PRIORITY["forest"]
+    assert TERRAIN_TRANSITION_PRIORITY["forest"] > TERRAIN_TRANSITION_PRIORITY["grass"]
+    assert TERRAIN_TRANSITION_PRIORITY[PATH] > TERRAIN_TRANSITION_PRIORITY["grass"]
+
+
+def test_forest_edge_shaping_preserves_forest_identity_deterministically():
+    world = make_world(width=3, height=1)
+    world.seed = 19
+    world.tiles[0] = [Tile("grass"), Tile("forest"), Tile("grass")]
+    renderer = TerrainRenderer(detail_level=RENDER_DETAIL_HIGH)
+    plain_context = TerrainRenderContext(
+        world=world,
+        tile=world.tiles[0][1],
+        tile_x=1,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+    )
+    edge_context = TerrainRenderContext(
+        world=world,
+        tile=world.tiles[0][1],
+        tile_x=1,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+        neighbourhood=TerrainNeighbourhood.from_world(world, 1, 0),
+    )
+
+    assert renderer.microtile_colors_for(edge_context) == renderer.microtile_colors_for(edge_context)
+    plain = renderer.microtile_colors_for(plain_context)
+    shaped = renderer.microtile_colors_for(edge_context)
+    forest_state = renderer.visual_state_for(edge_context)
+    forest_palette = set(TerrainPaletteManager().palette_for(forest_state))
+    grass_palette = set(TerrainPaletteManager().palette_for_neighbour("grass", forest_state))
+
+    assert shaped[4] == plain[4]
+    assert shaped[4] in forest_palette
+    assert set(shaped).issubset(set(plain) | forest_palette | grass_palette)
+
+
+def test_water_and_path_edges_use_microtile_masks_without_changing_tile_kind():
+    world = make_world(width=3, height=1)
+    world.seed = 23
+    world.tiles[0] = [Tile("water"), Tile("grass"), Tile(PATH)]
+    renderer = TerrainRenderer(detail_level=RENDER_DETAIL_HIGH)
+    grass_context = TerrainRenderContext(
+        world=world,
+        tile=world.tiles[0][1],
+        tile_x=1,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+        base_moisture=0.5,
+        neighbourhood=TerrainNeighbourhood.from_world(world, 1, 0),
+    )
+    grass_without_edges = TerrainRenderContext(
+        world=world,
+        tile=world.tiles[0][1],
+        tile_x=1,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+        base_moisture=0.5,
+    )
+
+    visual_state = renderer.visual_state_for(grass_context)
+    shaped = renderer.microtile_colors_for(grass_context)
+    unshaped = renderer.microtile_colors_for(grass_without_edges)
+    manager = TerrainPaletteManager()
+    allowed = set(unshaped)
+    allowed.update(manager.palette_for_neighbour("water", visual_state))
+    allowed.update(manager.palette_for_neighbour(PATH, visual_state))
+
+    assert visual_state.terrain == "grass"
+    assert shaped[4] == unshaped[4]
+    assert set(shaped).issubset(allowed)
+    assert world.tiles[0][1].kind == "grass"
+
+
+def test_edge_masks_scale_with_ultra_microtile_resolution():
+    world = make_world(width=2, height=1)
+    world.seed = 31
+    world.tiles[0] = [Tile("plain"), Tile("hill")]
+    renderer = TerrainRenderer(detail_level=RENDER_DETAIL_ULTRA)
+    context = TerrainRenderContext(
+        world=world,
+        tile=world.tiles[0][0],
+        tile_x=0,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+        base_moisture=0.5,
+        neighbourhood=TerrainNeighbourhood.from_world(world, 0, 0),
+    )
+    pattern = renderer.microtile_pattern_for(context)
+
+    assert pattern.resolution == 5
+    assert len(pattern.colors) == 25
+
+
+def test_renderer_context_includes_neighbourhood_for_visible_tiles():
+    world = make_world(width=2, height=1)
+    world.tiles[0] = [Tile("grass"), Tile("forest")]
+    renderer = make_renderer(world)
+
+    context = renderer.terrain_render_context(0, 0)
+
+    assert context.neighbourhood is not None
+    assert context.neighbourhood.kind_at("e") == "forest"
+
+
+def test_master_vegetation_palette_harmonizes_grass_and_forest():
+    world = make_world(width=2, height=1)
+    manager = TerrainPaletteManager()
+    grass_context = TerrainRenderContext(
+        world=world,
+        tile=world.tiles[0][0],
+        tile_x=0,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+        base_moisture=0.5,
+    )
+    forest_tile = Tile("forest")
+    forest_context = TerrainRenderContext(
+        world=world,
+        tile=forest_tile,
+        tile_x=1,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+    )
+    renderer = TerrainRenderer()
+    grass_palette = manager.palette_for(renderer.visual_state_for(grass_context))
+    forest_palette = manager.palette_for(renderer.visual_state_for(forest_context))
+    master = MASTER_VEGETATION_PALETTES[world.season]
+
+    assert palette_spread(grass_palette) < palette_spread(GRASS_MOISTURE_PALETTES[world.season][NORMAL])
+    assert palette_spread(forest_palette) < palette_spread(FOREST_SEASON_PALETTES[world.season])
+    assert min(_test_color_distance(color, master_color) for color in grass_palette for master_color in master) < 45
+    assert min(_test_color_distance(color, master_color) for color in forest_palette for master_color in master) < 70
+
+
+def test_autumn_keeps_more_colour_diversity_than_summer():
+    world = make_world(width=1, height=1)
+    renderer = TerrainRenderer()
+    manager = TerrainPaletteManager()
+    world.season_index = 1
+    summer_state = renderer.visual_state_for(
+        TerrainRenderContext(
+            world=world,
+            tile=Tile("grass"),
+            tile_x=0,
+            tile_y=0,
+            grass_state=GrassMoistureTransitionState(),
+            water_state=WaterTransitionState(),
+            base_moisture=0.5,
+        )
+    )
+    world.season_index = 2
+    autumn_state = TerrainRenderContext(
+        world=world,
+        tile=Tile("grass"),
+        tile_x=0,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+        base_moisture=0.5,
+    )
+    autumn_visual = renderer.visual_state_for(autumn_state)
+
+    assert palette_spread(manager.palette_for(autumn_visual)) >= palette_spread(manager.palette_for(summer_state))
+
+
+def test_motif_pattern_generation_clusters_microtiles():
+    world = make_world(width=1, height=1)
+    world.seed = 41
+    world.tiles[0][0] = Tile("forest")
+    renderer = TerrainRenderer(detail_level=RENDER_DETAIL_ULTRA)
+    context = TerrainRenderContext(
+        world=world,
+        tile=world.tiles[0][0],
+        tile_x=0,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+    )
+    pattern = renderer.microtile_pattern_for(context)
+    adjacent_matches = 0
+    for row in range(pattern.resolution):
+        for column in range(pattern.resolution - 1):
+            if pattern.colors[row * pattern.resolution + column] == pattern.colors[row * pattern.resolution + column + 1]:
+                adjacent_matches += 1
+
+    assert adjacent_matches >= 6
+
+
+def test_edge_shaping_uses_single_terrain_ownership_without_muddy_colours():
+    world = make_world(width=3, height=1)
+    world.seed = 53
+    world.tiles[0] = [Tile("water"), Tile("grass"), Tile("forest")]
+    renderer = TerrainRenderer(detail_level=RENDER_DETAIL_HIGH)
+    context = TerrainRenderContext(
+        world=world,
+        tile=world.tiles[0][1],
+        tile_x=1,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+        base_moisture=0.5,
+        neighbourhood=TerrainNeighbourhood.from_world(world, 1, 0),
+    )
+    unshaped_context = TerrainRenderContext(
+        world=world,
+        tile=world.tiles[0][1],
+        tile_x=1,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+        base_moisture=0.5,
+    )
+    shaped = renderer.microtile_colors_for(context)
+    unshaped = renderer.microtile_colors_for(unshaped_context)
+    visual_state = renderer.visual_state_for(context)
+    manager = TerrainPaletteManager()
+    allowed = set(unshaped)
+    allowed.update(manager.palette_for_neighbour("water", visual_state))
+    allowed.update(manager.palette_for_neighbour("forest", visual_state))
+
+    assert shaped[4] == unshaped[4]
+    assert set(shaped).issubset(allowed)
+
+
+def test_crop_palette_harmonizes_with_seasonal_vegetation():
+    spring_palette = farm_stage_palette("Growing", "Spring")
+    raw_palette = FARM_STAGE_PALETTES["Growing"]
+    master = MASTER_VEGETATION_PALETTES["Spring"]
+
+    assert palette_spread(spring_palette) <= palette_spread(raw_palette)
+    assert min(_test_color_distance(color, master_color) for color in spring_palette for master_color in master) < 45
 
 
 def test_plains_and_hills_use_moisture_reactive_grassland_visual_state():
@@ -413,7 +747,7 @@ def test_plains_and_hills_use_moisture_reactive_grassland_visual_state():
 
     assert renderer.visual_state_for(plain_context).moisture_state == WET
     assert renderer.visual_state_for(hill_context).moisture_state == WET
-    assert renderer.subcell_colors_for(plain_context) != renderer.subcell_colors_for(hill_context)
+    assert renderer.microtile_colors_for(plain_context) != renderer.microtile_colors_for(hill_context)
 
 
 def test_path_and_trampled_ground_use_moisture_reactive_path_palettes():
@@ -434,7 +768,8 @@ def test_path_and_trampled_ground_use_moisture_reactive_path_palettes():
         )
 
         assert renderer.visual_state_for(context).moisture_state == WET
-        assert set(renderer.subcell_colors_for(context)).issubset(PATH_PALETTES[tile.kind][WET])
+        assert renderer.microtile_colors_for(context) == renderer.microtile_colors_for(context)
+        assert palette_spread(renderer.microtile_colors_for(context)) <= palette_spread(PATH_PALETTES[tile.kind][WET])
 
 
 def test_grassland_seasonal_transition_uses_distributed_visual_season_after_start():
@@ -497,9 +832,9 @@ def test_farm_gameplay_state_modifies_final_palette_without_changing_tile_kind()
         gameplay_state=GameplayVisualState(crop_state=FIELD_READY, crop_growth=100, crop_food=4),
     )
 
-    assert renderer.subcell_colors_for(farm_context) != renderer.subcell_colors_for(base_context)
+    assert renderer.microtile_colors_for(farm_context) != renderer.microtile_colors_for(base_context)
     assert renderer.visual_state_for(farm_context).terrain == "grass"
-    assert set(renderer.subcell_colors_for(farm_context)).isdisjoint(FARM_STAGE_PALETTES["Empty"])
+    assert set(renderer.microtile_colors_for(farm_context)).isdisjoint(FARM_STAGE_PALETTES["Empty"])
 
 
 def test_construction_progress_uses_renderer_only_visual_stage():
@@ -520,8 +855,8 @@ def test_construction_progress_uses_renderer_only_visual_stage():
         gameplay_state=GameplayVisualState(construction_progress=1, construction_max=15),
     )
 
-    assert renderer.subcell_colors_for(context)
-    assert renderer.subcell_colors_for(context) != FARM_STAGE_PALETTES["Empty"]
+    assert renderer.microtile_colors_for(context)
+    assert renderer.microtile_colors_for(context) != FARM_STAGE_PALETTES["Empty"]
     assert CONSTRUCTION_PALETTES["Foundation"]
 
 
@@ -545,8 +880,8 @@ def test_future_visual_modifiers_are_composable_and_deterministic():
         gameplay_state=gameplay,
     )
 
-    assert renderer.subcell_colors_for(context) == renderer.subcell_colors_for(context)
-    assert renderer.subcell_colors_for(context) != TerrainRenderer().subcell_colors_for(
+    assert renderer.microtile_colors_for(context) == renderer.microtile_colors_for(context)
+    assert renderer.microtile_colors_for(context) != TerrainRenderer().microtile_colors_for(
         TerrainRenderContext(
             world=world,
             tile=world.tiles[0][0],
@@ -735,7 +1070,7 @@ def test_terrain_remains_visible_when_food_resource_is_unknown():
     renderer.draw_world()
 
     terrain_pixel = renderer.screen.get_at((1 * TILE_SIZE + 1, 1 * TILE_SIZE + 1))[:3]
-    assert terrain_pixel in GRASS_MOISTURE_PALETTES[world.season][NORMAL]
+    assert terrain_pixel in renderer.terrain_renderer.microtile_colors_for(renderer.terrain_render_context(1, 1))
 
 
 def test_forest_terrain_remains_visible_when_wood_resource_is_unknown():
@@ -747,8 +1082,9 @@ def test_forest_terrain_remains_visible_when_wood_resource_is_unknown():
     renderer.draw_world()
 
     terrain_pixel = renderer.screen.get_at((1 * TILE_SIZE + 1, 1 * TILE_SIZE + 1))[:3]
-    visual_season = forest_visual_season(world.seed, 1, 1, world.season, world.day_of_season)
-    assert terrain_pixel in FOREST_SEASON_PALETTES[visual_season]
+    context = renderer.terrain_render_context(1, 1)
+    assert renderer.terrain_renderer.visual_state_for(context).terrain == "forest"
+    assert terrain_pixel in renderer.terrain_renderer.microtile_colors_for(context)
 
 
 def test_forest_tile_draws_deterministic_subcell_canopy():
@@ -885,7 +1221,8 @@ def test_grass_tile_draws_deterministic_subcell_surface():
 
     assert first_pixels == second_pixels
     assert len(set(first_pixels)) > 1
-    assert all(color in GRASS_MOISTURE_PALETTES[world.season][NORMAL] for color in first_pixels)
+    context = renderer.terrain_render_context(1, 1)
+    assert all(color in renderer.terrain_renderer.microtile_colors_for(context) for color in first_pixels)
 
 
 def test_grass_moisture_palette_changes_by_state_and_season():
@@ -999,7 +1336,9 @@ def test_water_tile_draws_deterministic_subcell_surface():
 
     assert first_pixels == second_pixels
     assert len(set(first_pixels)) > 1
-    assert all(color in WATER_WEATHER_PALETTES[CLEAR] for color in first_pixels)
+    context = renderer.terrain_render_context(1, 1)
+    assert renderer.terrain_renderer.visual_state_for(context).weather_state == CLEAR
+    assert all(color in renderer.terrain_renderer.microtile_colors_for(context) for color in first_pixels)
 
 
 def test_water_weather_palette_changes_by_weather_state():

@@ -831,7 +831,7 @@ Rendering rules:
 
 Forest rendering is visual only. A forest tile remains one simulation tile, one pathfinding tile, and one harvestable wood/food resource node.
 
-Each visible forest tile is rendered as a 2x2 canopy made of deterministic subcells. Subcell colours are derived from world seed, tile coordinates, and the tile's current visual season. No frame-randomness is used, so forests do not flicker.
+Each visible forest tile is rendered as a deterministic microtile canopy. Microtile colours are derived from world seed, tile coordinates, render detail, and the tile's current visual season. No frame-randomness is used, so forests do not flicker.
 
 Seasonal forest palettes:
 - Spring: cohesive green shades with uncommon fresh growth accents
@@ -849,7 +849,7 @@ Future biome presentation can reuse the same pattern for young forest, mature fo
 
 Water rendering is visual only. A water tile remains one simulation tile, one unwalkable pathfinding tile, and one stable water source for villager behaviour.
 
-Each visible water tile is rendered as a 2x2 surface made of deterministic subcells. Subcell colours are derived from world seed, tile coordinates, and the tile's current visual weather state. No frame-randomness is used, so lakes, rivers, and ponds do not flicker.
+Each visible water tile is rendered as a deterministic microtile surface. Microtile colours are derived from world seed, tile coordinates, render detail, and the tile's current visual weather state. No frame-randomness is used, so lakes, rivers, and ponds do not flicker.
 
 Initial water weather palettes:
 - Clear: deep blue, blue, and light blue with subtle variation
@@ -868,7 +868,7 @@ Future environmental presentation can reuse the same pattern for storms, drought
 
 Grass rendering is visual only. A grass tile remains one simulation tile, one ordinary walkable terrain tile, and keeps the same pathfinding, building, resource, and save behaviour.
 
-Each visible grass tile is rendered as a 2x2 surface made of deterministic subcells. Subcell colours are derived from world seed, tile coordinates, season, base moisture from the generated moisture map, and the current visual moisture mode. No frame-randomness is used, so grass does not flicker.
+Each visible grass tile is rendered as a deterministic microtile surface. Microtile colours are derived from world seed, tile coordinates, render detail, season, base moisture from the generated moisture map, and the current visual moisture mode. No frame-randomness is used, so grass does not flicker.
 
 Grass visual moisture states:
 - Dry: yellow-green, brown-green, and dry patch tones
@@ -893,17 +893,87 @@ Terrain rendering is presentation-only. Terrain tile kinds, pathfinding, resourc
 
 All visible terrain tiles now render through the shared `TerrainRenderer` pipeline:
 - Build a renderer-facing visual state from world state, tile kind, season, weather, moisture, and environmental events.
+- Build a renderer-only neighbourhood snapshot from the eight adjacent terrain tiles.
 - Select colours through the centralized `TerrainPaletteManager`.
-- Generate a deterministic 2x2 subcell pattern through `TerrainPatternGenerator`.
-- Draw the tile while preserving gameplay overlays such as path borders, farms, resources, homes, workplaces, villagers, and wildlife.
+- Generate a deterministic microtile pattern through `TerrainPatternGenerator`.
+- Apply deterministic edge masks so neighbouring terrain can soften tile boundaries.
+- Draw the tile while preserving gameplay overlays such as farms, resources, homes, workplaces, villagers, and wildlife.
 
 The visual state layer separates simulation state from appearance. A forest tile remains `forest`, a water tile remains `water`, and a path tile remains path-like even when their rendered palettes change. Renderer-facing fields such as visual season, visual weather, and visual moisture are presentation inputs only.
 
-Every terrain tile uses the same 2x2 visual language. Specialized terrain palettes remain available for grass, forest, and water, while other terrain types derive subtle palette variation from their seasonal/environmental base colour. This keeps existing terrain recognizable while removing the old split between custom subcell terrain and single-colour terrain.
+Every terrain tile uses the same adaptive microtile visual language. Specialized terrain palettes remain available for grass, forest, and water, while other terrain types derive subtle palette variation from their seasonal/environmental base colour. This keeps existing terrain recognizable while removing the old split between custom microtile terrain and single-colour terrain.
 
 Pattern generation is deterministic. The renderer uses world seed, tile coordinates, terrain type, and visual state identity; it does not use frame-based randomness. Cached map rebuilding remains driven by existing cache keys for camera region, seasonal transition state, weather/moisture transition state, environmental state, discovery counts, and structure counts.
 
 Future environmental presentation should extend the palette and visual state layers rather than adding new one-off draw paths. Planned extensions include snow cover, drought stress, burnt terrain, magical corruption, frozen water, flooding, crop growth stages, ancient forests, biome-specific palettes, and terrain wear variations.
+
+### Neighbour-Aware Edge Shaping
+
+The simulation remains a square grid. The renderer hides some of that grid by letting each terrain tile inspect the eight surrounding terrain kinds:
+
+```
+NW N NE
+ W X E
+SW S SE
+```
+
+This neighbourhood is copied into `TerrainRenderContext` during rendering. It is read-only, is not saved, and does not affect movement, resources, pathfinding, AI, ownership, terrain kind, or construction.
+
+`TerrainEdgeShaper` applies deterministic edge ownership masks after the base microtile pattern is generated. Edge masks operate on the selected microtile resolution, so the same logic works for LOW, MEDIUM, HIGH, and ULTRA detail. The masks may assign an outer-ring edge or corner microtile to either the owning tile terrain or a neighbouring terrain, but they do not mix terrain palettes together. No alpha blending, transparency, cross-terrain colour interpolation, frame-randomness, or simulation state mutation is used.
+
+Terrain identity is preserved by design:
+- The centre microtile remains representative of the owning terrain.
+- Neighbour influence is limited to the outermost microtile ring.
+- Every microtile is drawn from exactly one terrain's palette.
+- Edge masks shape silhouettes rather than melting terrain types together.
+
+Terrain transition priority gives boundaries consistent visual behavior:
+- Water can own shoreline edge microtiles while remaining visually crisp.
+- Paths and worn ground keep readable route identity while gaining less rigid shoulders.
+- Forests can create irregular canopy outlines without dissolving into grassland.
+- Hills, plains, and grass can exchange occasional edge ownership while retaining their own palette identity.
+
+Path rendering now relies on neighbour-aware microtile shoulders rather than a hard per-tile border overlay in normal rendering. The path-border helper remains available for tests and future debug views, but ordinary roads should read as worn terrain rather than bordered squares.
+
+Future edge-aware terrain can reuse the same ownership system for snowlines, beaches, wetlands, crop field edges, frozen rivers, burnt terrain, cliffs, magical corruption, and biome transitions.
+
+### Visual Cohesion Pass
+
+Terrain rendering uses a shared seasonal vegetation palette to keep grass, plains, hills, forests, crops, and future vegetation within the same ecosystem. Terrain-specific palettes still exist, but the shared `TerrainPaletteManager` harmonizes them toward a master seasonal palette:
+- Spring: fresh cohesive greens with restrained bright accents.
+- Summer: mature greens and slightly dry meadow tones.
+- Autumn: intentionally broader yellow, orange, red, and brown-green variation.
+- Winter: muted dormant greens, browns, and grey-browns.
+
+Spring and Summer palette contrast is deliberately reduced so large terrain regions read as continuous meadows and canopy masses. Autumn keeps stronger colour diversity as the visually expressive season. Winter remains restrained and quiet.
+
+`TerrainPatternGenerator` now selects deterministic terrain motifs before placing microtile colours. Motifs replace independent per-microtile colour rolls with clustered, low-frequency structure:
+- Forest: dense canopy, canopy mass, small clearing, shrub patch.
+- Grass and plains: dense tuft, sparse tuft, meadow, flowering patch, worn patch.
+- Water: calm surface, ripple cluster, muted reflection, rain disturbance.
+- Paths: compacted earth, wheel rut, worn shoulder, packed track.
+
+Motifs are selected from world seed, tile coordinates, terrain, visual state, and render detail. Adjacent microtiles often share a cluster colour, while small accents remain rare outside Autumn or specific motifs. This keeps interiors of forests, lakes, grasslands, and plains visually calmer, leaving most complexity to edges and gameplay overlays.
+
+Edge shaping is intentionally crisp during the cohesion pass. Edge masks still create organic forest borders, water banks, path shoulders, and grassland transitions, but they use deterministic terrain ownership instead of blending terrain colours. This avoids muddy borders while preserving the renderer-only neighbourhood system.
+
+Farms and crop visuals are harmonized with the same seasonal vegetation palette. Crop state remains gameplay-owned; only the final crop palette is adjusted so fields sit naturally inside the surrounding landscape.
+
+### Adaptive Microtile Detail
+
+The simulation owns terrain tiles. The renderer owns visual detail.
+
+Terrain rendering no longer assumes a fixed microtile resolution. `TerrainRenderer` requests a render detail level, and `MicrotileGrid` maps that level to a square visual grid:
+- LOW: 1x1
+- MEDIUM: 2x2
+- HIGH: 3x3
+- ULTRA: 5x5
+
+The project default is HIGH, so each simulation tile currently renders as a 3x3 microtile pattern. This is a visual quality setting only. A terrain tile remains one simulation tile for movement, resources, saves, pathfinding, farming, construction, and inspection.
+
+Palette selection is independent of detail level. `TerrainPaletteManager` chooses colours from terrain and visual state. `TerrainPatternGenerator` places those colours into as many microtiles as the selected detail level requires. Changing detail level must not require new palettes or gameplay data.
+
+Future camera work can choose detail level based on zoom, viewport density, map size, or performance budget. That logic should call the renderer's detail-level API and should not touch world generation, pathfinding, AI, or terrain rules.
 
 ### Environmental Reactivity
 
@@ -914,11 +984,11 @@ The shared terrain renderer consumes existing world state and does not create ne
 - Existing path wear terrain kinds created by foot traffic thresholds.
 
 Terrain-to-environment mapping:
-- Forest: season only. Forests keep 2x2 deterministic canopy rendering and transition gradually during the first few days of a new season. There is no daily canopy drift.
+- Forest: season only. Forests keep deterministic microtile canopy rendering and transition gradually during the first few days of a new season. There is no daily canopy drift.
 - Water: weather only. Clear, Rain, and Heavy Rain choose weather-specific water palettes and transition over short in-game-hour windows.
 - Grass, plains, and hills: season plus moisture. These terrain types share grassland moisture logic while retaining distinct palette adjustments for readability.
 - Trampled grass, worn grass, dirt path, and established path: wear stage plus moisture. Existing traffic thresholds choose the terrain kind; the renderer darkens paths under wet conditions and uses lighter dusty earth tones under dry conditions.
-- Other terrain: seasonal/environmental base colour with subtle 2x2 variation.
+- Other terrain: seasonal/environmental base colour with subtle microtile variation.
 
 Transitions remain deterministic and distributed. Seasonal grassland and forest transitions use world seed, tile coordinates, season, and day of season. Weather and moisture transitions use world seed, tile coordinates, transition id, and current tick. No visual state relies on frame-randomness.
 
@@ -935,7 +1005,7 @@ The final palette is composed through a modifier stack:
 - Moisture
 - Gameplay state
 - Special modifiers
-- Deterministic 2x2 pattern
+- Deterministic microtile pattern
 - Render
 
 Current gameplay visual inputs:
@@ -956,7 +1026,7 @@ These are renderer states only. They do not create fire, snow, flooding, magic, 
 
 ## Contextual Tile Inspector
 
-The right-hand panel no longer includes a permanent terrain legend. Terrain is expected to be readable from the rendered map itself: 2x2 terrain patterns, seasonal palettes, weather-reactive water, moisture-reactive grasslands, path wear, and farm/construction visual states carry the visual meaning.
+The right-hand panel no longer includes a permanent terrain legend. Terrain is expected to be readable from the rendered map itself: adaptive microtile terrain patterns, seasonal palettes, weather-reactive water, moisture-reactive grasslands, path wear, and farm/construction visual states carry the visual meaning.
 
 The reclaimed panel space is used for a contextual Tile section:
 - If a tile is selected, the inspector shows that tile.

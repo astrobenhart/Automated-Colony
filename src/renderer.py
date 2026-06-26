@@ -50,6 +50,7 @@ from src.task_behavior import (
 )
 from src.terrain_rendering import (
     GameplayVisualState,
+    TerrainNeighbourhood,
     TerrainRenderContext,
     TerrainRenderer,
     TerrainVisualModifier,
@@ -60,7 +61,7 @@ from src.agent import Agent
 from src.profiler import profiler
 from src.simulation_lod import LOD_0_VISUAL
 from src.ui_overlays import OverlayManager
-from src.village_paths import is_path_like, path_border_edges
+from src.village_paths import path_border_edges
 from src.villager_inspection import compact_villager_rows
 from src.water_rendering import (
     WaterTransitionState,
@@ -345,6 +346,8 @@ class PygameRenderer:
             start_y,
             end_x,
             end_y,
+            self.terrain_renderer.detail_level,
+            self.terrain_renderer.microtile_grid.resolution,
             forest_transition_cache_key(self.world),
             grass_transition_cache_key(self.grass_transition_state, self.world.tick),
             water_transition_cache_key(self.water_transition_state, self.world.tick),
@@ -431,8 +434,6 @@ class PygameRenderer:
                 )
 
                 self.terrain_renderer.draw_tile(self._draw_target, rect, self.terrain_render_context(x, y))
-                if is_path_like(tile.kind):
-                    self.draw_path_border(screen_x, screen_y, x, y)
                 if DEBUG_DRAW_GRID:
                     pygame.draw.rect(self._draw_target, COLORS["grid"], rect, 1)
 
@@ -538,7 +539,11 @@ class PygameRenderer:
             water_state=self.water_transition_state,
             base_moisture=self.tile_moisture(tile_x, tile_y),
             gameplay_state=self.terrain_gameplay_state(tile_x, tile_y),
+            neighbourhood=self.terrain_neighbourhood(tile_x, tile_y),
         )
+
+    def terrain_neighbourhood(self, tile_x: int, tile_y: int):
+        return TerrainNeighbourhood.from_world(self.world, tile_x, tile_y)
 
     def hovered_world_tile(self) -> tuple[int, int] | None:
         if not pygame.mouse.get_focused():
