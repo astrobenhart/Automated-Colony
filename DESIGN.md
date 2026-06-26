@@ -907,6 +907,35 @@ Pattern generation is deterministic. The renderer uses world seed, tile coordina
 
 Future environmental presentation should extend the palette and visual state layers rather than adding new one-off draw paths. Planned extensions include snow cover, drought stress, burnt terrain, magical corruption, frozen water, flooding, crop growth stages, ancient forests, biome-specific palettes, and terrain wear variations.
 
+### Renderer Configuration
+
+Renderer art direction is loaded from `data/rendering/default.json` through `src/renderer_config.py`. The configuration is loaded once and normalized into immutable tuples for fast renderer use. This separates simulation, renderer logic, and art assets:
+
+```
+Simulation state
+  -> TerrainRenderer
+  -> Renderer art config
+  -> Final microtile output
+```
+
+The current config owns:
+- Master seasonal vegetation palettes.
+- Vegetation harmony strengths.
+- Terrain palette adjustment factors.
+- Terrain motif lists.
+- Path wear palettes.
+- Ambient occlusion strengths and mask chances.
+- Path visual language flags and forest encroachment tuning.
+- Reserved sprite pipeline layers for future assets.
+
+This is not live-reloaded yet, but the loader is centralized so future live tuning can clear and refresh the config cache without rewriting terrain systems. Future sprite assets should use the same config family for seasonal tinting, environmental tinting, sprite layer ordering, offsets, and theme selection.
+
+Renderer style rules:
+- Natural terrain should feel irregular, clustered, organic, and softly varied.
+- Constructed terrain should feel deliberate, geometric, ordered, and readable.
+- Paths are constructed terrain. Their normal rendering keeps crisp route identity instead of using organic edge shaping.
+- Nature may subtly reclaim constructed terrain only through explicit effects, such as forest-adjacent path encroachment.
+
 ### Neighbour-Aware Edge Shaping
 
 The simulation remains a square grid. The renderer hides some of that grid by letting each terrain tile inspect the eight surrounding terrain kinds:
@@ -933,13 +962,33 @@ Terrain transition priority gives boundaries consistent visual behavior:
 - Forests can create irregular canopy outlines without dissolving into grassland.
 - Hills, plains, and grass can exchange occasional edge ownership while retaining their own palette identity.
 
-Path rendering now relies on neighbour-aware microtile shoulders rather than a hard per-tile border overlay in normal rendering. The path-border helper remains available for tests and future debug views, but ordinary roads should read as worn terrain rather than bordered squares.
+Path rendering no longer uses natural edge shaping by default. Roads are part of the constructed visual language: straight sections remain crisp, corners remain readable, and intersections should communicate deliberate human construction. The path-border helper remains available for tests and future debug views, but ordinary roads should read as ordered worn terrain rather than bordered squares.
+
+Forest-adjacent paths can receive subtle deterministic encroachment from the seasonal vegetation palette. This is a separate renderer effect, not generic edge shaping, and should never obscure road readability.
 
 Future edge-aware terrain can reuse the same ownership system for snowlines, beaches, wetlands, crop field edges, frozen rivers, burnt terrain, cliffs, magical corruption, and biome transitions.
 
+### Ambient Terrain Occlusion
+
+Ambient terrain occlusion is a renderer-only depth effect. It is not a lighting engine, does not use directional shadows, and does not change terrain, movement, resources, pathfinding, AI, construction, saves, or simulation state.
+
+The first supported contributor is forest canopy. Forest tiles do not darken themselves and do not gain a visible outline. Instead, eligible neighbouring ground can receive a very subtle deterministic shade where it sits under implied canopy overhang. The shadow belongs to the receiving terrain, not to the forest.
+
+Current receiving terrain is intentionally narrow:
+- Grass, plains, dry grass, and sparse wetland-like vegetation may receive canopy shade.
+- Water, paths, farms, buildings, construction, workshops, stockpiles, mountains, hills, and forest tiles do not receive this effect.
+
+The effect is constrained to preserve readability:
+- Normal canopy influence reaches at most one microtile from a forest edge.
+- At ULTRA detail, dense continuous forest can influence a second microtile with rapid falloff.
+- The centre of the receiving tile remains unchanged.
+- Colours are only darkened versions of the receiver's own colours, never black, grey, transparent, or forest-coloured overlays.
+
+Masks are deterministic and use world seed, tile coordinates, neighbouring forest density, microtile position, and render detail. The result should feel like canopy height and volume rather than a visible forest border.
+
 ### Visual Cohesion Pass
 
-Terrain rendering uses a shared seasonal vegetation palette to keep grass, plains, hills, forests, crops, and future vegetation within the same ecosystem. Terrain-specific palettes still exist, but the shared `TerrainPaletteManager` harmonizes them toward a master seasonal palette:
+Terrain rendering uses a shared seasonal vegetation palette from the renderer config to keep grass, plains, hills, forests, crops, and future vegetation within the same ecosystem. Terrain-specific palettes still exist, but the shared `TerrainPaletteManager` harmonizes them toward a master seasonal palette:
 - Spring: fresh cohesive greens with restrained bright accents.
 - Summer: mature greens and slightly dry meadow tones.
 - Autumn: intentionally broader yellow, orange, red, and brown-green variation.
@@ -959,6 +1008,8 @@ Edge shaping is intentionally crisp during the cohesion pass. Edge masks still c
 
 Farms and crop visuals are harmonized with the same seasonal vegetation palette. Crop state remains gameplay-owned; only the final crop palette is adjusted so fields sit naturally inside the surrounding landscape.
 
+Spring forests deliberately retain a darker, richer identity than grasslands. They share the Spring colour family but use reduced harmony strength so woodland still reads as woodland.
+
 ### Adaptive Microtile Detail
 
 The simulation owns terrain tiles. The renderer owns visual detail.
@@ -974,6 +1025,99 @@ The project default is HIGH, so each simulation tile currently renders as a 3x3 
 Palette selection is independent of detail level. `TerrainPaletteManager` chooses colours from terrain and visual state. `TerrainPatternGenerator` places those colours into as many microtiles as the selected detail level requires. Changing detail level must not require new palettes or gameplay data.
 
 Future camera work can choose detail level based on zoom, viewport density, map size, or performance budget. That logic should call the renderer's detail-level API and should not touch world generation, pathfinding, AI, or terrain rules.
+
+### Cached Terrain Pipeline
+
+Terrain rendering now separates base surface invalidation from environmental visual transitions. The current renderer still uses one viewport-sized map surface, but it treats that surface as cached terrain rather than a frame-by-frame procedural render target.
+
+Renderer invalidation is split into revision families:
+- Terrain: broad viewport/detail/world surface changes.
+- Season: season labels, distributed forest transitions, and final-day seasonal colour interpolation.
+- Weather: renderer-facing water state transitions.
+- Moisture: renderer-facing grass/path moisture transitions.
+- Construction: construction and farm visual state changes.
+- Overlays: resource, structure, workplace, and other map-symbol visibility changes.
+
+Base cache changes still rebuild the viewport surface. Weather, moisture, season, and environmental transition changes use per-tile visual signatures instead. Each signature combines the tile's renderer-facing `TerrainVisualState`, neighbour signature, and lightweight overlay state. During a transition tick, the renderer scans the visible tiles and redraws only tiles whose signature has actually changed.
+
+The terrain renderer also caches deterministic intermediate results:
+- Palette and neighbour-palette lookups.
+- Palette weight lookups.
+- Motif pattern generation.
+- Edge mask selection from neighbour signatures.
+- Final microtile patterns by tile, visual state, neighbour state, render detail, and environment key.
+
+This preserves the visual output while avoiding repeated full-surface regeneration during weather and moisture transitions. Future rendering should reuse the same visual signatures and revision families rather than introducing separate invalidation logic.
+
+### Chunk Terrain Cache
+
+The viewport terrain surface has been replaced by independent cached terrain chunks. Each chunk currently covers `16x16` simulation tiles and owns:
+- A fixed-size Pygame surface.
+- Dirty/full-dirty status.
+- A set of dirty tiles for partial chunk updates.
+- A cache state and visual revision counter.
+- Last rebuild/redraw counts for profiling.
+
+Frame rendering now determines visible chunks, rebuilds only dirty chunks, clips drawing to the map viewport, and blits cached chunk surfaces. Camera movement no longer invalidates terrain. If the camera moves within already cached chunks, frame rendering performs only surface blits. If the camera crosses into uncached territory, only the newly visible chunk row or column is built.
+
+Dirty tracking works at two levels:
+- Full-dirty chunks rebuild their full `16x16` surface. This is used for first builds, detail changes, and broad renderer invalidation.
+- Tile-dirty chunks redraw only the changed tiles on the existing chunk surface. This is used by weather, moisture, season, and overlay signature changes.
+
+The renderer exposes dirty helpers for future simulation hooks:
+- `mark_tile_dirty(x, y)` for isolated visual updates.
+- `mark_tile_and_neighbours_dirty(x, y)` for terrain edits that can affect edge shaping, ambient occlusion, or neighbouring silhouettes.
+
+Weather and seasonal transitions still scan visible tile signatures to discover which tiles changed, then dirty only the affected chunks/tiles. Future simulation systems should eventually emit explicit dirty tile events for harvesting, construction, path wear, farm changes, fire, snow, flooding, and magic so the renderer does not need to infer those changes from cache-key scans.
+
+The architecture is now:
+
+```
+Simulation
+  -> Terrain visual state
+  -> Dirty chunk queue
+  -> Chunk surface cache
+  -> Frame compositor
+  -> Dynamic agents, selection, overlays, and UI
+```
+
+This is still synchronous, but the rebuild boundary is now chunk-local and ready for future background building, zoom-aware chunk variants, sprite layers, biome layers, and lighting layers.
+
+### Layered Scene Compositor
+
+The renderer is now organized as a scene compositor rather than a single terrain renderer. The initial frame pipeline is:
+
+```
+Terrain Layer
+Vegetation Layer
+Structures Layer
+Agent Layer
+Effects Layer
+UI Layer
+```
+
+Layer responsibilities:
+- Terrain Layer owns cached terrain chunks, terrain palettes, motifs, adaptive microtiles, environmental state, path rendering, edge shaping, and ambient terrain occlusion.
+- Vegetation Layer is reserved for future vegetation sprites such as trees, shrubs, flowers, crop detail, and grass accents. Forest canopy detail remains baked into terrain chunks until sprite assets exist.
+- Structures Layer represents human-built and static map objects such as houses, farms, workshops, stockpiles, workplace markers, and resource symbols. In this phase these are still composed into the terrain chunk surface to preserve existing visuals and cache behaviour, but the chunk rebuild path now calls structure-layer methods separately from terrain drawing.
+- Agent Layer renders dynamic villagers and future mobile entities independently from cached terrain.
+- Effects Layer is reserved for future transient visuals such as rain, snow, smoke, fire, particles, and magical effects.
+- UI Layer owns selection highlights, right-panel information, diagnostics/history/villager overlays, cursor-level UI, and `pygame_gui` drawing.
+
+The main frame renderer calls `compose_scene()`, which renders layers in order. UI and agent drawing never invalidates terrain chunks. Static chunk contents are still cached together for now, but the architecture now has explicit ownership boundaries for splitting vegetation and structure surfaces into their own chunk caches later.
+
+Current render flow:
+
+```
+World state
+  -> Renderer revision state
+  -> Dirty chunk/tile tracking
+  -> Terrain chunk cache updates
+  -> Layer compositor
+  -> Display
+```
+
+Future renderer events should target layers directly. Examples: tree harvested -> Vegetation/Terrain dirty, construction completed -> Structures dirty, villager moved -> Agent layer redraw, weather particle event -> Effects layer update. This keeps simulation behaviour independent from renderer implementation while allowing each layer to become independently cacheable.
 
 ### Environmental Reactivity
 

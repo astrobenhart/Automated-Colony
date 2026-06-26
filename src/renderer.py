@@ -1,4 +1,7 @@
 import pygame
+from dataclasses import dataclass, field
+from typing import Callable
+
 import pygame_gui
 import time
 
@@ -70,6 +73,30 @@ from src.water_rendering import (
 )
 from src.workplace import FARM, STORAGE, VILLAGE_CENTER, WORKSHOP
 from src.world import World
+
+TERRAIN_CHUNK_SIZE = 16
+
+
+@dataclass
+class TerrainChunkCache:
+    chunk_x: int
+    chunk_y: int
+    surface: pygame.Surface
+    cache_state: tuple[object, ...] | None = None
+    visual_revision: int = 0
+    dirty: bool = True
+    full_dirty: bool = True
+    dirty_tiles: set[tuple[int, int]] = field(default_factory=set)
+    last_redraw_count: int = 0
+
+
+@dataclass(frozen=True)
+class RendererLayer:
+    name: str
+    owner: str
+    draw: Callable[[], None]
+    cached: bool = False
+
 
 def is_food_visible_to_player(world: World, x: int, y: int) -> bool:
     return (x, y) in world.colony_memory.known_food
@@ -143,6 +170,22 @@ class PygameRenderer:
         self.camera_y = 0
         self.map_surface = pygame.Surface((VIEWPORT_WIDTH * TILE_SIZE, VIEWPORT_HEIGHT * TILE_SIZE)).convert()
         self.map_cache_key = None
+        self.map_visual_transition_key = None
+        self.map_dynamic_visual_key = None
+        self.terrain_chunks: dict[tuple[int, int], TerrainChunkCache] = {}
+        self.dirty_chunks: set[tuple[int, int]] = set()
+        self.tile_visual_cache: dict[tuple[int, int], tuple[object, ...]] = {}
+        self.renderer_revisions = {
+            "terrain": 0,
+            "weather": 0,
+            "season": 0,
+            "moisture": 0,
+            "construction": 0,
+            "overlays": 0,
+        }
+        self.last_partial_redraw_count = 0
+        self.last_chunk_rebuild_count = 0
+        self.last_chunk_redraw_count = 0
         self._draw_target = self.screen
         self._agent_tile_counts: dict[tuple[int, int], int] = {}
         self._agent_tile_drawn: dict[tuple[int, int], int] = {}
@@ -153,6 +196,10 @@ class PygameRenderer:
         self.last_render_ms = 0.0
         self.last_sim_ms = 0.0
         self.last_sim_ticks = 0
+        self.current_paused = False
+        self.current_sim_speed = 0
+        self.render_layers: tuple[RendererLayer, ...] = ()
+        self.configure_render_layers()
 
     def register_overlays(self):
         self.overlay_manager.register_overlay(
@@ -170,6 +217,16 @@ class PygameRenderer:
                 self.world,
                 self.ui_manager,
             ),
+        )
+
+    def configure_render_layers(self) -> None:
+        self.render_layers = (
+            RendererLayer("Terrain", "TerrainLayer", self.draw_terrain_layer, cached=True),
+            RendererLayer("Vegetation", "VegetationLayer", self.draw_vegetation_layer, cached=True),
+            RendererLayer("Structures", "StructureLayer", self.draw_structure_layer, cached=True),
+            RendererLayer("Agents", "AgentLayer", self.draw_agent_layer),
+            RendererLayer("Effects", "EffectsLayer", self.draw_effects_layer),
+            RendererLayer("UI", "UILayer", self.draw_ui_layer),
         )
         self.overlay_manager.register_overlay(
             DIAGNOSTICS_OVERLAY,
@@ -191,6 +248,15 @@ class PygameRenderer:
 
     def invalidate_map_cache(self):
         self.map_cache_key = None
+        self.map_visual_transition_key = None
+        self.map_dynamic_visual_key = None
+        self.tile_visual_cache.clear()
+        self.terrain_chunks.clear()
+        self.dirty_chunks.clear()
+        self.bump_renderer_revision("terrain")
+
+    def bump_renderer_revision(self, name: str) -> None:
+        self.renderer_revisions[name] = self.renderer_revisions.get(name, 0) + 1
 
     def process_ui_event(self, event) -> bool:
         overlay_consumed = self.overlay_manager.handle_event(event)
@@ -222,6 +288,12 @@ class PygameRenderer:
             "last_sim_ms": self.last_sim_ms,
             "sim_ticks": self.last_sim_ticks,
             "fps": self.clock.get_fps(),
+            "render_layers": tuple(layer.name for layer in self.render_layers),
+            "terrain_chunks": len(self.terrain_chunks),
+            "dirty_chunks": len(self.dirty_chunks),
+            "last_chunk_rebuilds": self.last_chunk_rebuild_count,
+            "last_chunk_redraws": self.last_chunk_redraw_count,
+            "last_partial_redraws": self.last_partial_redraw_count,
         }
 
     def selected_villager(self):
@@ -261,7 +333,6 @@ class PygameRenderer:
         self.camera_x += dx
         self.camera_y += dy
         self.clamp_camera()
-        self.invalidate_map_cache()
 
     def clamp_camera(self):
         max_x = max(0, self.world.width - VIEWPORT_WIDTH)
@@ -308,13 +379,13 @@ class PygameRenderer:
             render_start = time.perf_counter()
             self.last_sim_ms = last_sim_ms
             self.last_sim_ticks = sim_ticks
+            self.current_paused = paused
+            self.current_sim_speed = sim_speed
             self.validate_selection()
             self.clamp_camera()
             self.screen.fill((0, 0, 0))
 
-            self.draw_world()
-            self.draw_panel(paused, sim_speed)
-            self.ui_manager.draw_ui(self.screen)
+            self.compose_scene()
 
             pygame.display.flip()
             self.frame_count += 1
@@ -332,29 +403,53 @@ class PygameRenderer:
                 self.world.record_lod_update(LOD_0_VISUAL, elapsed_seconds)
 
     def draw_world(self):
-        start_x, start_y, end_x, end_y = self.visible_tile_bounds()
-        self.draw_cached_map(start_x, start_y, end_x, end_y)
-        self.draw_agents(start_x, start_y, end_x, end_y)
+        self.draw_terrain_layer()
+        self.draw_vegetation_layer()
+        self.draw_structure_layer()
+        self.draw_agent_layer()
+        self.draw_effects_layer()
         self.draw_selection_highlight()
 
+    def compose_scene(self) -> None:
+        for layer in self.render_layers:
+            with profiler.time(f"renderer layer {layer.name}"):
+                layer.draw()
+
+    def draw_terrain_layer(self) -> None:
+        start_x, start_y, end_x, end_y = self.visible_tile_bounds()
+        self.draw_cached_map(start_x, start_y, end_x, end_y)
+
+    def draw_vegetation_layer(self) -> None:
+        # Reserved for future sprite vegetation; forest canopy detail is currently baked into terrain chunks.
+        return
+
+    def draw_structure_layer(self) -> None:
+        # Static structures are currently cached during chunk rebuilds to preserve existing visuals.
+        return
+
+    def draw_agent_layer(self) -> None:
+        start_x, start_y, end_x, end_y = self.visible_tile_bounds()
+        self.draw_agents(start_x, start_y, end_x, end_y)
+
+    def draw_effects_layer(self) -> None:
+        return
+
+    def draw_ui_layer(self) -> None:
+        self.draw_selection_highlight()
+        self.draw_panel(getattr(self, "current_paused", False), getattr(self, "current_sim_speed", 0))
+        self.ui_manager.draw_ui(self.screen)
+
     def map_cache_state(self, start_x: int, start_y: int, end_x: int, end_y: int):
-        settlement = self.world.settlement
-        self.update_grass_transition_state()
-        self.update_water_transition_state()
         return (
-            start_x,
-            start_y,
-            end_x,
-            end_y,
+            self.world.width,
+            self.world.height,
             self.terrain_renderer.detail_level,
             self.terrain_renderer.microtile_grid.resolution,
-            forest_transition_cache_key(self.world),
-            grass_transition_cache_key(self.grass_transition_state, self.world.tick),
-            water_transition_cache_key(self.water_transition_state, self.world.tick),
-            self.world.season,
-            self.world.next_season,
-            round(self.world.transition_progress, 3),
-            self.environment_event_cache_state(),
+        )
+
+    def dynamic_visual_cache_state(self):
+        settlement = self.world.settlement
+        return (
             self.gameplay_visual_cache_state(),
             len(self.world.colony_memory.known_food),
             len(self.world.colony_memory.known_wood),
@@ -363,6 +458,19 @@ class PygameRenderer:
             len(settlement.workshops) if settlement is not None else 0,
             len(settlement.homes) if settlement is not None else 0,
             len(settlement.workplaces) if settlement is not None else 0,
+        )
+
+    def visual_transition_cache_state(self):
+        self.update_grass_transition_state()
+        self.update_water_transition_state()
+        return (
+            forest_transition_cache_key(self.world),
+            grass_transition_cache_key(self.grass_transition_state, self.world.tick),
+            water_transition_cache_key(self.water_transition_state, self.world.tick),
+            self.world.season,
+            self.world.next_season,
+            round(self.world.transition_progress, 3),
+            self.environment_event_cache_state(),
         )
 
     def gameplay_visual_cache_state(self):
@@ -411,67 +519,281 @@ class PygameRenderer:
 
     def draw_cached_map(self, start_x: int, start_y: int, end_x: int, end_y: int):
         cache_key = self.map_cache_state(start_x, start_y, end_x, end_y)
+        visual_key = self.visual_transition_cache_state()
+        dynamic_key = self.dynamic_visual_cache_state()
+        self.last_partial_redraw_count = 0
+        self.last_chunk_rebuild_count = 0
+        self.last_chunk_redraw_count = 0
         if cache_key != self.map_cache_key:
-            self.rebuild_map_surface(start_x, start_y, end_x, end_y)
+            self.mark_all_chunks_dirty()
             self.map_cache_key = cache_key
-        self.screen.blit(self.map_surface, (0, 0))
+            self.map_visual_transition_key = visual_key
+            self.map_dynamic_visual_key = dynamic_key
+            self.bump_renderer_revision("terrain")
+        elif visual_key != self.map_visual_transition_key:
+            self.mark_visual_transition_revisions(self.map_visual_transition_key, visual_key)
+            self.redraw_dirty_visible_tiles(start_x, start_y, end_x, end_y)
+            self.map_visual_transition_key = visual_key
+        elif dynamic_key != self.map_dynamic_visual_key:
+            self.mark_dynamic_visual_revisions(self.map_dynamic_visual_key, dynamic_key)
+            self.redraw_dirty_visible_tiles(start_x, start_y, end_x, end_y)
+            self.map_dynamic_visual_key = dynamic_key
+        self.draw_visible_chunks(start_x, start_y, end_x, end_y)
+
+    def mark_all_chunks_dirty(self) -> None:
+        for chunk in self.terrain_chunks.values():
+            chunk.dirty = True
+            chunk.full_dirty = True
+            chunk.dirty_tiles.clear()
+            self.dirty_chunks.add((chunk.chunk_x, chunk.chunk_y))
+
+    def mark_dynamic_visual_revisions(self, old_key, new_key) -> None:
+        if old_key is None:
+            self.bump_renderer_revision("terrain")
+            return
+        if old_key[0] != new_key[0]:
+            self.bump_renderer_revision("construction")
+        if old_key[1:] != new_key[1:]:
+            self.bump_renderer_revision("overlays")
+
+    def draw_visible_chunks(self, start_x: int, start_y: int, end_x: int, end_y: int) -> None:
+        previous_clip = self.screen.get_clip()
+        self.screen.set_clip(pygame.Rect(0, 0, VIEWPORT_WIDTH * TILE_SIZE, VIEWPORT_HEIGHT * TILE_SIZE))
+        for chunk_x, chunk_y in self.visible_chunk_coords(start_x, start_y, end_x, end_y):
+            chunk = self.chunk_for(chunk_x, chunk_y)
+            if chunk.dirty:
+                self.rebuild_chunk(chunk)
+            blit_x = chunk_x * TERRAIN_CHUNK_SIZE * TILE_SIZE - start_x * TILE_SIZE
+            blit_y = chunk_y * TERRAIN_CHUNK_SIZE * TILE_SIZE - start_y * TILE_SIZE
+            self.screen.blit(chunk.surface, (blit_x, blit_y))
+        self.screen.set_clip(previous_clip)
+
+    def visible_chunk_coords(self, start_x: int, start_y: int, end_x: int, end_y: int):
+        first_chunk_x = start_x // TERRAIN_CHUNK_SIZE
+        first_chunk_y = start_y // TERRAIN_CHUNK_SIZE
+        last_chunk_x = (max(start_x, end_x - 1)) // TERRAIN_CHUNK_SIZE
+        last_chunk_y = (max(start_y, end_y - 1)) // TERRAIN_CHUNK_SIZE
+        for chunk_y in range(first_chunk_y, last_chunk_y + 1):
+            for chunk_x in range(first_chunk_x, last_chunk_x + 1):
+                yield chunk_x, chunk_y
+
+    def chunk_for(self, chunk_x: int, chunk_y: int) -> TerrainChunkCache:
+        key = (chunk_x, chunk_y)
+        chunk = self.terrain_chunks.get(key)
+        if chunk is None:
+            surface = pygame.Surface(
+                (
+                    TERRAIN_CHUNK_SIZE * TILE_SIZE,
+                    TERRAIN_CHUNK_SIZE * TILE_SIZE,
+                )
+            ).convert()
+            chunk = TerrainChunkCache(chunk_x, chunk_y, surface)
+            self.terrain_chunks[key] = chunk
+        return chunk
+
+    def rebuild_chunk(self, chunk: TerrainChunkCache) -> None:
+        previous_target = self._draw_target
+        self._draw_target = chunk.surface
+        chunk.last_redraw_count = 0
+        start_x = chunk.chunk_x * TERRAIN_CHUNK_SIZE
+        start_y = chunk.chunk_y * TERRAIN_CHUNK_SIZE
+        end_x = min(self.world.width, start_x + TERRAIN_CHUNK_SIZE)
+        end_y = min(self.world.height, start_y + TERRAIN_CHUNK_SIZE)
+
+        if chunk.full_dirty or chunk.cache_state is None:
+            chunk.surface.fill((0, 0, 0))
+            tiles_to_draw = tuple(
+                (x, y)
+                for y in range(start_y, end_y)
+                for x in range(start_x, end_x)
+            )
+        else:
+            tiles_to_draw = tuple(
+                (x, y)
+                for x, y in chunk.dirty_tiles
+                if start_x <= x < end_x and start_y <= y < end_y
+            )
+
+        for x, y in tiles_to_draw:
+            self.draw_map_tile(x, y, start_x, start_y)
+            chunk.last_redraw_count += 1
+        self._draw_target = previous_target
+        chunk.cache_state = self.chunk_cache_state(chunk)
+        chunk.visual_revision += 1
+        chunk.dirty = False
+        chunk.full_dirty = False
+        chunk.dirty_tiles.clear()
+        self.dirty_chunks.discard((chunk.chunk_x, chunk.chunk_y))
+        self.last_chunk_rebuild_count += 1
+        self.last_chunk_redraw_count += chunk.last_redraw_count
+
+    def chunk_cache_state(self, chunk: TerrainChunkCache) -> tuple[object, ...]:
+        return (
+            self.map_cache_key,
+            self.map_visual_transition_key,
+            self.map_dynamic_visual_key,
+            chunk.visual_revision,
+        )
+
+    def mark_visual_transition_revisions(self, old_key, new_key) -> None:
+        if old_key is None:
+            self.bump_renderer_revision("terrain")
+            return
+        if old_key[0] != new_key[0] or old_key[3:6] != new_key[3:6]:
+            self.bump_renderer_revision("season")
+        if old_key[1] != new_key[1]:
+            self.bump_renderer_revision("moisture")
+        if old_key[2] != new_key[2]:
+            self.bump_renderer_revision("weather")
+        if old_key[6] != new_key[6]:
+            self.bump_renderer_revision("overlays")
 
     def rebuild_map_surface(self, start_x: int, start_y: int, end_x: int, end_y: int):
         previous_target = self._draw_target
         self._draw_target = self.map_surface
         self.map_surface.fill((0, 0, 0))
+        self.tile_visual_cache.clear()
         for y in range(start_y, end_y):
             for x in range(start_x, end_x):
-                tile = self.world.tile_at(x, y)
-                screen_x = x - start_x
-                screen_y = y - start_y
-
-                rect = pygame.Rect(
-                    screen_x * TILE_SIZE,
-                    screen_y * TILE_SIZE,
-                    TILE_SIZE,
-                    TILE_SIZE,
-                )
-
-                self.terrain_renderer.draw_tile(self._draw_target, rect, self.terrain_render_context(x, y))
-                if DEBUG_DRAW_GRID:
-                    pygame.draw.rect(self._draw_target, COLORS["grid"], rect, 1)
-
-                workplace = self.world.workplace_at(x, y)
-                if workplace is not None:
-                    self.draw_workplace_placeholder(workplace, screen_x, screen_y, x, y)
-
-                farm = self.world.farm_at(x, y)
-                if farm is not None:
-                    self.draw_farm_border(farm, screen_x, screen_y, x, y)
-                    self.draw_farm_state_symbol(farm, screen_x, screen_y)
-
-                if tile.food > 0 and is_food_visible_to_player(self.world, x, y):
-                    self.draw_centered_symbol("f", screen_x, screen_y, self.resource_color("food", tile.food, max_food(tile)))
-
-                if tile.wood > 0 and is_wood_visible_to_player(self.world, x, y):
-                    self.draw_centered_symbol("w", screen_x, screen_y, self.resource_color("wood", tile.wood, max_wood(tile)))
-
-                animal = self.world.animal_at(x, y)
-                if animal:
-                    self.draw_centered_symbol(animal.symbol, screen_x, screen_y, COLORS["wildlife"])
-
-                if self.is_settlement_center(x, y):
-                    self.draw_centered_symbol("+", screen_x, screen_y, COLORS["settlement"])
-
-                if self.world.home_at(x, y):
-                    self.draw_centered_symbol("H", screen_x, screen_y, COLORS["text"])
-
-                stockpile = self.world.stockpile_at(x, y)
-                if stockpile:
-                    symbol = "F" if stockpile.stockpile_type == "food" else "W"
-                    color = COLORS["stockpile_food"] if stockpile.stockpile_type == "food" else COLORS["stockpile_wood"]
-                    self.draw_centered_symbol(symbol, screen_x, screen_y, color)
-
-                workshop = self.world.workshop_at(x, y)
-                if workshop:
-                    self.draw_centered_symbol("T", screen_x, screen_y, COLORS["workshop"])
+                self.draw_map_tile(x, y, start_x, start_y)
         self._draw_target = previous_target
+
+    def redraw_dirty_visible_tiles(self, start_x: int, start_y: int, end_x: int, end_y: int) -> int:
+        redraws = 0
+        for y in range(start_y, end_y):
+            for x in range(start_x, end_x):
+                signature = self.tile_render_signature(x, y)
+                if self.tile_visual_cache.get((x, y)) == signature:
+                    continue
+                self.mark_tile_dirty(x, y)
+                self.tile_visual_cache[(x, y)] = signature
+                redraws += 1
+        self.last_partial_redraw_count = redraws
+        return redraws
+
+    def mark_tile_dirty(self, tile_x: int, tile_y: int) -> None:
+        chunk_x = tile_x // TERRAIN_CHUNK_SIZE
+        chunk_y = tile_y // TERRAIN_CHUNK_SIZE
+        chunk = self.terrain_chunks.get((chunk_x, chunk_y))
+        if chunk is not None:
+            chunk.dirty = True
+            if not chunk.full_dirty:
+                chunk.dirty_tiles.add((tile_x, tile_y))
+        self.dirty_chunks.add((chunk_x, chunk_y))
+
+    def mark_tile_and_neighbours_dirty(self, tile_x: int, tile_y: int) -> None:
+        for y in range(max(0, tile_y - 1), min(self.world.height, tile_y + 2)):
+            for x in range(max(0, tile_x - 1), min(self.world.width, tile_x + 2)):
+                self.mark_tile_dirty(x, y)
+
+    def draw_map_tile(
+        self,
+        x: int,
+        y: int,
+        start_x: int,
+        start_y: int,
+        signature: tuple[object, ...] | None = None,
+    ) -> None:
+        tile = self.world.tile_at(x, y)
+        screen_x = x - start_x
+        screen_y = y - start_y
+
+        rect = pygame.Rect(
+            screen_x * TILE_SIZE,
+            screen_y * TILE_SIZE,
+            TILE_SIZE,
+            TILE_SIZE,
+        )
+
+        self.draw_terrain_chunk_tile(x, y, rect)
+        self.draw_vegetation_chunk_tile(x, y, screen_x, screen_y)
+        self.draw_structure_chunk_tile(x, y, screen_x, screen_y, tile)
+
+        self.tile_visual_cache[(x, y)] = signature or self.tile_render_signature(x, y)
+
+    def draw_terrain_chunk_tile(self, x: int, y: int, rect: pygame.Rect) -> None:
+        self.terrain_renderer.draw_tile(self._draw_target, rect, self.terrain_render_context(x, y))
+        if DEBUG_DRAW_GRID:
+            pygame.draw.rect(self._draw_target, COLORS["grid"], rect, 1)
+
+    def draw_vegetation_chunk_tile(self, x: int, y: int, screen_x: int, screen_y: int) -> None:
+        return
+
+    def draw_structure_chunk_tile(self, x: int, y: int, screen_x: int, screen_y: int, tile) -> None:
+        workplace = self.world.workplace_at(x, y)
+        if workplace is not None:
+            self.draw_workplace_placeholder(workplace, screen_x, screen_y, x, y)
+
+        farm = self.world.farm_at(x, y)
+        if farm is not None:
+            self.draw_farm_border(farm, screen_x, screen_y, x, y)
+            self.draw_farm_state_symbol(farm, screen_x, screen_y)
+
+        if tile.food > 0 and is_food_visible_to_player(self.world, x, y):
+            self.draw_centered_symbol("f", screen_x, screen_y, self.resource_color("food", tile.food, max_food(tile)))
+
+        if tile.wood > 0 and is_wood_visible_to_player(self.world, x, y):
+            self.draw_centered_symbol("w", screen_x, screen_y, self.resource_color("wood", tile.wood, max_wood(tile)))
+
+        animal = self.world.animal_at(x, y)
+        if animal:
+            self.draw_centered_symbol(animal.symbol, screen_x, screen_y, COLORS["wildlife"])
+
+        if self.is_settlement_center(x, y):
+            self.draw_centered_symbol("+", screen_x, screen_y, COLORS["settlement"])
+
+        if self.world.home_at(x, y):
+            self.draw_centered_symbol("H", screen_x, screen_y, COLORS["text"])
+
+        stockpile = self.world.stockpile_at(x, y)
+        if stockpile:
+            symbol = "F" if stockpile.stockpile_type == "food" else "W"
+            color = COLORS["stockpile_food"] if stockpile.stockpile_type == "food" else COLORS["stockpile_wood"]
+            self.draw_centered_symbol(symbol, screen_x, screen_y, color)
+
+        workshop = self.world.workshop_at(x, y)
+        if workshop:
+            self.draw_centered_symbol("T", screen_x, screen_y, COLORS["workshop"])
+
+    def tile_render_signature(self, tile_x: int, tile_y: int) -> tuple[object, ...]:
+        tile = self.world.tile_at(tile_x, tile_y)
+        context = self.terrain_render_context(tile_x, tile_y)
+        visual_state = self.terrain_renderer.visual_state_for(context)
+        return (
+            visual_state,
+            context.neighbourhood.kinds if context.neighbourhood is not None else (),
+            self.tile_overlay_signature(tile_x, tile_y, tile),
+        )
+
+    def tile_overlay_signature(self, tile_x: int, tile_y: int, tile) -> tuple[object, ...]:
+        farm = self.world.farm_at(tile_x, tile_y)
+        animal = self.world.animal_at(tile_x, tile_y)
+        stockpile = self.world.stockpile_at(tile_x, tile_y)
+        workplace = self.world.workplace_at(tile_x, tile_y)
+        workshop = self.world.workshop_at(tile_x, tile_y)
+        return (
+            tile.kind,
+            tile.food if is_food_visible_to_player(self.world, tile_x, tile_y) else None,
+            tile.wood if is_wood_visible_to_player(self.world, tile_x, tile_y) else None,
+            getattr(tile, "foot_traffic", 0),
+            getattr(tile, "walkable", True),
+            getattr(animal, "symbol", None),
+            self.is_settlement_center(tile_x, tile_y),
+            bool(self.world.home_at(tile_x, tile_y)),
+            getattr(stockpile, "stockpile_type", None),
+            bool(workshop),
+            (
+                getattr(workplace, "workplace_id", None),
+                getattr(workplace, "workplace_type", None),
+            ) if workplace is not None else None,
+            (
+                getattr(farm, "origin_x", None),
+                getattr(farm, "origin_y", None),
+                getattr(farm, "crop_state", None),
+                getattr(farm, "growth", None),
+                getattr(farm, "food", None),
+            ) if farm is not None else None,
+        )
 
     def tile_moisture(self, tile_x: int, tile_y: int) -> float | None:
         moisture_map = getattr(self.world, "moisture_map", None)

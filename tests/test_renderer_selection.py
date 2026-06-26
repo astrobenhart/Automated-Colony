@@ -58,8 +58,11 @@ from src.terrain_rendering import (
     MASTER_VEGETATION_PALETTES,
     MICROTILE_RESOLUTION_BY_DETAIL,
     PATH_PALETTES,
+    AmbientTerrainOcclusion,
     GameplayVisualState,
+    MicrotilePattern,
     MicrotileGrid,
+    PathForestEncroachment,
     TerrainNeighbourhood,
     TerrainRenderContext,
     TerrainPaletteManager,
@@ -71,6 +74,7 @@ from src.terrain_rendering import (
     farm_stage_palette,
     palette_spread,
 )
+from src.renderer_config import DEFAULT_RENDERER_CONFIG_PATH, load_renderer_art_config
 from src.tile import Tile
 from src.village_paths import DIRT_PATH, PATH, TRAMPLED_GRASS, WORN_GRASS
 from src.water_rendering import (
@@ -99,6 +103,19 @@ def make_renderer(world: World) -> PygameRenderer:
 
 def _test_color_distance(a, b) -> int:
     return abs(a[0] - b[0]) + abs(a[1] - b[1]) + abs(a[2] - b[2])
+
+
+def _test_brightness(color) -> int:
+    return color[0] + color[1] + color[2]
+
+
+def _average_test_color(palette):
+    count = len(palette)
+    return (
+        round(sum(color[0] for color in palette) / count),
+        round(sum(color[1] for color in palette) / count),
+        round(sum(color[2] for color in palette) / count),
+    )
 
 
 def teardown_function():
@@ -588,6 +605,17 @@ def test_renderer_context_includes_neighbourhood_for_visible_tiles():
     assert context.neighbourhood.kind_at("e") == "forest"
 
 
+def test_renderer_art_config_loads_external_visual_settings():
+    config = load_renderer_art_config(DEFAULT_RENDERER_CONFIG_PATH)
+
+    assert config.source_path == DEFAULT_RENDERER_CONFIG_PATH
+    assert config.master_vegetation_palettes["Spring"] == MASTER_VEGETATION_PALETTES["Spring"]
+    assert config.path_palettes[PATH]["Normal"] == PATH_PALETTES[PATH][NORMAL]
+    assert "dense_canopy" in config.terrain_motifs["forest"]
+    assert not config.path_visual_language.edge_shaping_enabled
+    assert config.sprite_pipeline.reserved_layers[0] == "terrain"
+
+
 def test_master_vegetation_palette_harmonizes_grass_and_forest():
     world = make_world(width=2, height=1)
     manager = TerrainPaletteManager()
@@ -618,6 +646,35 @@ def test_master_vegetation_palette_harmonizes_grass_and_forest():
     assert palette_spread(forest_palette) < palette_spread(FOREST_SEASON_PALETTES[world.season])
     assert min(_test_color_distance(color, master_color) for color in grass_palette for master_color in master) < 45
     assert min(_test_color_distance(color, master_color) for color in forest_palette for master_color in master) < 70
+
+
+def test_spring_forests_remain_darker_than_surrounding_grass():
+    world = make_world(width=2, height=1)
+    renderer = TerrainRenderer()
+    manager = TerrainPaletteManager()
+    grass_state = renderer.visual_state_for(
+        TerrainRenderContext(
+            world=world,
+            tile=Tile("grass"),
+            tile_x=0,
+            tile_y=0,
+            grass_state=GrassMoistureTransitionState(),
+            water_state=WaterTransitionState(),
+            base_moisture=0.5,
+        )
+    )
+    forest_state = renderer.visual_state_for(
+        TerrainRenderContext(
+            world=world,
+            tile=Tile("forest"),
+            tile_x=1,
+            tile_y=0,
+            grass_state=GrassMoistureTransitionState(),
+            water_state=WaterTransitionState(),
+        )
+    )
+
+    assert _test_brightness(_average_test_color(manager.palette_for(forest_state))) < _test_brightness(_average_test_color(manager.palette_for(grass_state)))
 
 
 def test_autumn_keeps_more_colour_diversity_than_summer():
@@ -677,7 +734,7 @@ def test_motif_pattern_generation_clusters_microtiles():
 def test_edge_shaping_uses_single_terrain_ownership_without_muddy_colours():
     world = make_world(width=3, height=1)
     world.seed = 53
-    world.tiles[0] = [Tile("water"), Tile("grass"), Tile("forest")]
+    world.tiles[0] = [Tile("water"), Tile("grass"), Tile("hill")]
     renderer = TerrainRenderer(detail_level=RENDER_DETAIL_HIGH)
     context = TerrainRenderContext(
         world=world,
@@ -704,10 +761,62 @@ def test_edge_shaping_uses_single_terrain_ownership_without_muddy_colours():
     manager = TerrainPaletteManager()
     allowed = set(unshaped)
     allowed.update(manager.palette_for_neighbour("water", visual_state))
-    allowed.update(manager.palette_for_neighbour("forest", visual_state))
+    allowed.update(manager.palette_for_neighbour("hill", visual_state))
 
     assert shaped[4] == unshaped[4]
     assert set(shaped).issubset(allowed)
+
+
+def test_path_edge_shaping_is_disabled_for_constructed_readability():
+    world = make_world(width=2, height=1)
+    world.seed = 83
+    world.tiles[0] = [Tile(PATH), Tile("water")]
+    renderer = TerrainRenderer(detail_level=RENDER_DETAIL_HIGH)
+    path_context = TerrainRenderContext(
+        world=world,
+        tile=world.tiles[0][0],
+        tile_x=0,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+        base_moisture=0.5,
+        neighbourhood=TerrainNeighbourhood.from_world(world, 0, 0),
+    )
+    unshaped_context = TerrainRenderContext(
+        world=world,
+        tile=world.tiles[0][0],
+        tile_x=0,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+        base_moisture=0.5,
+    )
+
+    assert renderer.microtile_colors_for(path_context) == renderer.microtile_colors_for(unshaped_context)
+
+
+def test_forest_encroachment_adds_subtle_nature_to_adjacent_paths():
+    world = make_world(width=2, height=1)
+    world.seed = 2
+    world.tiles[0] = [Tile(PATH), Tile("forest")]
+    renderer = TerrainRenderer(detail_level=RENDER_DETAIL_HIGH)
+    context = TerrainRenderContext(
+        world=world,
+        tile=world.tiles[0][0],
+        tile_x=0,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+        base_moisture=0.5,
+        neighbourhood=TerrainNeighbourhood.from_world(world, 0, 0),
+    )
+    state = renderer.visual_state_for(context)
+    base = MicrotilePattern(3, tuple([(150, 112, 72)] * 9))
+    encroached = PathForestEncroachment().apply(base, state, context)
+
+    assert encroached.colors[4] == base.colors[4]
+    assert any(color != base.colors[index] for index, color in enumerate(encroached.colors))
+    assert all(_test_color_distance(color, base.colors[index]) < 50 for index, color in enumerate(encroached.colors))
 
 
 def test_crop_palette_harmonizes_with_seasonal_vegetation():
@@ -717,6 +826,94 @@ def test_crop_palette_harmonizes_with_seasonal_vegetation():
 
     assert palette_spread(spring_palette) <= palette_spread(raw_palette)
     assert min(_test_color_distance(color, master_color) for color in spring_palette for master_color in master) < 45
+
+
+def test_forest_ambient_occlusion_subtly_darkens_neighbouring_grass():
+    world = make_world(width=2, height=1)
+    world.seed = 67
+    world.tiles[0] = [Tile("grass"), Tile("forest")]
+    renderer = TerrainRenderer(detail_level=RENDER_DETAIL_HIGH)
+    context = TerrainRenderContext(
+        world=world,
+        tile=world.tiles[0][0],
+        tile_x=0,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+        base_moisture=0.5,
+        neighbourhood=TerrainNeighbourhood.from_world(world, 0, 0),
+    )
+    state = renderer.visual_state_for(context)
+    base = MicrotilePattern(3, tuple([(100, 150, 90)] * 9))
+    shaded = AmbientTerrainOcclusion().apply(base, state, context)
+
+    assert shaded.colors[4] == base.colors[4]
+    assert any(_test_brightness(color) < _test_brightness(base.colors[index]) for index, color in enumerate(shaded.colors))
+    assert all(_test_brightness(color) >= int(_test_brightness(base.colors[index]) * 0.88) for index, color in enumerate(shaded.colors))
+
+
+def test_forest_ambient_occlusion_does_not_affect_water_paths_or_farms():
+    world = make_world(width=3, height=1)
+    world.seed = 71
+    world.tiles[0] = [Tile("water"), Tile(PATH), Tile("forest")]
+    renderer = TerrainRenderer(detail_level=RENDER_DETAIL_HIGH)
+    occlusion = AmbientTerrainOcclusion()
+    base = MicrotilePattern(3, tuple([(100, 150, 90)] * 9))
+
+    for x in (0, 1):
+        context = TerrainRenderContext(
+            world=world,
+            tile=world.tiles[0][x],
+            tile_x=x,
+            tile_y=0,
+            grass_state=GrassMoistureTransitionState(),
+            water_state=WaterTransitionState(),
+            base_moisture=0.5,
+            neighbourhood=TerrainNeighbourhood.from_world(world, x, 0),
+        )
+        assert occlusion.apply(base, renderer.visual_state_for(context), context) == base
+
+    farm_world = make_world(width=2, height=1)
+    farm_world.tiles[0] = [Tile("grass"), Tile("forest")]
+    farm_world.settlement = Settlement("Farm Test", 0, 0, 1, "Spring")
+    farm_world.settlement.farm_plots.append(FarmPlot(0, 0, tuple(((0, 0), (0, 1), (1, 0), (1, 1)))))
+    farm_context = TerrainRenderContext(
+        world=farm_world,
+        tile=farm_world.tiles[0][0],
+        tile_x=0,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+        base_moisture=0.5,
+        gameplay_state=GameplayVisualState(crop_state=FIELD_GROWING),
+        neighbourhood=TerrainNeighbourhood.from_world(farm_world, 0, 0),
+    )
+    assert occlusion.apply(base, renderer.visual_state_for(farm_context), farm_context) == base
+
+
+def test_dense_forest_ambient_occlusion_can_reach_second_microtile_at_ultra_detail():
+    world = make_world(width=3, height=3)
+    world.seed = 73
+    for x, y in ((0, 1), (1, 0), (2, 1), (1, 2)):
+        world.tiles[y][x] = Tile("forest")
+    renderer = TerrainRenderer(detail_level=RENDER_DETAIL_ULTRA)
+    context = TerrainRenderContext(
+        world=world,
+        tile=world.tiles[1][1],
+        tile_x=1,
+        tile_y=1,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+        base_moisture=0.5,
+        neighbourhood=TerrainNeighbourhood.from_world(world, 1, 1),
+    )
+    state = renderer.visual_state_for(context)
+    base = MicrotilePattern(5, tuple([(100, 150, 90)] * 25))
+    shaded = AmbientTerrainOcclusion().apply(base, state, context)
+    second_ring_indices = (6, 7, 8, 11, 13, 16, 17, 18)
+
+    assert any(shaded.colors[index] != base.colors[index] for index in second_ring_indices)
+    assert shaded.colors[12] == base.colors[12]
 
 
 def test_plains_and_hills_use_moisture_reactive_grassland_visual_state():
@@ -1175,26 +1372,41 @@ def test_forest_transition_cache_changes_only_during_transition_days():
     world.seed = 14
     world.tiles[1][1].kind = "forest"
     renderer = make_renderer(world)
-    original_rebuild = renderer.rebuild_map_surface
-    rebuilds = []
+    viewport_rebuilds = []
+    original_viewport_rebuild = renderer.rebuild_map_surface
+    chunk_rebuilds = []
+    original_chunk_rebuild = renderer.rebuild_chunk
 
-    def spy_rebuild(start_x, start_y, end_x, end_y):
-        rebuilds.append((world.day_of_season, world.tick))
-        original_rebuild(start_x, start_y, end_x, end_y)
+    def spy_viewport_rebuild(start_x, start_y, end_x, end_y):
+        viewport_rebuilds.append((world.day_of_season, world.tick))
+        original_viewport_rebuild(start_x, start_y, end_x, end_y)
 
-    renderer.rebuild_map_surface = spy_rebuild
+    def spy_chunk_rebuild(chunk):
+        chunk_rebuilds.append((world.day_of_season, world.tick, chunk.chunk_x, chunk.chunk_y))
+        original_chunk_rebuild(chunk)
+
+    renderer.rebuild_map_surface = spy_viewport_rebuild
+    renderer.rebuild_chunk = spy_chunk_rebuild
 
     renderer.draw_world()
+    partials = []
     world.tick += 1
     renderer.draw_world()
+    partials.append(renderer.last_partial_redraw_count)
     world.day += 1
     renderer.draw_world()
+    partials.append(renderer.last_partial_redraw_count)
     world.day += FOREST_SEASON_TRANSITION_DAYS + 2
     renderer.draw_world()
+    partials.append(renderer.last_partial_redraw_count)
     world.day += 1
     renderer.draw_world()
+    partials.append(renderer.last_partial_redraw_count)
 
-    assert rebuilds == [(1, 0), (2, 1), (FOREST_SEASON_TRANSITION_DAYS + 4, 1)]
+    assert viewport_rebuilds == []
+    assert chunk_rebuilds[0] == (1, 0, 0, 0)
+    assert any(count > 0 for count in partials)
+    assert renderer.renderer_revisions["season"] > 0
 
 
 def grass_tile_pixels(renderer, tile_x: int = 1, tile_y: int = 1):
@@ -1293,24 +1505,39 @@ def test_grass_moisture_cache_changes_during_weather_transition():
     world.seed = 14
     world.tiles[1][1].kind = "grass"
     renderer = make_renderer(world)
-    original_rebuild = renderer.rebuild_map_surface
-    rebuilds = []
+    viewport_rebuilds = []
+    original_viewport_rebuild = renderer.rebuild_map_surface
+    chunk_rebuilds = []
+    original_chunk_rebuild = renderer.rebuild_chunk
 
-    def spy_rebuild(start_x, start_y, end_x, end_y):
-        rebuilds.append((renderer.grass_transition_state.current_mode, world.tick))
-        original_rebuild(start_x, start_y, end_x, end_y)
+    def spy_viewport_rebuild(start_x, start_y, end_x, end_y):
+        viewport_rebuilds.append((renderer.grass_transition_state.current_mode, world.tick))
+        original_viewport_rebuild(start_x, start_y, end_x, end_y)
 
-    renderer.rebuild_map_surface = spy_rebuild
+    def spy_chunk_rebuild(chunk):
+        chunk_rebuilds.append((renderer.grass_transition_state.current_mode, world.tick, chunk.chunk_x, chunk.chunk_y))
+        original_chunk_rebuild(chunk)
+
+    renderer.rebuild_map_surface = spy_viewport_rebuild
+    renderer.rebuild_chunk = spy_chunk_rebuild
 
     renderer.draw_world()
     world.tick += 1
     renderer.draw_world()
+    before_event_redraws = renderer.last_partial_redraw_count
     world.active_environment_events.append(create_environment_event("heavy_rain", duration_days=2))
     renderer.draw_world()
+    event_redraws = renderer.last_partial_redraw_count
     world.tick += 1
     renderer.draw_world()
+    transition_redraws = renderer.last_partial_redraw_count
 
-    assert rebuilds == [("clear", 0), (GRASS_HEAVY_RAIN, 1), (GRASS_HEAVY_RAIN, 2)]
+    assert viewport_rebuilds == []
+    assert chunk_rebuilds[0] == ("clear", 0, 0, 0)
+    assert before_event_redraws == 0
+    assert event_redraws > 0
+    assert transition_redraws >= 0
+    assert renderer.renderer_revisions["moisture"] > 0
 
 
 def water_tile_pixels(renderer, tile_x: int = 1, tile_y: int = 1):
@@ -1387,24 +1614,40 @@ def test_water_weather_cache_changes_during_weather_transition():
     world.seed = 14
     world.tiles[1][1].kind = "water"
     renderer = make_renderer(world)
-    original_rebuild = renderer.rebuild_map_surface
-    rebuilds = []
+    viewport_rebuilds = []
+    original_viewport_rebuild = renderer.rebuild_map_surface
+    chunk_rebuilds = []
+    original_chunk_rebuild = renderer.rebuild_chunk
 
-    def spy_rebuild(start_x, start_y, end_x, end_y):
-        rebuilds.append((renderer.water_transition_state.current_state, world.tick))
-        original_rebuild(start_x, start_y, end_x, end_y)
+    def spy_viewport_rebuild(start_x, start_y, end_x, end_y):
+        viewport_rebuilds.append((renderer.water_transition_state.current_state, world.tick))
+        original_viewport_rebuild(start_x, start_y, end_x, end_y)
 
-    renderer.rebuild_map_surface = spy_rebuild
+    def spy_chunk_rebuild(chunk):
+        chunk_rebuilds.append((renderer.water_transition_state.current_state, world.tick, chunk.chunk_x, chunk.chunk_y))
+        original_chunk_rebuild(chunk)
+
+    renderer.rebuild_map_surface = spy_viewport_rebuild
+    renderer.rebuild_chunk = spy_chunk_rebuild
 
     renderer.draw_world()
     world.tick += 1
     renderer.draw_world()
+    before_event_redraws = renderer.last_partial_redraw_count
     world.active_environment_events.append(create_environment_event("heavy_rain", duration_days=2))
     renderer.draw_world()
-    world.tick += 1
-    renderer.draw_world()
+    event_redraws = renderer.last_partial_redraw_count
+    transition_redraws = []
+    for _ in range(40):
+        world.tick += 1
+        renderer.draw_world()
+        transition_redraws.append(renderer.last_partial_redraw_count)
 
-    assert rebuilds == [(CLEAR, 0), (HEAVY_RAIN, 1), (HEAVY_RAIN, 2)]
+    assert viewport_rebuilds == []
+    assert chunk_rebuilds[0] == (CLEAR, 0, 0, 0)
+    assert before_event_redraws == 0
+    assert event_redraws + sum(transition_redraws) > 0
+    assert renderer.renderer_revisions["weather"] > 0
 
 
 def test_resource_visibility_uses_colony_memory_not_agent_personal_memory(monkeypatch):
@@ -1573,13 +1816,13 @@ def test_renderer_reuses_cached_map_surface_between_world_ticks(monkeypatch):
     world = make_world(width=3, height=3)
     renderer = make_renderer(world)
     rebuilds = []
-    original_rebuild = renderer.rebuild_map_surface
+    original_rebuild = renderer.rebuild_chunk
 
-    def spy_rebuild(start_x, start_y, end_x, end_y):
-        rebuilds.append((start_x, start_y, end_x, end_y))
-        original_rebuild(start_x, start_y, end_x, end_y)
+    def spy_rebuild(chunk):
+        rebuilds.append((chunk.chunk_x, chunk.chunk_y))
+        original_rebuild(chunk)
 
-    monkeypatch.setattr(renderer, "rebuild_map_surface", spy_rebuild)
+    monkeypatch.setattr(renderer, "rebuild_chunk", spy_rebuild)
 
     renderer.draw_world()
     renderer.draw_world()
@@ -1591,19 +1834,80 @@ def test_renderer_keeps_cached_map_surface_within_same_visual_tick_bucket(monkey
     world = make_world(width=3, height=3)
     renderer = make_renderer(world)
     rebuilds = []
-    original_rebuild = renderer.rebuild_map_surface
+    original_rebuild = renderer.rebuild_chunk
 
-    def spy_rebuild(start_x, start_y, end_x, end_y):
+    def spy_rebuild(chunk):
         rebuilds.append(world.tick)
-        original_rebuild(start_x, start_y, end_x, end_y)
+        original_rebuild(chunk)
 
-    monkeypatch.setattr(renderer, "rebuild_map_surface", spy_rebuild)
+    monkeypatch.setattr(renderer, "rebuild_chunk", spy_rebuild)
 
     renderer.draw_world()
     world.tick += 1
     renderer.draw_world()
 
     assert rebuilds == [0]
+
+
+def test_renderer_uses_ordered_scene_layers():
+    world = make_world(width=3, height=3)
+    renderer = make_renderer(world)
+
+    assert [layer.name for layer in renderer.render_layers] == [
+        "Terrain",
+        "Vegetation",
+        "Structures",
+        "Agents",
+        "Effects",
+        "UI",
+    ]
+    assert renderer.render_layers[0].cached is True
+    assert renderer.render_layers[3].cached is False
+    assert renderer.diagnostics_metrics()["render_layers"] == tuple(layer.name for layer in renderer.render_layers)
+
+
+def test_agent_and_ui_layers_do_not_dirty_terrain_chunks():
+    world = make_world(width=3, height=3)
+    agent = Agent("Eli", 1, 1, role=SCOUT)
+    world.agents.append(agent)
+    renderer = make_renderer(world)
+
+    renderer.draw(False, 10, last_sim_ms=0, sim_ticks=0)
+    assert renderer.last_chunk_rebuild_count > 0
+
+    agent.x = 2
+    agent.y = 1
+    renderer.draw(False, 10, last_sim_ms=0, sim_ticks=0)
+
+    assert renderer.last_chunk_rebuild_count == 0
+    assert renderer.last_chunk_redraw_count == 0
+    assert len(renderer.dirty_chunks) == 0
+
+
+def test_camera_movement_reuses_cached_chunks(monkeypatch):
+    world = make_world(width=96, height=45)
+    renderer = make_renderer(world)
+
+    renderer.draw_world()
+
+    rebuilds = []
+    original_rebuild = renderer.rebuild_chunk
+
+    def spy_rebuild(chunk):
+        rebuilds.append((chunk.chunk_x, chunk.chunk_y))
+        original_rebuild(chunk)
+
+    monkeypatch.setattr(renderer, "rebuild_chunk", spy_rebuild)
+
+    renderer.pan_camera(3, 0)
+    renderer.draw_world()
+
+    assert rebuilds == []
+
+    renderer.pan_camera(13, 0)
+    renderer.draw_world()
+
+    assert rebuilds == [(5, 0), (5, 1), (5, 2)]
 
 
 def test_role_colors_are_bright_for_screensaver_readability():

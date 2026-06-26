@@ -25,6 +25,7 @@ from src.grass_rendering import (
     grass_visual_moisture_mode,
 )
 from src.seasons import seasonal_tile_color
+from src.renderer_config import RendererArtConfig, load_renderer_art_config
 from src.village_paths import DIRT_PATH, PATH, TRAMPLED_GRASS, WORN_GRASS
 from src.water_rendering import WATER_WEATHER_PALETTES, WATER_WEATHER_WEIGHTS, water_visual_weather
 
@@ -67,20 +68,9 @@ TERRAIN_TRANSITION_PRIORITY: dict[str, int] = {
     "wetland": 40,
     "mountain": 35,
 }
-
-MASTER_VEGETATION_PALETTES: dict[str, tuple[Color, ...]] = {
-    "Spring": ((74, 138, 74), (84, 152, 82), (96, 164, 90), (62, 118, 66)),
-    "Summer": ((82, 132, 68), (92, 142, 74), (104, 150, 82), (116, 132, 72)),
-    "Autumn": ((104, 126, 66), (136, 130, 62), (156, 112, 56), (122, 92, 58)),
-    "Winter": ((92, 92, 72), (104, 100, 78), (78, 88, 70), (118, 110, 86)),
-}
-
-VEGETATION_HARMONY_STRENGTH: dict[str, float] = {
-    "Spring": 0.62,
-    "Summer": 0.68,
-    "Autumn": 0.12,
-    "Winter": 0.58,
-}
+DEFAULT_ART_CONFIG = load_renderer_art_config()
+MASTER_VEGETATION_PALETTES: dict[str, tuple[Color, ...]] = DEFAULT_ART_CONFIG.master_vegetation_palettes
+VEGETATION_HARMONY_STRENGTH: dict[str, float] = DEFAULT_ART_CONFIG.vegetation_harmony_strength
 
 TERRAIN_PALETTE_ROLES: dict[str, str] = {
     "grass": "grass",
@@ -90,49 +80,14 @@ TERRAIN_PALETTE_ROLES: dict[str, str] = {
     "wetland": "grass",
 }
 
-TERRAIN_MOTIFS: dict[str, tuple[str, ...]] = {
-    "forest": ("dense_canopy", "canopy_mass", "small_clearing", "shrub_patch"),
-    "grass": ("dense_tuft", "sparse_tuft", "flowering_patch", "worn_patch"),
-    "plain": ("meadow", "dry_meadow", "soft_tuft", "open_sward"),
-    "hill": ("highland_grass", "rocky_tuft", "wind_swept", "soft_slope"),
-    "water": ("calm_surface", "ripple_cluster", "muted_reflection", "rain_disturbance"),
-    TRAMPLED_GRASS: ("worn_shoulder", "dusty_patch", "faint_track", "sparse_tuft"),
-    WORN_GRASS: ("worn_shoulder", "compacted_earth", "faint_track", "sparse_tuft"),
-    DIRT_PATH: ("compacted_earth", "wheel_rut", "worn_shoulder", "packed_track"),
-    PATH: ("compacted_earth", "wheel_rut", "packed_track", "worn_shoulder"),
-}
+TERRAIN_MOTIFS: dict[str, tuple[str, ...]] = DEFAULT_ART_CONFIG.terrain_motifs
 
 CALM_INTERIOR_TERRAINS = ("forest", "water", "grass", "plain", "hill")
-FOREST_OCCLUSION_RECEIVERS = ("grass", "plain", "dry", "wetland")
+FOREST_OCCLUSION_RECEIVERS = DEFAULT_ART_CONFIG.ambient_occlusion.forest_receivers
 
-GRASSLAND_PALETTE_FACTORS: dict[str, tuple[float, float, float]] = {
-    "grass": (1.0, 1.0, 1.0),
-    "plain": (1.04, 1.03, 0.94),
-    "hill": (1.06, 1.00, 0.9),
-}
+GRASSLAND_PALETTE_FACTORS: dict[str, tuple[float, float, float]] = DEFAULT_ART_CONFIG.terrain_palette_factors
 
-PATH_PALETTES: dict[str, dict[str, tuple[Color, ...]]] = {
-    TRAMPLED_GRASS: {
-        DRY: ((138, 128, 82), (150, 136, 92), (116, 112, 78), (160, 148, 104)),
-        NORMAL: ((118, 112, 74), (130, 120, 82), (104, 104, 72), (142, 132, 92)),
-        WET: ((86, 82, 62), (98, 92, 68), (108, 100, 74), (74, 72, 56)),
-    },
-    WORN_GRASS: {
-        DRY: ((154, 134, 82), (168, 146, 92), (136, 122, 78), (178, 158, 108)),
-        NORMAL: ((132, 112, 74), (146, 124, 84), (116, 104, 70), (156, 136, 96)),
-        WET: ((90, 76, 58), (104, 86, 62), (116, 96, 70), (78, 66, 52)),
-    },
-    DIRT_PATH: {
-        DRY: ((170, 136, 82), (184, 148, 92), (150, 120, 76), (196, 160, 106)),
-        NORMAL: ((142, 104, 68), (156, 116, 76), (126, 94, 64), (168, 128, 88)),
-        WET: ((86, 62, 50), (98, 70, 54), (112, 82, 62), (72, 54, 46)),
-    },
-    PATH: {
-        DRY: ((184, 146, 88), (198, 158, 100), (164, 130, 82), (210, 170, 112)),
-        NORMAL: ((152, 112, 72), (166, 124, 82), (136, 100, 66), (178, 136, 92)),
-        WET: ((82, 58, 46), (96, 68, 52), (108, 78, 58), (70, 50, 42)),
-    },
-}
+PATH_PALETTES: dict[str, dict[str, tuple[Color, ...]]] = DEFAULT_ART_CONFIG.path_palettes
 
 PATH_WEAR_WEIGHTS: dict[str, tuple[int, ...]] = {
     TRAMPLED_GRASS: (34, 28, 24, 14),
@@ -291,40 +246,68 @@ def microtile_resolution_for_detail(detail_level: RenderDetail) -> int:
 class TerrainPaletteManager:
     """Central palette source for terrain visuals."""
 
+    def __init__(self, art_config: RendererArtConfig = DEFAULT_ART_CONFIG) -> None:
+        self.art_config = art_config
+        self._palette_cache: dict[TerrainVisualState, tuple[Color, ...]] = {}
+        self._weights_cache: dict[tuple[TerrainVisualState, tuple[Color, ...]], tuple[int, ...]] = {}
+        self._neighbour_palette_cache: dict[tuple[str, TerrainVisualState], tuple[Color, ...]] = {}
+
     def palette_for(self, state: TerrainVisualState) -> tuple[Color, ...]:
+        cached = self._palette_cache.get(state)
+        if cached is not None:
+            return cached
+
         if state.terrain in GRASSLAND_TERRAINS:
             season_palettes = GRASS_MOISTURE_PALETTES.get(state.visual_season or state.season, GRASS_MOISTURE_PALETTES["Spring"])
             palette = season_palettes.get(state.moisture_state or NORMAL, season_palettes[NORMAL])
-            return self._vegetation_palette(self._terrain_adjusted_palette(palette, state.terrain), state, state.terrain)
-        if state.terrain in PATH_TERRAINS:
+            result = self._vegetation_palette(self._terrain_adjusted_palette(palette, state.terrain), state, state.terrain)
+        elif state.terrain in PATH_TERRAINS:
             terrain_palettes = PATH_PALETTES.get(state.terrain, PATH_PALETTES[DIRT_PATH])
-            return self._cohesive_earth_palette(terrain_palettes.get(state.moisture_state or NORMAL, terrain_palettes[NORMAL]))
-        if state.terrain == "forest":
-            return self._vegetation_palette(
+            result = self._cohesive_earth_palette(terrain_palettes.get(state.moisture_state or NORMAL, terrain_palettes[NORMAL]))
+        elif state.terrain == "forest":
+            result = self._vegetation_palette(
                 FOREST_SEASON_PALETTES.get(state.visual_season or state.season, FOREST_SEASON_PALETTES["Spring"]),
                 state,
                 "forest",
             )
-        if state.terrain == "water":
-            return self._cohesive_water_palette(WATER_WEATHER_PALETTES.get(state.weather_state or "Clear", WATER_WEATHER_PALETTES["Clear"]))
-        if state.gameplay and state.gameplay.construction_state:
-            return CONSTRUCTION_PALETTES.get(state.gameplay.construction_state, CONSTRUCTION_PALETTES["Under Construction"])
-        return self._generic_palette(state.base_color)
+        elif state.terrain == "water":
+            result = self._cohesive_water_palette(WATER_WEATHER_PALETTES.get(state.weather_state or "Clear", WATER_WEATHER_PALETTES["Clear"]))
+        elif state.gameplay and state.gameplay.construction_state:
+            result = CONSTRUCTION_PALETTES.get(state.gameplay.construction_state, CONSTRUCTION_PALETTES["Under Construction"])
+        else:
+            result = self._generic_palette(state.base_color)
+
+        self._palette_cache[state] = result
+        return result
 
     def weights_for(self, state: TerrainVisualState, palette: tuple[Color, ...]) -> tuple[int, ...]:
+        key = (state, palette)
+        cached = self._weights_cache.get(key)
+        if cached is not None:
+            return cached
+
         if state.terrain in GRASSLAND_TERRAINS:
-            return self._cohesive_weights(GRASS_MOISTURE_WEIGHTS.get(state.moisture_state or NORMAL, GRASS_MOISTURE_WEIGHTS[NORMAL]), state)
-        if state.terrain in PATH_TERRAINS:
-            return self._cohesive_weights(PATH_WEAR_WEIGHTS.get(state.terrain, PATH_WEAR_WEIGHTS[DIRT_PATH]), state)
-        if state.terrain == "forest":
-            return self._cohesive_weights(FOREST_SEASON_WEIGHTS.get(state.visual_season or state.season, FOREST_SEASON_WEIGHTS["Spring"]), state)
-        if state.terrain == "water":
-            return self._cohesive_weights(WATER_WEATHER_WEIGHTS.get(state.weather_state or "Clear", WATER_WEATHER_WEIGHTS["Clear"]), state)
-        if len(palette) == 4:
-            return (42, 32, 18, 8)
-        return tuple(1 for _ in palette)
+            result = self._cohesive_weights(GRASS_MOISTURE_WEIGHTS.get(state.moisture_state or NORMAL, GRASS_MOISTURE_WEIGHTS[NORMAL]), state)
+        elif state.terrain in PATH_TERRAINS:
+            result = self._cohesive_weights(PATH_WEAR_WEIGHTS.get(state.terrain, PATH_WEAR_WEIGHTS[DIRT_PATH]), state)
+        elif state.terrain == "forest":
+            result = self._cohesive_weights(FOREST_SEASON_WEIGHTS.get(state.visual_season or state.season, FOREST_SEASON_WEIGHTS["Spring"]), state)
+        elif state.terrain == "water":
+            result = self._cohesive_weights(WATER_WEATHER_WEIGHTS.get(state.weather_state or "Clear", WATER_WEATHER_WEIGHTS["Clear"]), state)
+        elif len(palette) == 4:
+            result = (42, 32, 18, 8)
+        else:
+            result = tuple(1 for _ in palette)
+
+        self._weights_cache[key] = result
+        return result
 
     def palette_for_neighbour(self, terrain: str, state: TerrainVisualState) -> tuple[Color, ...]:
+        key = (terrain, state)
+        cached = self._neighbour_palette_cache.get(key)
+        if cached is not None:
+            return cached
+
         neighbour_state = TerrainVisualState(
             terrain=terrain,
             season=state.season,
@@ -336,7 +319,9 @@ class TerrainPaletteManager:
             foot_traffic=0,
             gameplay=None,
         )
-        return self.palette_for(neighbour_state)
+        result = self.palette_for(neighbour_state)
+        self._neighbour_palette_cache[key] = result
+        return result
 
     def _generic_palette(self, base_color: Color) -> tuple[Color, Color, Color, Color]:
         return (
@@ -347,16 +332,19 @@ class TerrainPaletteManager:
         )
 
     def _terrain_adjusted_palette(self, palette: tuple[Color, ...], terrain: str) -> tuple[Color, ...]:
-        factors = GRASSLAND_PALETTE_FACTORS.get(terrain)
+        factors = self.art_config.terrain_palette_factors.get(terrain)
         if factors is None:
             return palette
         return tuple(_multiply_color(color, factors) for color in palette)
 
     def _vegetation_palette(self, palette: tuple[Color, ...], state: TerrainVisualState, terrain: str) -> tuple[Color, ...]:
-        master = MASTER_VEGETATION_PALETTES.get(state.visual_season or state.season, MASTER_VEGETATION_PALETTES["Spring"])
-        strength = VEGETATION_HARMONY_STRENGTH.get(state.visual_season or state.season, 0.58)
+        master = self.art_config.master_vegetation_palettes.get(
+            state.visual_season or state.season,
+            self.art_config.master_vegetation_palettes["Spring"],
+        )
+        strength = self.art_config.vegetation_harmony_strength.get(state.visual_season or state.season, 0.58)
         if terrain == "forest":
-            strength *= 0.72
+            strength *= 0.58
         if state.moisture_state == WET:
             palette = tuple(_mix_color(color, (52, 108, 64), 0.12) for color in palette)
         elif state.moisture_state == DRY:
@@ -482,6 +470,13 @@ class TerrainModifierStack:
 class TerrainPatternGenerator:
     """Shared deterministic microtile pattern generator."""
 
+    def __init__(self, art_config: RendererArtConfig = DEFAULT_ART_CONFIG) -> None:
+        self.art_config = art_config
+        self._pattern_cache: dict[
+            tuple[int | None, int, int, TerrainVisualState, tuple[Color, ...], tuple[int, ...], RenderDetail],
+            MicrotilePattern,
+        ] = {}
+
     def generate_pattern(
         self,
         seed: int | None,
@@ -492,6 +487,11 @@ class TerrainPatternGenerator:
         weights: tuple[int, ...],
         detail_level: RenderDetail = DEFAULT_RENDER_DETAIL,
     ) -> MicrotilePattern:
+        key = (seed, tile_x, tile_y, state, palette, weights, detail_level)
+        cached = self._pattern_cache.get(key)
+        if cached is not None:
+            return cached
+
         resolution = microtile_resolution_for_detail(detail_level)
         colors: list[Color] = []
         identity = self._state_identity(state)
@@ -523,10 +523,12 @@ class TerrainPatternGenerator:
             if replacement == colors[0]:
                 replacement = palette[(replacement_index + 1) % len(palette)]
             colors[-1] = _mix_color(colors[-1], replacement, 0.42)
-        return MicrotilePattern(resolution=resolution, colors=tuple(colors))
+        pattern = MicrotilePattern(resolution=resolution, colors=tuple(colors))
+        self._pattern_cache[key] = pattern
+        return pattern
 
     def _motif_for(self, seed: int | None, tile_x: int, tile_y: int, state: TerrainVisualState, identity: tuple[object, ...]) -> str:
-        motifs = TERRAIN_MOTIFS.get(state.terrain, ("soft_patch", "open_patch", "quiet_patch"))
+        motifs = self.art_config.terrain_motifs.get(state.terrain, ("soft_patch", "open_patch", "quiet_patch"))
         index = _stable_int(seed, tile_x, tile_y, state.terrain, identity, "motif") % len(motifs)
         return motifs[index]
 
@@ -599,8 +601,10 @@ class EdgeMask:
 class TerrainEdgeShaper:
     """Applies deterministic edge ownership masks to microtile patterns."""
 
-    def __init__(self, palette_manager: TerrainPaletteManager) -> None:
+    def __init__(self, palette_manager: TerrainPaletteManager, art_config: RendererArtConfig = DEFAULT_ART_CONFIG) -> None:
         self.palette_manager = palette_manager
+        self.art_config = art_config
+        self._edge_mask_cache: dict[tuple[str, tuple[tuple[str, str], ...], bool], tuple[EdgeMask, ...]] = {}
 
     def apply(self, pattern: MicrotilePattern, state: TerrainVisualState, context: TerrainRenderContext) -> MicrotilePattern:
         neighbourhood = context.neighbourhood
@@ -617,16 +621,29 @@ class TerrainEdgeShaper:
         return MicrotilePattern(resolution=pattern.resolution, colors=tuple(colors))
 
     def edge_masks_for(self, state: TerrainVisualState, neighbourhood: TerrainNeighbourhood) -> tuple[EdgeMask, ...]:
+        key = (
+            state.terrain,
+            neighbourhood.kinds,
+            self.art_config.path_visual_language.edge_shaping_enabled,
+        )
+        cached = self._edge_mask_cache.get(key)
+        if cached is not None:
+            return cached
+
         masks: list[EdgeMask] = []
         for direction in CARDINAL_DIRECTIONS + CORNER_DIRECTIONS:
             neighbour = neighbourhood.kind_at(direction)
             if neighbour is None or not self._should_shape(state.terrain, neighbour):
                 continue
             masks.append(EdgeMask(direction, neighbour))
-        return tuple(masks)
+        result = tuple(masks)
+        self._edge_mask_cache[key] = result
+        return result
 
     def _should_shape(self, terrain: str, neighbour: str) -> bool:
         if terrain == neighbour:
+            return False
+        if (terrain in PATH_TERRAINS or neighbour in PATH_TERRAINS) and not self.art_config.path_visual_language.edge_shaping_enabled:
             return False
         if terrain in PATH_TERRAINS or neighbour in PATH_TERRAINS:
             return True
@@ -726,6 +743,183 @@ class TerrainEdgeShaper:
         return palette[roll % len(palette)]
 
 
+class AmbientTerrainOcclusion:
+    """Subtle renderer-only ambient influence from nearby terrain."""
+
+    def __init__(self, art_config: RendererArtConfig = DEFAULT_ART_CONFIG) -> None:
+        self.art_config = art_config
+
+    def apply(self, pattern: MicrotilePattern, state: TerrainVisualState, context: TerrainRenderContext) -> MicrotilePattern:
+        neighbourhood = context.neighbourhood
+        if neighbourhood is None or pattern.resolution <= 1:
+            return pattern
+        if not self._can_receive_occlusion(state, context):
+            return pattern
+
+        forest_directions = tuple(
+            direction
+            for direction in CARDINAL_DIRECTIONS + CORNER_DIRECTIONS
+            if neighbourhood.kind_at(direction) == "forest"
+        )
+        if not forest_directions:
+            return pattern
+
+        density = self._forest_density(neighbourhood)
+        colors = list(pattern.colors)
+        for direction in forest_directions:
+            for index, row, column, distance in self._influence_indices(direction, pattern.resolution, density):
+                if self._should_apply(context, state, direction, row, column, distance, density):
+                    colors[index] = self._shade_receiver(colors[index], distance, density)
+        return MicrotilePattern(resolution=pattern.resolution, colors=tuple(colors))
+
+    def _can_receive_occlusion(self, state: TerrainVisualState, context: TerrainRenderContext) -> bool:
+        if state.terrain not in self.art_config.ambient_occlusion.forest_receivers:
+            return False
+        if state.terrain in PATH_TERRAINS or state.terrain in ("water", "forest", "mountain", "hill"):
+            return False
+        gameplay = state.gameplay
+        if gameplay and (
+            gameplay.crop_state
+            or gameplay.construction_progress is not None
+            or gameplay.construction_state
+            or gameplay.building_state
+        ):
+            return False
+
+        world = context.world
+        for accessor_name in ("home_at", "farm_at", "workplace_at", "stockpile_at", "workshop_at"):
+            accessor = getattr(world, accessor_name, None)
+            if accessor is not None and accessor(context.tile_x, context.tile_y):
+                return False
+        return True
+
+    def _forest_density(self, neighbourhood: TerrainNeighbourhood) -> int:
+        return sum(1 for _, kind in neighbourhood.kinds if kind == "forest")
+
+    def _influence_indices(self, direction: str, resolution: int, density: int):
+        max_distance = 2 if resolution >= 5 and density >= 4 else 1
+        for row in range(resolution):
+            for column in range(resolution):
+                distance = self._distance_from_direction(direction, row, column, resolution)
+                if 1 <= distance <= max_distance:
+                    yield row * resolution + column, row, column, distance
+
+    def _distance_from_direction(self, direction: str, row: int, column: int, resolution: int) -> int:
+        last = resolution - 1
+        distances = []
+        if "n" in direction:
+            distances.append(row + 1)
+        if "s" in direction:
+            distances.append(last - row + 1)
+        if "w" in direction:
+            distances.append(column + 1)
+        if "e" in direction:
+            distances.append(last - column + 1)
+        return max(distances) if direction in CORNER_DIRECTIONS else min(distances)
+
+    def _should_apply(
+        self,
+        context: TerrainRenderContext,
+        state: TerrainVisualState,
+        direction: str,
+        row: int,
+        column: int,
+        distance: int,
+        density: int,
+    ) -> bool:
+        config = self.art_config.ambient_occlusion
+        chance = config.first_microtile_chance if distance == 1 else config.second_microtile_chance
+        chance += min(config.max_chance_bonus, max(0, density - 1) * config.density_chance_bonus)
+        roll = _stable_int(
+            getattr(context.world, "seed", None),
+            context.tile_x,
+            context.tile_y,
+            state.terrain,
+            direction,
+            row,
+            column,
+            distance,
+            density,
+            "ambient-occlusion",
+        )
+        return roll % 100 < min(92, chance)
+
+    def _shade_receiver(self, color: Color, distance: int, density: int) -> Color:
+        config = self.art_config.ambient_occlusion
+        darken = config.first_microtile_darken if distance == 1 else config.second_microtile_darken
+        darken += min(config.max_density_bonus, max(0, density - 2) * config.density_bonus)
+        return _shade(color, 1.0 - darken)
+
+
+class PathForestEncroachment:
+    """Subtle deterministic leaf/grass flecks on forest-adjacent paths."""
+
+    def __init__(self, art_config: RendererArtConfig = DEFAULT_ART_CONFIG) -> None:
+        self.art_config = art_config
+
+    def apply(self, pattern: MicrotilePattern, state: TerrainVisualState, context: TerrainRenderContext) -> MicrotilePattern:
+        config = self.art_config.path_visual_language
+        neighbourhood = context.neighbourhood
+        if not config.encroachment_enabled or neighbourhood is None or pattern.resolution <= 1:
+            return pattern
+        if state.terrain not in config.encroachment_terrains:
+            return pattern
+
+        forest_directions = tuple(
+            direction
+            for direction in CARDINAL_DIRECTIONS + CORNER_DIRECTIONS
+            if neighbourhood.kind_at(direction) == "forest"
+        )
+        if not forest_directions:
+            return pattern
+
+        seasonal_palette = self.art_config.master_vegetation_palettes.get(
+            state.visual_season or state.season,
+            self.art_config.master_vegetation_palettes["Spring"],
+        )
+        colors = list(pattern.colors)
+        for direction in forest_directions:
+            for index, row, column in self._edge_indices(direction, pattern.resolution):
+                if self._should_encroach(context, state, direction, row, column):
+                    roll = _stable_int(
+                        getattr(context.world, "seed", None),
+                        context.tile_x,
+                        context.tile_y,
+                        state.terrain,
+                        direction,
+                        row,
+                        column,
+                        "path-forest-encroachment-color",
+                    )
+                    colors[index] = _mix_color(colors[index], seasonal_palette[roll % len(seasonal_palette)], config.forest_encroachment_strength)
+        return MicrotilePattern(resolution=pattern.resolution, colors=tuple(colors))
+
+    def _edge_indices(self, direction: str, resolution: int):
+        last = resolution - 1
+        for row in range(resolution):
+            for column in range(resolution):
+                if (
+                    "n" in direction and row == 0
+                    or "s" in direction and row == last
+                    or "w" in direction and column == 0
+                    or "e" in direction and column == last
+                ):
+                    yield row * resolution + column, row, column
+
+    def _should_encroach(self, context: TerrainRenderContext, state: TerrainVisualState, direction: str, row: int, column: int) -> bool:
+        roll = _stable_int(
+            getattr(context.world, "seed", None),
+            context.tile_x,
+            context.tile_y,
+            state.terrain,
+            direction,
+            row,
+            column,
+            "path-forest-encroachment",
+        )
+        return roll % 100 < self.art_config.path_visual_language.forest_encroachment_chance
+
+
 class TerrainRenderer:
     """Shared terrain rendering pipeline for every map tile."""
 
@@ -739,13 +933,18 @@ class TerrainRenderer:
         self.palette_manager = palette_manager or TerrainPaletteManager()
         self.pattern_generator = pattern_generator or TerrainPatternGenerator()
         self.modifier_stack = modifier_stack or TerrainModifierStack()
-        self.edge_shaper = TerrainEdgeShaper(self.palette_manager)
+        self.art_config = self.palette_manager.art_config
+        self.edge_shaper = TerrainEdgeShaper(self.palette_manager, self.art_config)
+        self.ambient_occlusion = AmbientTerrainOcclusion(self.art_config)
+        self.path_encroachment = PathForestEncroachment(self.art_config)
         self.detail_level = detail_level
         self.microtile_grid = MicrotileGrid(detail_level)
+        self._microtile_pattern_cache: dict[tuple[object, ...], MicrotilePattern] = {}
 
     def set_detail_level(self, detail_level: RenderDetail) -> None:
         self.detail_level = detail_level
         self.microtile_grid = MicrotileGrid(detail_level)
+        self._microtile_pattern_cache.clear()
 
     def visual_state_for(self, context: TerrainRenderContext) -> TerrainVisualState:
         world = context.world
@@ -825,6 +1024,11 @@ class TerrainRenderer:
 
     def microtile_pattern_for(self, context: TerrainRenderContext) -> MicrotilePattern:
         state = self.visual_state_for(context)
+        cache_key = self.microtile_cache_key(context, state)
+        cached = self._microtile_pattern_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
         palette = self.palette_manager.palette_for(state)
         palette = self.modifier_stack.apply(palette, state)
         weights = self.palette_manager.weights_for(state, palette)
@@ -837,14 +1041,36 @@ class TerrainRenderer:
             weights,
             self.detail_level,
         )
+        pattern = self.ambient_occlusion.apply(pattern, state, context)
         pattern = self.edge_shaper.apply(pattern, state, context)
+        pattern = self.path_encroachment.apply(pattern, state, context)
         if state.environment_tinted:
             events = getattr(context.world, "active_environment_events", ())
-            return MicrotilePattern(
+            pattern = MicrotilePattern(
                 resolution=pattern.resolution,
                 colors=tuple(environmental_tile_color(color, state.terrain, events) for color in pattern.colors),
             )
+        self._microtile_pattern_cache[cache_key] = pattern
         return pattern
+
+    def microtile_cache_key(self, context: TerrainRenderContext, state: TerrainVisualState) -> tuple[object, ...]:
+        return (
+            getattr(context.world, "seed", None),
+            context.tile_x,
+            context.tile_y,
+            self.detail_level,
+            state,
+            context.neighbourhood.kinds if context.neighbourhood is not None else (),
+            tuple(
+                sorted(
+                    (
+                        getattr(event, "effect_type", None),
+                        getattr(event, "remaining_days", None),
+                    )
+                    for event in getattr(context.world, "active_environment_events", ())
+                )
+            ),
+        )
 
     def microtile_colors_for(self, context: TerrainRenderContext) -> tuple[Color, ...]:
         return self.microtile_pattern_for(context).colors
