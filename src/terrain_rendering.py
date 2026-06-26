@@ -103,6 +103,7 @@ TERRAIN_MOTIFS: dict[str, tuple[str, ...]] = {
 }
 
 CALM_INTERIOR_TERRAINS = ("forest", "water", "grass", "plain", "hill")
+FOREST_OCCLUSION_RECEIVERS = ("grass", "plain", "dry", "wetland")
 
 GRASSLAND_PALETTE_FACTORS: dict[str, tuple[float, float, float]] = {
     "grass": (1.0, 1.0, 1.0),
