@@ -11,7 +11,6 @@ from src.config import (
     DEBUG_DRAW_GRID,
     FOREST_SEASON_TRANSITION_DAYS,
     GRASS_MOISTURE_TRANSITION_HOURS,
-    SYMBOL_LABELS,
     TILE_SIZE,
     TICKS_PER_HOUR,
     TERRAIN_LABELS,
@@ -47,8 +46,20 @@ from src.overlays.villagers import VILLAGERS_OVERLAY
 from src.roles import BUILDER, FORAGER, GENERALIST, ROLES, SCOUT
 from src.seasons import seasonal_tile_color
 from src.settlement import Settlement
-from src.farming import FIELD_READY, FarmPlot
+from src.farming import FIELD_DORMANT, FIELD_GROWING, FIELD_PLANTED, FIELD_READY, FIELD_UNPREPARED, FarmPlot
+from src.terrain_rendering import (
+    CONSTRUCTION_PALETTES,
+    FARM_STAGE_PALETTES,
+    PATH_PALETTES,
+    GameplayVisualState,
+    TerrainRenderContext,
+    TerrainRenderer,
+    TerrainVisualModifier,
+    construction_visual_stage,
+    crop_visual_stage,
+)
 from src.tile import Tile
+from src.village_paths import DIRT_PATH, PATH, TRAMPLED_GRASS, WORN_GRASS
 from src.water_rendering import (
     CLEAR,
     HEAVY_RAIN,
@@ -251,31 +262,60 @@ def test_selection_highlight_aligns_with_camera_offset():
     assert highlight_pixel == COLORS["selection"]
 
 
-def test_legend_draws_terrain_swatch_and_symbol_labels():
+def test_tile_inspector_draws_empty_state_when_no_tile_is_available(monkeypatch):
     world = make_world(width=3, height=3)
     renderer = make_renderer(world)
+    lines = []
 
-    renderer.draw_panel(paused=False, sim_speed=1)
+    monkeypatch.setattr(renderer, "hovered_world_tile", lambda: None)
 
-    assert "water" in TERRAIN_LABELS
-    assert "@" in SYMBOL_LABELS
-    assert "r" in SYMBOL_LABELS
+    def spy_draw_text_line(text, x, y, width, bottom_y, font=None, color=None):
+        lines.append(text)
+        return y + 1
+
+    monkeypatch.setattr(renderer, "draw_section_header", lambda *args, **kwargs: args[2])
+    monkeypatch.setattr(renderer, "draw_text_line", spy_draw_text_line)
+
+    renderer.draw_tile_inspector(0, 0, 200, 200)
+
+    assert "Hover over a tile to inspect it." in lines
 
 
-def test_legend_swatch_uses_current_seasonal_color():
+def test_tile_inspector_uses_selected_tile_before_hover(monkeypatch):
     world = make_world(width=3, height=3)
-    world.season_index = 1
+    world.tiles[1][1] = Tile("water")
+    world.tiles[2][2] = Tile("forest")
     renderer = make_renderer(world)
-    x = 20
-    y = 20
+    renderer.selected_tile = (1, 1)
+    monkeypatch.setattr(renderer, "hovered_world_tile", lambda: (2, 2))
 
-    renderer.draw_legend_item("wetland", "Wetland", x, y, 120)
+    rows = renderer.tile_inspector_rows(1, 1)
 
-    swatch_pixel = renderer.screen.get_at((x + 1, y + 3))[:3]
-    assert swatch_pixel == renderer.tile_color("wetland")
+    assert ("Terrain", TERRAIN_LABELS["water"]) in rows
+    assert ("Weather", renderer.water_transition_state.current_state) in rows
 
 
-def test_map_and_legend_use_same_seasonal_color_source():
+def test_tile_inspector_uses_hovered_tile_when_nothing_selected(monkeypatch):
+    world = make_world(width=3, height=3)
+    world.tiles[2][2] = Tile("forest")
+    renderer = make_renderer(world)
+    monkeypatch.setattr(renderer, "hovered_world_tile", lambda: (2, 2))
+    rows = []
+
+    def spy_draw_stat_row(label, value, x, y, width, bottom_y, color=None):
+        rows.append((label, value))
+        return y + 1
+
+    monkeypatch.setattr(renderer, "draw_section_header", lambda *args, **kwargs: args[2])
+    monkeypatch.setattr(renderer, "draw_stat_row", spy_draw_stat_row)
+
+    renderer.draw_tile_inspector(0, 0, 200, 200)
+
+    assert ("Tile", "(2, 2)") in rows
+    assert ("Terrain", TERRAIN_LABELS["forest"]) in rows
+
+
+def test_map_and_tile_inspector_use_same_visual_state_source():
     world = make_world(width=3, height=3)
     world.tiles[0][0] = Tile("wetland")
     world.season_index = 3
@@ -284,27 +324,270 @@ def test_map_and_legend_use_same_seasonal_color_source():
     renderer.draw_world()
     map_pixel = renderer.screen.get_at((1, 1))[:3]
 
-    renderer.draw_legend_item("wetland", "Wetland", 40, 40, 120)
-    legend_pixel = renderer.screen.get_at((41, 43))[:3]
+    context = TerrainRenderContext(
+        world=world,
+        tile=world.tiles[0][0],
+        tile_x=0,
+        tile_y=0,
+        grass_state=renderer.grass_transition_state,
+        water_state=renderer.water_transition_state,
+        base_moisture=renderer.tile_moisture(0, 0),
+    )
+    assert map_pixel in renderer.terrain_renderer.subcell_colors_for(context)
+    assert ("Season", renderer.terrain_renderer.visual_state_for(context).season) in renderer.tile_inspector_rows(0, 0)
 
-    assert map_pixel == renderer.tile_color("wetland")
-    assert legend_pixel == map_pixel
+
+def test_renderer_uses_shared_terrain_renderer_for_visible_tiles(monkeypatch):
+    world = make_world(width=4, height=2)
+    world.tiles = [
+        [Tile("grass"), Tile("water"), Tile("forest"), Tile("plain")],
+        [Tile("hill"), Tile("path"), Tile("trampled_grass"), Tile("worn_grass")],
+    ]
+    renderer = make_renderer(world)
+    rendered_kinds = []
+    original_draw_tile = renderer.terrain_renderer.draw_tile
+
+    def spy_draw_tile(surface, rect, context):
+        rendered_kinds.append(context.tile.kind)
+        original_draw_tile(surface, rect, context)
+
+    monkeypatch.setattr(renderer.terrain_renderer, "draw_tile", spy_draw_tile)
+
+    renderer.draw_world()
+
+    assert rendered_kinds == [
+        "grass",
+        "water",
+        "forest",
+        "plain",
+        "hill",
+        "path",
+        "trampled_grass",
+        "worn_grass",
+    ]
 
 
-def test_legend_uses_blended_transition_color():
+def test_terrain_pattern_generation_is_deterministic():
+    world = make_world(width=1, height=1)
+    world.seed = 123
+    world.tiles[0][0] = Tile("hill")
+    renderer = TerrainRenderer()
+    context = TerrainRenderContext(
+        world=world,
+        tile=world.tiles[0][0],
+        tile_x=0,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+    )
+
+    assert renderer.subcell_colors_for(context) == renderer.subcell_colors_for(context)
+    assert len(renderer.subcell_colors_for(context)) == 4
+
+
+def test_plains_and_hills_use_moisture_reactive_grassland_visual_state():
+    world = make_world(width=2, height=1)
+    world.tiles[0][0] = Tile("plain")
+    world.tiles[0][1] = Tile("hill")
+    renderer = TerrainRenderer()
+    wet_state = GrassMoistureTransitionState(previous_mode=GRASS_HEAVY_RAIN, current_mode=GRASS_HEAVY_RAIN)
+
+    plain_context = TerrainRenderContext(
+        world=world,
+        tile=world.tiles[0][0],
+        tile_x=0,
+        tile_y=0,
+        grass_state=wet_state,
+        water_state=WaterTransitionState(),
+        base_moisture=0.2,
+    )
+    hill_context = TerrainRenderContext(
+        world=world,
+        tile=world.tiles[0][1],
+        tile_x=1,
+        tile_y=0,
+        grass_state=wet_state,
+        water_state=WaterTransitionState(),
+        base_moisture=0.2,
+    )
+
+    assert renderer.visual_state_for(plain_context).moisture_state == WET
+    assert renderer.visual_state_for(hill_context).moisture_state == WET
+    assert renderer.subcell_colors_for(plain_context) != renderer.subcell_colors_for(hill_context)
+
+
+def test_path_and_trampled_ground_use_moisture_reactive_path_palettes():
+    world = make_world(width=4, height=1)
+    world.tiles[0] = [Tile(TRAMPLED_GRASS), Tile(WORN_GRASS), Tile(DIRT_PATH), Tile(PATH)]
+    renderer = TerrainRenderer()
+    wet_state = GrassMoistureTransitionState(previous_mode=GRASS_HEAVY_RAIN, current_mode=GRASS_HEAVY_RAIN)
+
+    for x, tile in enumerate(world.tiles[0]):
+        context = TerrainRenderContext(
+            world=world,
+            tile=tile,
+            tile_x=x,
+            tile_y=0,
+            grass_state=wet_state,
+            water_state=WaterTransitionState(),
+            base_moisture=0.2,
+        )
+
+        assert renderer.visual_state_for(context).moisture_state == WET
+        assert set(renderer.subcell_colors_for(context)).issubset(PATH_PALETTES[tile.kind][WET])
+
+
+def test_grassland_seasonal_transition_uses_distributed_visual_season_after_start():
+    world = make_world(width=4, height=4)
+    world.seed = 44
+    world.day = 21
+    world.season_index = 1
+    renderer = TerrainRenderer()
+    visual_seasons = set()
+
+    for y in range(4):
+        for x in range(4):
+            world.tiles[y][x] = Tile("plain")
+            context = TerrainRenderContext(
+                world=world,
+                tile=world.tiles[y][x],
+                tile_x=x,
+                tile_y=y,
+                grass_state=GrassMoistureTransitionState(),
+                water_state=WaterTransitionState(),
+                base_moisture=0.5,
+            )
+            visual_seasons.add(renderer.visual_state_for(context).visual_season)
+
+    assert visual_seasons.issubset({"Spring", "Summer"})
+    assert len(visual_seasons) > 1
+
+
+def test_crop_visual_stage_maps_current_and_future_farm_states():
+    assert crop_visual_stage(FIELD_UNPREPARED) == "Harvested"
+    assert crop_visual_stage(FIELD_PLANTED, growth=0) == "Planted"
+    assert crop_visual_stage(FIELD_PLANTED, growth=4) == "Sprouting"
+    assert crop_visual_stage(FIELD_GROWING) == "Growing"
+    assert crop_visual_stage(FIELD_READY) == "Mature"
+    assert crop_visual_stage(FIELD_DORMANT) == "Fallow"
+    assert crop_visual_stage("Prepared") == "Prepared"
+
+
+def test_farm_gameplay_state_modifies_final_palette_without_changing_tile_kind():
+    world = make_world(width=1, height=1)
+    tile = world.tiles[0][0]
+    renderer = TerrainRenderer()
+    base_context = TerrainRenderContext(
+        world=world,
+        tile=tile,
+        tile_x=0,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+        base_moisture=0.5,
+    )
+    farm_context = TerrainRenderContext(
+        world=world,
+        tile=tile,
+        tile_x=0,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+        base_moisture=0.5,
+        gameplay_state=GameplayVisualState(crop_state=FIELD_READY, crop_growth=100, crop_food=4),
+    )
+
+    assert renderer.subcell_colors_for(farm_context) != renderer.subcell_colors_for(base_context)
+    assert renderer.visual_state_for(farm_context).terrain == "grass"
+    assert set(renderer.subcell_colors_for(farm_context)).isdisjoint(FARM_STAGE_PALETTES["Empty"])
+
+
+def test_construction_progress_uses_renderer_only_visual_stage():
+    assert construction_visual_stage(1, 15) == "Foundation"
+    assert construction_visual_stage(8, 15) == "Under Construction"
+    assert construction_visual_stage(15, 15) == "Completed"
+
+    world = make_world(width=1, height=1)
+    renderer = TerrainRenderer()
+    context = TerrainRenderContext(
+        world=world,
+        tile=world.tiles[0][0],
+        tile_x=0,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+        base_moisture=0.5,
+        gameplay_state=GameplayVisualState(construction_progress=1, construction_max=15),
+    )
+
+    assert renderer.subcell_colors_for(context)
+    assert renderer.subcell_colors_for(context) != FARM_STAGE_PALETTES["Empty"]
+    assert CONSTRUCTION_PALETTES["Foundation"]
+
+
+def test_future_visual_modifiers_are_composable_and_deterministic():
+    world = make_world(width=1, height=1)
+    renderer = TerrainRenderer()
+    gameplay = GameplayVisualState(
+        modifiers=(
+            TerrainVisualModifier("snow", "Light Snow", 0.5),
+            TerrainVisualModifier("magic", "Mystical", 0.4),
+        )
+    )
+    context = TerrainRenderContext(
+        world=world,
+        tile=world.tiles[0][0],
+        tile_x=0,
+        tile_y=0,
+        grass_state=GrassMoistureTransitionState(),
+        water_state=WaterTransitionState(),
+        base_moisture=0.5,
+        gameplay_state=gameplay,
+    )
+
+    assert renderer.subcell_colors_for(context) == renderer.subcell_colors_for(context)
+    assert renderer.subcell_colors_for(context) != TerrainRenderer().subcell_colors_for(
+        TerrainRenderContext(
+            world=world,
+            tile=world.tiles[0][0],
+            tile_x=0,
+            tile_y=0,
+            grass_state=GrassMoistureTransitionState(),
+            water_state=WaterTransitionState(),
+            base_moisture=0.5,
+        )
+    )
+
+
+def test_pygame_renderer_exposes_farm_and_construction_gameplay_state():
+    world = make_world(width=4, height=4)
+    world.settlement = Settlement("Test", 1, 1, 1, "Spring")
+    farm = FarmPlot(1, 1)
+    farm.crop_state = FIELD_READY
+    farm.growth = 100
+    farm.food = 4
+    world.settlement.farm_plots.append(farm)
+    world.settlement.construction_progress[(3, 3)] = 4
+    renderer = make_renderer(world)
+
+    farm_state = renderer.terrain_gameplay_state(1, 1)
+    construction_state = renderer.terrain_gameplay_state(3, 3)
+
+    assert farm_state is not None
+    assert farm_state.crop_state == FIELD_READY
+    assert construction_state is not None
+    assert construction_state.construction_progress == 4
+
+
+def test_tile_color_helper_still_uses_blended_transition_color():
     world = make_world(width=3, height=3)
     world.day = 20
     world.tick = TICKS_PER_DAY // 2
     renderer = make_renderer(world)
-    x = 20
-    y = 20
 
-    renderer.draw_legend_item("plain", "Plain", x, y, 120)
-
-    swatch_pixel = renderer.screen.get_at((x + 1, y + 3))[:3]
-    assert swatch_pixel == renderer.tile_color("plain")
-    assert swatch_pixel != seasonal_tile_color("plain", "Spring")
-    assert swatch_pixel != seasonal_tile_color("plain", "Summer")
+    color = renderer.tile_color("plain")
+    assert color != seasonal_tile_color("plain", "Spring")
+    assert color != seasonal_tile_color("plain", "Summer")
 
 
 def test_resource_symbol_color_reflects_abundance():
