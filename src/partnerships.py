@@ -167,6 +167,36 @@ def form_partnership(world: World, first: Agent, second: Agent) -> tuple[Agent, 
     return first, second
 
 
+def end_partnership_due_to_death(world: World, deceased: Agent) -> None:
+    """Clear active partner references when death naturally ends a partnership."""
+    deceased_id = villager_key(deceased)
+    partner_id = getattr(deceased, "partner_id", None)
+    if not partner_id:
+        return
+
+    survivor = next(
+        (agent for agent in world.living_agents() if villager_key(agent) == partner_id),
+        None,
+    )
+    if survivor is not None and getattr(survivor, "partner_id", None) == deceased_id:
+        survivor.partner_id = None
+        survivor.partner_ids = [pid for pid in getattr(survivor, "partner_ids", []) if pid != deceased_id]
+        survivor.partnership_start_year = None
+        survivor.partnership_duration = 0
+        memories = getattr(survivor, "personal_memories", None)
+        if memories is not None:
+            memory = f"Lost long-term partner {getattr(deceased, 'name', 'a partner')} in Year {world.year}."
+            if memory not in memories:
+                memories.insert(0, memory)
+        survivor.sync_generation_architecture()
+
+    deceased.partner_id = None
+    deceased.partner_ids = [pid for pid in getattr(deceased, "partner_ids", []) if pid != partner_id]
+    deceased.partnership_start_year = None
+    deceased.partnership_duration = 0
+    deceased.sync_generation_architecture()
+
+
 def refresh_partnership_durations(world: World):
     for agent in world.living_agents():
         start_year = getattr(agent, "partnership_start_year", None)
@@ -233,7 +263,53 @@ def prefer_shared_household(world: World, first: Agent, second: Agent) -> bool:
         world.add_agent_to_household(second, first_household)
         add_household_memory(second, first_household, world)
         return True
+    household = create_partner_household(world, first, second, first_household)
+    if household is not None:
+        world.add_agent_to_household(first, household)
+        world.add_agent_to_household(second, household)
+        add_household_memory(first, household, world)
+        add_household_memory(second, household, world)
+        return True
     return False
+
+
+def create_partner_household(world: World, first: Agent, second: Agent, source_household: Household | None) -> Household | None:
+    settlement = getattr(world, "settlement", None)
+    if settlement is None:
+        return None
+    household_id = next_household_id(settlement)
+    household = type(source_household)(
+        household_id=household_id,
+        household_name=partner_household_name(settlement, first, second),
+        home_id=None,
+        home_building_id=None,
+        member_ids=[],
+        founder_ids=[villager_key(first), villager_key(second)],
+        founded_year=world.year,
+        household_head=villager_key(first),
+    )
+    settlement.households.append(household)
+    return household
+
+
+def next_household_id(settlement) -> str:
+    existing = {household.household_id for household in settlement.households}
+    index = len(existing)
+    while f"household-{index}" in existing:
+        index += 1
+    return f"household-{index}"
+
+
+def partner_household_name(settlement, first: Agent, second: Agent) -> str:
+    base = f"{getattr(first, 'name', 'New')} {getattr(second, 'name', 'Hearth')}"
+    existing = {household.household_name for household in settlement.households}
+    name = f"{base} Hearth"
+    if name not in existing:
+        return name
+    index = 2
+    while f"{base} Hearth {index}" in existing:
+        index += 1
+    return f"{base} Hearth {index}"
 
 
 def record_partnership_history(world: World, first: Agent, second: Agent, moved_household: bool):

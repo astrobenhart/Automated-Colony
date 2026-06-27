@@ -332,6 +332,9 @@ class World:
         if home is not None:
             agent.home_x = home.x
             agent.home_y = home.y
+        else:
+            agent.home_x = None
+            agent.home_y = None
 
     def ensure_household_membership(self):
         if self.settlement is None or not self.settlement.households:

@@ -373,9 +373,26 @@ Eligibility stays deliberately narrow:
 - no direct parent, child, or sibling relationship
 - sufficient existing familiarity from household, workplace, or routine history
 
-Household integration is conservative. Partners already sharing a household stay there. If one partner lacks a household or lives alone, they may join the other partner's household. Established multi-person households are not reshuffled just to force every pair into the same home.
+Household integration is renewal-oriented. Partners already sharing a household stay there. If one partner lacks a household or lives alone, they may join the other partner's household. If both partners belong to established multi-person households, they form a new household record with no home yet; the existing residential planner then creates normal housing demand and builders construct the new home through the usual task pipeline. This keeps partnerships as social bonds, not marriage or romance simulation, while ensuring stable adult partnerships can become shared households across generations.
 
 Future birth systems should use partnerships as one input into household-based renewal, not as a complete family simulation.
+
+## v0.8 Partnership Lifecycle
+
+The partnership lifecycle is:
+
+Adult
+-> Partnership
+-> Household Formation
+-> Household Growth
+-> Household Expansion
+-> Next Generation
+
+Partnerships describe stable adult social relationships. Households describe the physical living arrangement. Births require both: an established partnership and a shared household.
+
+When partners can safely share an existing household, one partner joins the other household. When both partners are already embedded in established households, they found a new household and become a residential demand for the normal construction system. The simulation should not rely on a lucky overcrowding side effect before partners can live together.
+
+Death naturally ends an active partnership. The deceased villager remains in memories and history, but the surviving partner's active `partner_id` state is cleared so they can eventually participate in future partnership formation. This is lifecycle cleanup, not a breakup or romance mechanic.
 
 ## v0.8 Birth Foundation
 
@@ -1880,6 +1897,27 @@ Design boundaries:
 - do not recompute settlement-wide social, family, or planner state per tick
 - keep active visible work responsive even as background systems slow down
 - prefer event-driven updates whenever a future system changes rarely
+
+## Headless Simulation Runner
+
+Long-running validation must measure the actual game, not a calendar shortcut.
+
+`SimulationRunner` is the canonical execution path for release validation, balance testing, regression probes, and performance benchmarking. It advances the world by calling `World.update()` for every simulation tick. It does not call `World.advance_day()` directly, because direct day advancement bypasses villager AI, movement, task execution, construction progress, residential completion, and household splitting.
+
+Runner modes:
+- Interactive: renderer enabled, UI enabled, frame limiting enabled, human-facing presentation active.
+- Headless: renderer disabled, UI disabled, frame limiting removed, every gameplay tick still executed.
+- Validation: headless execution with metrics, callbacks, seed batching, and report generation.
+
+All modes must execute identical gameplay logic. Acceleration is allowed only by removing presentation overhead: rendering, UI, sleeps, frame limiting, and noisy debug display. It must not skip ticks, batch multiple gameplay updates into one, bypass AI, skip construction, skip planner work, or bypass household, birth, death, Chronicle, or resource systems.
+
+The validation runner records wall-clock runtime, ticks executed, simulated days and years per second, estimated speedup over interactive play, peak memory when available, and domain metrics such as population, births, natural deaths, household splits, residential construction, resources, housing capacity, and Chronicle activity.
+
+Design boundaries:
+- use `SimulationRunner` or an equivalent `World.update()` loop for release validation
+- keep `World.advance_day()` for targeted calendar tests only
+- do not use daily fast-forward results as proof that construction-driven or task-driven systems are stable
+- future validation infrastructure should add metrics around this runner rather than inventing new shortcuts
 
 ## Design Priorities
 

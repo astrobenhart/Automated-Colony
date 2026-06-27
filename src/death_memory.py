@@ -99,6 +99,9 @@ def record_death(world: World, agent: Agent, cause_of_death: str) -> DeathRecord
     record_death_history(world, record)
     record_family_death(world, agent)
     handle_household_death_succession(world, agent)
+    from src.partnerships import end_partnership_due_to_death
+
+    end_partnership_due_to_death(world, agent)
     return record
 
 

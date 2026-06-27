@@ -1,0 +1,1238 @@
+{
+  "birth_attempts": 18112,
+  "births": 17,
+  "chronicle_entries": 1197,
+  "decades": [
+    {
+      "adult_age_avg": 45.13,
+      "adult_age_median": 44,
+      "age_at_first_child_avg": 46.49,
+      "age_distribution": {
+        "18-29": 5429,
+        "30-49": 18296,
+        "50-64": 7992,
+        "65+": 4238
+      },
+      "average_household_size": 4.07,
+      "birth_attempts": 9901,
+      "births": 8,
+      "children_avg": 3.33,
+      "children_per_household": 0.27,
+      "children_per_partnership": 0.17,
+      "days": 799,
+      "decade": 1,
+      "elders_avg": 5.3,
+      "eligible_birth_chance_avg": 0.00111,
+      "eligible_birth_score_avg": 62.61,
+      "eligible_partnerships_avg": 1.17,
+      "families_avg": 9.22,
+      "first_failure_reasons": {
+        "child_spacing_satisfied": 1988,
+        "living_together": 480,
+        "parent_age_eligible": 1760,
+        "partnership_duration_satisfied": 942
+      },
+      "food_avg": 38.85,
+      "gate_breakdown": {
+        "child_spacing_satisfied": {
+          "blocked_pct": 16.34,
+          "fail": 2468,
+          "pass": 12634
+        },
+        "dependent_child_cap_satisfied": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 15102
+        },
+        "eligible_partnership": {
+          "blocked_pct": 34.23,
+          "fail": 5170,
+          "pass": 9932
+        },
+        "food_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 15102
+        },
+        "household_rules_satisfied": {
+          "blocked_pct": 3.61,
+          "fail": 545,
+          "pass": 14557
+        },
+        "housing_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 15102
+        },
+        "living_together": {
+          "blocked_pct": 3.61,
+          "fail": 545,
+          "pass": 14557
+        },
+        "mutual_partnership": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 15102
+        },
+        "parent_age_eligible": {
+          "blocked_pct": 11.65,
+          "fail": 1760,
+          "pass": 13342
+        },
+        "partnered": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 15102
+        },
+        "partnership_duration_satisfied": {
+          "blocked_pct": 6.24,
+          "fail": 942,
+          "pass": 14160
+        },
+        "settlement_member": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 15102
+        },
+        "water_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 15102
+        }
+      },
+      "generation_depth_max": 1,
+      "household_splits": 5,
+      "household_successions": 0,
+      "households_avg": 11.92,
+      "housing_capacity_avg": 59.9,
+      "natural_deaths": 0,
+      "partnerships_avg": 18.9,
+      "partnerships_delta": 20,
+      "population_avg": 48.33,
+      "population_max": 53,
+      "population_min": 45,
+      "residential_expansions": 7,
+      "water_avg": 85.4,
+      "working_adults_avg": 39.7
+    },
+    {
+      "adult_age_avg": 54.56,
+      "adult_age_median": 54,
+      "age_at_first_child_avg": 48.78,
+      "age_distribution": {
+        "18-29": 560,
+        "30-49": 12480,
+        "50-64": 14240,
+        "65+": 8123
+      },
+      "average_household_size": 4.01,
+      "birth_attempts": 5404,
+      "births": 7,
+      "children_avg": 12.7,
+      "children_per_household": 0.89,
+      "children_per_partnership": 0.64,
+      "days": 800,
+      "decade": 11,
+      "elders_avg": 10.15,
+      "eligible_birth_chance_avg": 0.00131,
+      "eligible_birth_score_avg": 75.42,
+      "eligible_partnerships_avg": 0,
+      "families_avg": 10.98,
+      "first_failure_reasons": {
+        "child_spacing_satisfied": 5521,
+        "living_together": 480,
+        "parent_age_eligible": 4377
+      },
+      "food_avg": 30.57,
+      "gate_breakdown": {
+        "child_spacing_satisfied": {
+          "blocked_pct": 36.01,
+          "fail": 5696,
+          "pass": 10121
+        },
+        "dependent_child_cap_satisfied": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 15817
+        },
+        "eligible_partnership": {
+          "blocked_pct": 65.61,
+          "fail": 10378,
+          "pass": 5439
+        },
+        "food_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 15817
+        },
+        "household_rules_satisfied": {
+          "blocked_pct": 5.06,
+          "fail": 800,
+          "pass": 15017
+        },
+        "housing_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 15817
+        },
+        "living_together": {
+          "blocked_pct": 5.06,
+          "fail": 800,
+          "pass": 15017
+        },
+        "mutual_partnership": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 15817
+        },
+        "parent_age_eligible": {
+          "blocked_pct": 27.67,
+          "fail": 4377,
+          "pass": 11440
+        },
+        "partnered": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 15817
+        },
+        "partnership_duration_satisfied": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 15817
+        },
+        "settlement_member": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 15817
+        },
+        "water_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 15817
+        }
+      },
+      "generation_depth_max": 1,
+      "household_splits": 2,
+      "household_successions": 3,
+      "households_avg": 14.22,
+      "housing_capacity_avg": 79.87,
+      "natural_deaths": 3,
+      "partnerships_avg": 19.77,
+      "partnerships_delta": -1,
+      "population_avg": 56.95,
+      "population_max": 59,
+      "population_min": 53,
+      "residential_expansions": 3,
+      "water_avg": 59.55,
+      "working_adults_avg": 34.1
+    },
+    {
+      "adult_age_avg": 60.3,
+      "adult_age_median": 62.0,
+      "age_at_first_child_avg": 52.17,
+      "age_distribution": {
+        "18-29": 1917,
+        "30-49": 5440,
+        "50-64": 13280,
+        "65+": 14147
+      },
+      "average_household_size": 3.61,
+      "birth_attempts": 2728,
+      "births": 2,
+      "children_avg": 13.74,
+      "children_per_household": 0.87,
+      "children_per_partnership": 0.7,
+      "days": 800,
+      "decade": 21,
+      "elders_avg": 17.68,
+      "eligible_birth_chance_avg": 0.00128,
+      "eligible_birth_score_avg": 74.13,
+      "eligible_partnerships_avg": 0,
+      "families_avg": 12,
+      "first_failure_reasons": {
+        "child_spacing_satisfied": 2745,
+        "dependent_child_cap_satisfied": 125,
+        "living_together": 640,
+        "parent_age_eligible": 9391,
+        "partnership_duration_satisfied": 92
+      },
+      "food_avg": 29.72,
+      "gate_breakdown": {
+        "child_spacing_satisfied": {
+          "blocked_pct": 28.53,
+          "fail": 4485,
+          "pass": 11238
+        },
+        "dependent_child_cap_satisfied": {
+          "blocked_pct": 1.59,
+          "fail": 250,
+          "pass": 15473
+        },
+        "eligible_partnership": {
+          "blocked_pct": 82.64,
+          "fail": 12993,
+          "pass": 2730
+        },
+        "food_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 15723
+        },
+        "household_rules_satisfied": {
+          "blocked_pct": 9.74,
+          "fail": 1532,
+          "pass": 14191
+        },
+        "housing_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 15723
+        },
+        "living_together": {
+          "blocked_pct": 9.74,
+          "fail": 1532,
+          "pass": 14191
+        },
+        "mutual_partnership": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 15723
+        },
+        "parent_age_eligible": {
+          "blocked_pct": 59.73,
+          "fail": 9391,
+          "pass": 6332
+        },
+        "partnered": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 15723
+        },
+        "partnership_duration_satisfied": {
+          "blocked_pct": 0.59,
+          "fail": 92,
+          "pass": 15631
+        },
+        "settlement_member": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 15723
+        },
+        "water_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 15723
+        }
+      },
+      "generation_depth_max": 1,
+      "household_splits": 1,
+      "household_successions": 4,
+      "households_avg": 15.85,
+      "housing_capacity_avg": 89.25,
+      "natural_deaths": 5,
+      "partnerships_avg": 19.65,
+      "partnerships_delta": -1,
+      "population_avg": 57.23,
+      "population_max": 58,
+      "population_min": 54,
+      "residential_expansions": 1,
+      "water_avg": 58.93,
+      "working_adults_avg": 25.8
+    },
+    {
+      "adult_age_avg": 62.39,
+      "adult_age_median": 67,
+      "age_at_first_child_avg": 51.94,
+      "age_distribution": {
+        "18-29": 3901,
+        "30-49": 1739,
+        "50-64": 8000,
+        "65+": 18595
+      },
+      "average_household_size": 3.18,
+      "birth_attempts": 79,
+      "births": 0,
+      "children_avg": 10.65,
+      "children_per_household": 0.67,
+      "children_per_partnership": 0.69,
+      "days": 800,
+      "decade": 31,
+      "elders_avg": 23.24,
+      "eligible_birth_chance_avg": 0.00142,
+      "eligible_birth_score_avg": 80.84,
+      "eligible_partnerships_avg": 0,
+      "families_avg": 12,
+      "first_failure_reasons": {
+        "child_spacing_satisfied": 588,
+        "dependent_child_cap_satisfied": 372,
+        "living_together": 1920,
+        "parent_age_eligible": 9324,
+        "partnership_duration_satisfied": 72
+      },
+      "food_avg": 34.6,
+      "gate_breakdown": {
+        "child_spacing_satisfied": {
+          "blocked_pct": 13.74,
+          "fail": 1698,
+          "pass": 10658
+        },
+        "dependent_child_cap_satisfied": {
+          "blocked_pct": 6.02,
+          "fail": 744,
+          "pass": 11612
+        },
+        "eligible_partnership": {
+          "blocked_pct": 99.35,
+          "fail": 12276,
+          "pass": 80
+        },
+        "food_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 12356
+        },
+        "household_rules_satisfied": {
+          "blocked_pct": 19.34,
+          "fail": 2390,
+          "pass": 9966
+        },
+        "housing_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 12356
+        },
+        "living_together": {
+          "blocked_pct": 19.34,
+          "fail": 2390,
+          "pass": 9966
+        },
+        "mutual_partnership": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 12356
+        },
+        "parent_age_eligible": {
+          "blocked_pct": 75.46,
+          "fail": 9324,
+          "pass": 3032
+        },
+        "partnered": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 12356
+        },
+        "partnership_duration_satisfied": {
+          "blocked_pct": 0.58,
+          "fail": 72,
+          "pass": 12284
+        },
+        "settlement_member": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 12356
+        },
+        "water_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 12356
+        }
+      },
+      "generation_depth_max": 1,
+      "household_splits": 0,
+      "household_successions": 6,
+      "households_avg": 16,
+      "housing_capacity_avg": 90,
+      "natural_deaths": 6,
+      "partnerships_avg": 15.45,
+      "partnerships_delta": -3,
+      "population_avg": 50.94,
+      "population_max": 54,
+      "population_min": 48,
+      "residential_expansions": 0,
+      "water_avg": 56.28,
+      "working_adults_avg": 17.05
+    },
+    {
+      "adult_age_avg": 61.01,
+      "adult_age_median": 69,
+      "age_at_first_child_avg": 50.61,
+      "age_distribution": {
+        "18-29": 5460,
+        "30-49": 4440,
+        "50-64": 2480,
+        "65+": 17969
+      },
+      "average_household_size": 2.66,
+      "birth_attempts": 0,
+      "births": 0,
+      "children_avg": 4.62,
+      "children_per_household": 0.29,
+      "children_per_partnership": 0.35,
+      "days": 800,
+      "decade": 41,
+      "elders_avg": 22.46,
+      "eligible_birth_chance_avg": 0.0,
+      "eligible_birth_score_avg": 0.0,
+      "eligible_partnerships_avg": 0.0,
+      "families_avg": 12,
+      "first_failure_reasons": {
+        "living_together": 4400,
+        "parent_age_eligible": 5986,
+        "partnership_duration_satisfied": 52
+      },
+      "food_avg": 40.08,
+      "gate_breakdown": {
+        "child_spacing_satisfied": {
+          "blocked_pct": 7.67,
+          "fail": 801,
+          "pass": 9637
+        },
+        "dependent_child_cap_satisfied": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 10438
+        },
+        "eligible_partnership": {
+          "blocked_pct": 100.0,
+          "fail": 10438,
+          "pass": 0
+        },
+        "food_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 10438
+        },
+        "household_rules_satisfied": {
+          "blocked_pct": 42.65,
+          "fail": 4452,
+          "pass": 5986
+        },
+        "housing_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 10438
+        },
+        "living_together": {
+          "blocked_pct": 42.65,
+          "fail": 4452,
+          "pass": 5986
+        },
+        "mutual_partnership": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 10438
+        },
+        "parent_age_eligible": {
+          "blocked_pct": 57.35,
+          "fail": 5986,
+          "pass": 4452
+        },
+        "partnered": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 10438
+        },
+        "partnership_duration_satisfied": {
+          "blocked_pct": 0.5,
+          "fail": 52,
+          "pass": 10386
+        },
+        "settlement_member": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 10438
+        },
+        "water_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 10438
+        }
+      },
+      "generation_depth_max": 1,
+      "household_splits": 0,
+      "household_successions": 8,
+      "households_avg": 16,
+      "housing_capacity_avg": 90,
+      "natural_deaths": 12,
+      "partnerships_avg": 13.05,
+      "partnerships_delta": -4,
+      "population_avg": 42.56,
+      "population_max": 48,
+      "population_min": 36,
+      "residential_expansions": 0,
+      "water_avg": 109.64,
+      "working_adults_avg": 15.47
+    },
+    {
+      "adult_age_avg": 58.78,
+      "adult_age_median": 55,
+      "age_at_first_child_avg": 48.59,
+      "age_distribution": {
+        "18-29": 2789,
+        "30-49": 7859,
+        "50-64": 1179,
+        "65+": 11768
+      },
+      "average_household_size": 1.98,
+      "birth_attempts": 0,
+      "births": 0,
+      "children_avg": 2.22,
+      "children_per_household": 0.14,
+      "children_per_partnership": 0.24,
+      "days": 800,
+      "decade": 51,
+      "elders_avg": 14.71,
+      "eligible_birth_chance_avg": 0.0,
+      "eligible_birth_score_avg": 0.0,
+      "eligible_partnerships_avg": 0,
+      "families_avg": 12,
+      "first_failure_reasons": {
+        "living_together": 5680,
+        "parent_age_eligible": 1599,
+        "partnership_duration_satisfied": 68
+      },
+      "food_avg": 43.71,
+      "gate_breakdown": {
+        "child_spacing_satisfied": {
+          "blocked_pct": 8.79,
+          "fail": 646,
+          "pass": 6701
+        },
+        "dependent_child_cap_satisfied": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 7347
+        },
+        "eligible_partnership": {
+          "blocked_pct": 100.0,
+          "fail": 7347,
+          "pass": 0
+        },
+        "food_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 7347
+        },
+        "household_rules_satisfied": {
+          "blocked_pct": 78.24,
+          "fail": 5748,
+          "pass": 1599
+        },
+        "housing_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 7347
+        },
+        "living_together": {
+          "blocked_pct": 78.24,
+          "fail": 5748,
+          "pass": 1599
+        },
+        "mutual_partnership": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 7347
+        },
+        "parent_age_eligible": {
+          "blocked_pct": 21.76,
+          "fail": 1599,
+          "pass": 5748
+        },
+        "partnered": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 7347
+        },
+        "partnership_duration_satisfied": {
+          "blocked_pct": 0.93,
+          "fail": 68,
+          "pass": 7279
+        },
+        "settlement_member": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 7347
+        },
+        "water_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 7347
+        }
+      },
+      "generation_depth_max": 1,
+      "household_splits": 0,
+      "household_successions": 3,
+      "households_avg": 16,
+      "housing_capacity_avg": 90,
+      "natural_deaths": 9,
+      "partnerships_avg": 9.18,
+      "partnerships_delta": -3,
+      "population_avg": 31.71,
+      "population_max": 36,
+      "population_min": 27,
+      "residential_expansions": 0,
+      "water_avg": 1277.68,
+      "working_adults_avg": 14.78
+    },
+    {
+      "adult_age_avg": 56.22,
+      "adult_age_median": 51.0,
+      "age_at_first_child_avg": 37.74,
+      "age_distribution": {
+        "18-29": 1281,
+        "30-49": 7079,
+        "50-64": 4378,
+        "65+": 5094
+      },
+      "average_household_size": 1.46,
+      "birth_attempts": 0,
+      "births": 0,
+      "children_avg": 1,
+      "children_per_household": 0.06,
+      "children_per_partnership": 0.12,
+      "days": 800,
+      "decade": 61,
+      "elders_avg": 6.37,
+      "eligible_birth_chance_avg": 0.0,
+      "eligible_birth_score_avg": 0.0,
+      "eligible_partnerships_avg": 0,
+      "families_avg": 12,
+      "first_failure_reasons": {
+        "living_together": 6338,
+        "parent_age_eligible": 62
+      },
+      "food_avg": 43.22,
+      "gate_breakdown": {
+        "child_spacing_satisfied": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "dependent_child_cap_satisfied": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "eligible_partnership": {
+          "blocked_pct": 100.0,
+          "fail": 6400,
+          "pass": 0
+        },
+        "food_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "household_rules_satisfied": {
+          "blocked_pct": 100.0,
+          "fail": 6400,
+          "pass": 0
+        },
+        "housing_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "living_together": {
+          "blocked_pct": 100.0,
+          "fail": 6400,
+          "pass": 0
+        },
+        "mutual_partnership": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "parent_age_eligible": {
+          "blocked_pct": 0.97,
+          "fail": 62,
+          "pass": 6338
+        },
+        "partnered": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "partnership_duration_satisfied": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "settlement_member": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "water_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        }
+      },
+      "generation_depth_max": 1,
+      "household_splits": 0,
+      "household_successions": 4,
+      "households_avg": 16,
+      "housing_capacity_avg": 90,
+      "natural_deaths": 5,
+      "partnerships_avg": 8,
+      "partnerships_delta": 0,
+      "population_avg": 23.29,
+      "population_max": 27,
+      "population_min": 22,
+      "residential_expansions": 0,
+      "water_avg": 5854.53,
+      "working_adults_avg": 15.92
+    },
+    {
+      "adult_age_avg": 56.77,
+      "adult_age_median": 55.0,
+      "age_at_first_child_avg": 35.38,
+      "age_distribution": {
+        "18-29": 457,
+        "30-49": 3750,
+        "50-64": 5983,
+        "65+": 4190
+      },
+      "average_household_size": 1.15,
+      "birth_attempts": 0,
+      "births": 0,
+      "children_avg": 0.44,
+      "children_per_household": 0.03,
+      "children_per_partnership": 0.06,
+      "days": 800,
+      "decade": 71,
+      "elders_avg": 5.24,
+      "eligible_birth_chance_avg": 0.0,
+      "eligible_birth_score_avg": 0.0,
+      "eligible_partnerships_avg": 0,
+      "families_avg": 12,
+      "first_failure_reasons": {
+        "living_together": 4557,
+        "parent_age_eligible": 1843
+      },
+      "food_avg": 42.59,
+      "gate_breakdown": {
+        "child_spacing_satisfied": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "dependent_child_cap_satisfied": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "eligible_partnership": {
+          "blocked_pct": 100.0,
+          "fail": 6400,
+          "pass": 0
+        },
+        "food_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "household_rules_satisfied": {
+          "blocked_pct": 100.0,
+          "fail": 6400,
+          "pass": 0
+        },
+        "housing_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "living_together": {
+          "blocked_pct": 100.0,
+          "fail": 6400,
+          "pass": 0
+        },
+        "mutual_partnership": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "parent_age_eligible": {
+          "blocked_pct": 28.8,
+          "fail": 1843,
+          "pass": 4557
+        },
+        "partnered": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "partnership_duration_satisfied": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "settlement_member": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "water_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        }
+      },
+      "generation_depth_max": 1,
+      "household_splits": 0,
+      "household_successions": 4,
+      "households_avg": 16,
+      "housing_capacity_avg": 90,
+      "natural_deaths": 4,
+      "partnerships_avg": 8,
+      "partnerships_delta": 0,
+      "population_avg": 18.42,
+      "population_max": 22,
+      "population_min": 18,
+      "residential_expansions": 0,
+      "water_avg": 12436.55,
+      "working_adults_avg": 12.74
+    },
+    {
+      "adult_age_avg": 62.93,
+      "adult_age_median": 63,
+      "age_at_first_child_avg": 36.98,
+      "age_distribution": {
+        "18-29": 515,
+        "30-49": 1566,
+        "50-64": 5237,
+        "65+": 6343
+      },
+      "average_household_size": 1.07,
+      "birth_attempts": 0,
+      "births": 0,
+      "children_avg": 0,
+      "children_per_household": 0.0,
+      "children_per_partnership": 0.0,
+      "days": 800,
+      "decade": 81,
+      "elders_avg": 7.93,
+      "eligible_birth_chance_avg": 0.0,
+      "eligible_birth_score_avg": 0.0,
+      "eligible_partnerships_avg": 0,
+      "families_avg": 12,
+      "first_failure_reasons": {
+        "living_together": 2767,
+        "parent_age_eligible": 3633
+      },
+      "food_avg": 40.93,
+      "gate_breakdown": {
+        "child_spacing_satisfied": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "dependent_child_cap_satisfied": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "eligible_partnership": {
+          "blocked_pct": 100.0,
+          "fail": 6400,
+          "pass": 0
+        },
+        "food_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "household_rules_satisfied": {
+          "blocked_pct": 100.0,
+          "fail": 6400,
+          "pass": 0
+        },
+        "housing_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "living_together": {
+          "blocked_pct": 100.0,
+          "fail": 6400,
+          "pass": 0
+        },
+        "mutual_partnership": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "parent_age_eligible": {
+          "blocked_pct": 56.77,
+          "fail": 3633,
+          "pass": 2767
+        },
+        "partnered": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "partnership_duration_satisfied": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "settlement_member": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        },
+        "water_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 6400
+        }
+      },
+      "generation_depth_max": 1,
+      "household_splits": 0,
+      "household_successions": 0,
+      "households_avg": 16,
+      "housing_capacity_avg": 90,
+      "natural_deaths": 1,
+      "partnerships_avg": 8,
+      "partnerships_delta": 0,
+      "population_avg": 17.08,
+      "population_max": 18,
+      "population_min": 17,
+      "residential_expansions": 0,
+      "water_avg": 20620.25,
+      "working_adults_avg": 9.15
+    },
+    {
+      "adult_age_avg": 70.43,
+      "adult_age_median": 72.0,
+      "age_at_first_child_avg": 0.0,
+      "age_distribution": {
+        "30-49": 812,
+        "50-64": 1930,
+        "65+": 8758
+      },
+      "average_household_size": 0.9,
+      "birth_attempts": 0,
+      "births": 0,
+      "children_avg": 0,
+      "children_per_household": 0.0,
+      "children_per_partnership": 0.0,
+      "days": 800,
+      "decade": 91,
+      "elders_avg": 10.95,
+      "eligible_birth_chance_avg": 0.0,
+      "eligible_birth_score_avg": 0.0,
+      "eligible_partnerships_avg": 0,
+      "families_avg": 12,
+      "first_failure_reasons": {
+        "living_together": 884,
+        "parent_age_eligible": 3727
+      },
+      "food_avg": 40.61,
+      "gate_breakdown": {
+        "child_spacing_satisfied": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 4611
+        },
+        "dependent_child_cap_satisfied": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 4611
+        },
+        "eligible_partnership": {
+          "blocked_pct": 100.0,
+          "fail": 4611,
+          "pass": 0
+        },
+        "food_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 4611
+        },
+        "household_rules_satisfied": {
+          "blocked_pct": 100.0,
+          "fail": 4611,
+          "pass": 0
+        },
+        "housing_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 4611
+        },
+        "living_together": {
+          "blocked_pct": 100.0,
+          "fail": 4611,
+          "pass": 0
+        },
+        "mutual_partnership": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 4611
+        },
+        "parent_age_eligible": {
+          "blocked_pct": 80.83,
+          "fail": 3727,
+          "pass": 884
+        },
+        "partnered": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 4611
+        },
+        "partnership_duration_satisfied": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 4611
+        },
+        "settlement_member": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 4611
+        },
+        "water_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 4611
+        }
+      },
+      "generation_depth_max": 1,
+      "household_splits": 0,
+      "household_successions": 6,
+      "households_avg": 16,
+      "housing_capacity_avg": 90,
+      "natural_deaths": 7,
+      "partnerships_avg": 5.76,
+      "partnerships_delta": -5,
+      "population_avg": 14.38,
+      "population_max": 17,
+      "population_min": 10,
+      "residential_expansions": 0,
+      "water_avg": 29648.32,
+      "working_adults_avg": 3.43
+    },
+    {
+      "adult_age_avg": 69.6,
+      "adult_age_median": 73.0,
+      "age_at_first_child_avg": 0.0,
+      "age_distribution": {
+        "30-49": 1,
+        "50-64": 2,
+        "65+": 7
+      },
+      "average_household_size": 0.62,
+      "birth_attempts": 0,
+      "births": 0,
+      "children_avg": 0,
+      "children_per_household": 0.0,
+      "children_per_partnership": 0.0,
+      "days": 1,
+      "decade": 101,
+      "elders_avg": 7,
+      "eligible_birth_chance_avg": 0.0,
+      "eligible_birth_score_avg": 0.0,
+      "eligible_partnerships_avg": 0,
+      "families_avg": 12,
+      "first_failure_reasons": {
+        "living_together": 1,
+        "parent_age_eligible": 2
+      },
+      "food_avg": 31,
+      "gate_breakdown": {
+        "child_spacing_satisfied": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 3
+        },
+        "dependent_child_cap_satisfied": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 3
+        },
+        "eligible_partnership": {
+          "blocked_pct": 100.0,
+          "fail": 3,
+          "pass": 0
+        },
+        "food_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 3
+        },
+        "household_rules_satisfied": {
+          "blocked_pct": 100.0,
+          "fail": 3,
+          "pass": 0
+        },
+        "housing_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 3
+        },
+        "living_together": {
+          "blocked_pct": 100.0,
+          "fail": 3,
+          "pass": 0
+        },
+        "mutual_partnership": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 3
+        },
+        "parent_age_eligible": {
+          "blocked_pct": 66.67,
+          "fail": 2,
+          "pass": 1
+        },
+        "partnered": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 3
+        },
+        "partnership_duration_satisfied": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 3
+        },
+        "settlement_member": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 3
+        },
+        "water_available": {
+          "blocked_pct": 0.0,
+          "fail": 0,
+          "pass": 3
+        }
+      },
+      "generation_depth_max": 1,
+      "household_splits": 0,
+      "household_successions": 0,
+      "households_avg": 16,
+      "housing_capacity_avg": 90,
+      "natural_deaths": 0,
+      "partnerships_avg": 3,
+      "partnerships_delta": 0,
+      "population_avg": 10,
+      "population_max": 10,
+      "population_min": 10,
+      "residential_expansions": 0,
+      "water_avg": 34551,
+      "working_adults_avg": 3
+    }
+  ],
+  "elapsed_seconds": 3433.987,
+  "families": 12,
+  "final_population": 10,
+  "homes": 19,
+  "household_splits": 8,
+  "households": 16,
+  "housing_capacity": 90,
+  "natural_deaths": 52,
+  "peak_memory_mb": 30.66,
+  "seed": 9201,
+  "simulation_ticks_per_second": 232.97,
+  "years": 100
+}

@@ -38,6 +38,24 @@ def test_natural_aging_death_records_old_age_and_updates_year_counter(monkeypatc
     assert world.natural_deaths_by_year[world.year] == 1
 
 
+def test_natural_death_clears_surviving_partner_without_disrupting_succession(monkeypatch):
+    world, household, elder, successor = two_member_household_world()
+    elder.age = 96
+    elder.lifecycle_stage = ELDER
+    elder.expected_lifespan = 76
+    elder.partner_ids = [villager_key(successor)]
+    successor.partner_ids = [villager_key(elder)]
+    monkeypatch.setattr("src.renewal.natural_death_daily_chance", lambda agent: 1.0 if agent is elder else 0.0)
+
+    update_renewal(world)
+
+    assert household.household_head == villager_key(successor)
+    assert successor.partner_id is None
+    assert successor.partner_ids == []
+    assert successor.partnership_start_year is None
+    assert successor.partnership_duration == 0
+
+
 def test_household_head_succession_prefers_surviving_partner():
     world, household, head, successor = two_member_household_world()
 

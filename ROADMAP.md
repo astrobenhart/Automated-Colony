@@ -493,6 +493,17 @@ Notes:
 - Any failures should become GitHub issues rather than expanding the scope of v0.8.
 - Only merge v0.8 once the simulation demonstrates believable long-term continuity.
 
+### Release Blocker - Century-Scale Population Renewal
+
+- [ ] Investigate why births no longer replace natural deaths during century-scale simulations despite functioning partnerships, households, residential growth, succession, and family systems.
+
+Completion criteria:
+
+- Root cause identified.
+- Demographic investigation completed.
+- Investigation report written.
+- Evidence gathered before any gameplay balancing begins.
+
 ## v0.9 - Workplaces, Professions, and Delivery Networks
 
 Goal: Make daily work legible and useful without turning the project into a colony-management job board.

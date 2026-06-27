@@ -4,11 +4,14 @@ from src.agent import Agent
 from src.generations import FAMILY, RELATIONSHIP_PARTNER
 from src.partnerships import (
     PARTNER_FAMILIARITY_FLOOR,
+    end_partnership_due_to_death,
     form_partnership,
+    is_unpartnered_adult,
     partnership_eligible,
     partnership_score,
     refresh_partnership_durations,
 )
+from src.residential import complete_residential_construction, residential_demand
 from src.settlement import Home, Household, Settlement
 from src.social_memory import SocialMemoryEntry, relationship_summary
 from src.tile import Tile
@@ -130,6 +133,77 @@ def test_partners_prefer_shared_household_without_duplicate_membership():
     ]
     assert memberships == ["household-2"]
     assert ari.home_id == "home-2"
+
+
+def test_established_partners_found_shared_household_when_existing_homes_are_full_social_units():
+    world, ari, bryn = make_partnership_world()
+    first_household = world.settlement.household_for("household-1")
+    second_household = world.settlement.household_for("household-2")
+    first_household.member_ids.append("oak-elder")
+    second_household.member_ids.append("willow-elder")
+
+    form_partnership(world, ari, bryn)
+
+    assert ari.household_id == bryn.household_id
+    assert ari.household_id not in {"household-1", "household-2"}
+    household = world.household_for_agent(ari)
+    assert household.home_id is None
+    assert ari.home_id is None
+    assert bryn.home_id is None
+
+    demand = residential_demand(world)
+    assert demand is not None
+    assert demand.demand_type == "new_house"
+    assert demand.household_id == household.household_id
+
+
+def test_later_generation_partnerships_also_found_shared_households():
+    world, ari, bryn = make_partnership_world()
+    ari.generation = 1
+    bryn.generation = 1
+    world.settlement.household_for("household-1").member_ids.append("oak-parent")
+    world.settlement.household_for("household-2").member_ids.append("willow-parent")
+
+    form_partnership(world, ari, bryn)
+
+    assert ari.household_id == bryn.household_id
+    assert ari.household_id not in {"household-1", "household-2"}
+    assert residential_demand(world).demand_type == "new_house"
+
+
+def test_partner_household_becomes_birth_eligible_after_residential_construction():
+    from src.births import birth_eligible
+
+    world, ari, bryn = make_partnership_world()
+    world.colony_storage.food = 80
+    world.colony_storage.water = 80
+    world.settlement.household_for("household-1").member_ids.append("oak-elder")
+    world.settlement.household_for("household-2").member_ids.append("willow-elder")
+    form_partnership(world, ari, bryn)
+    ari.partnership_start_year = world.year - 2
+    bryn.partnership_start_year = world.year - 2
+    refresh_partnership_durations(world)
+
+    assert not birth_eligible(world, ari, bryn)
+    complete_residential_construction(world, 1, 1)
+
+    assert ari.home_id is not None
+    assert bryn.home_id == ari.home_id
+    assert birth_eligible(world, ari, bryn)
+
+
+def test_death_cleans_up_active_partnership_and_survivor_returns_to_candidate_pool():
+    world, ari, bryn = make_partnership_world()
+    form_partnership(world, ari, bryn)
+    ari.alive = False
+
+    end_partnership_due_to_death(world, ari)
+
+    assert ari.partner_id is None
+    assert bryn.partner_id is None
+    assert bryn.partner_ids == []
+    assert is_unpartnered_adult(bryn)
+    assert any("Lost long-term partner Ari" in memory for memory in bryn.personal_memories)
 
 
 def test_partner_relationship_type_memory_and_chronicle_are_recorded():
