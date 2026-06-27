@@ -466,6 +466,33 @@ Success Criteria:
 - Households can continue through successors.
 - The village can continue into the next generation without advanced social simulation systems.
 
+### Release Validation
+
+Purpose:
+
+Validate that the first complete generational simulation remains stable over long-running autonomous play.
+
+Validation checklist:
+
+- [ ] 50-year autonomous simulation
+- [ ] 100-year autonomous simulation
+- [ ] Population remains stable
+- [ ] Households persist across generations
+- [ ] Families continue beyond founders
+- [ ] Renderer performance remains stable
+- [ ] Chronicle continues to generate interesting historical events
+- [ ] No long-term simulation deadlocks
+- [ ] No irreversible resource collapse
+- [ ] No runaway population explosion
+- [ ] No extinction under normal starting conditions
+
+Notes:
+
+- This is a validation milestone, not a feature milestone.
+- Prefer identifying balancing issues over adding new systems.
+- Any failures should become GitHub issues rather than expanding the scope of v0.8.
+- Only merge v0.8 once the simulation demonstrates believable long-term continuity.
+
 ## v0.9 - Workplaces, Professions, and Delivery Networks
 
 Goal: Make daily work legible and useful without turning the project into a colony-management job board.
