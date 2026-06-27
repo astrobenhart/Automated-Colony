@@ -4,6 +4,7 @@ from src.births import (
     BIRTH_PARENT_STAGES,
     birth_eligible,
     create_child,
+    household_birth_spacing_allows,
     inherited_trait,
     update_births,
 )
@@ -85,6 +86,15 @@ def test_birth_adds_memories_and_chronicle_entry():
     entries = world.history.by_category(BIRTH)
     assert entries
     assert child.name in entries[-1].description
+
+
+def test_birth_spacing_prevents_immediate_repeat_births():
+    world, parent_a, parent_b = make_birth_world()
+
+    create_child(world, parent_a, parent_b)
+
+    assert not household_birth_spacing_allows(world, parent_a, parent_b)
+    assert not birth_eligible(world, parent_a, parent_b)
 
 
 def test_update_births_is_uncommon_but_can_create_child_when_rng_allows(monkeypatch):

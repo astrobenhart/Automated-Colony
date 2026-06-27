@@ -297,6 +297,9 @@ def maybe_split_household_for_new_home(world: World, source_household: Household
     new_home.household_id = household.household_id
     world.add_agent_to_household(first, household)
     world.add_agent_to_household(second, household)
+    world.household_split_events_by_year = getattr(world, "household_split_events_by_year", {})
+    world.household_split_events_by_year[world.year] = world.household_split_events_by_year.get(world.year, 0) + 1
+    record_household_split_history(world, source_household, household, first, second)
     return household
 
 
@@ -317,3 +320,19 @@ def split_household_name(settlement, source_household: Household) -> str:
         index += 1
         name = f"{base} Hearth {index}"
     return name
+
+
+def record_household_split_history(world: World, source_household: Household, new_household: Household, first: Agent, second: Agent):
+    from src.generations import SUCCESSION
+
+    world.history.record(
+        day=world.day,
+        year=world.year,
+        season=world.season,
+        category=SUCCESSION,
+        title="Household Divides",
+        description=(
+            f"{first.name} and {second.name} established {new_household.household_name}, "
+            f"a new home grown from {source_household.household_name}."
+        ),
+    )

@@ -407,13 +407,16 @@ Purpose:
 Create continuity between generations.
 
 Features:
-- [ ] Family relationships
-- [ ] Family memories
-- [ ] Trait inheritance
+- [x] Family relationships
+- [x] Family memories
+- [x] Trait inheritance
 
 Notes:
 - Children inherit traits from parents with variation.
 - Family memories should feed the Chronicle and village history systems.
+- Families are persistent lineage/history entities, separate from households.
+- Family identity is permanent and survives household movement.
+- Full family tree UI, surnames, reputation, inheritance law, and genealogy visualization remain future enhancements.
 
 ### Phase 5 - Renewal
 
@@ -421,13 +424,16 @@ Purpose:
 Close the generational loop.
 
 Features:
-- [ ] Household succession
-- [ ] Natural death from aging
-- [ ] Family Chronicle integration
+- [x] Household succession
+- [x] Natural death from aging
+- [x] Family Chronicle integration
 
 Notes:
 - Villages must be capable of replacing older generations naturally.
 - Deaths should connect to renewal rather than creating automatic settlement collapse.
+- Old-age death is probabilistic and lifespan-based rather than fixed-age.
+- Household heads are succeeded by a surviving partner, adult child, or oldest adult resident.
+- Household division and family passing events feed the Chronicle without adding inheritance law or family-tree UI.
 
 ### Future Backlog - Not Core v0.8
 - [ ] Family trees

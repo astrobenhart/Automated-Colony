@@ -7,14 +7,24 @@ from typing import TYPE_CHECKING
 from src.appearance import appearance_seed_for, appearance_type_for_seed
 from src.config import (
     BIRTH_DAILY_CHANCE,
+    BIRTH_DAILY_CHANCE_CAP,
     BIRTH_FOOD_RESERVE_DAYS,
+    BIRTH_MAX_DEPENDENT_CHILDREN_PER_HOUSEHOLD,
     BIRTH_MAX_PER_DAY,
+    BIRTH_MIN_CHILD_SPACING_YEARS,
     BIRTH_MIN_PARTNERSHIP_YEARS,
+    BIRTH_SCORE_CHANCE_FACTOR,
     BIRTH_WATER_RESERVE_DAYS,
     HOME_WANDER_MAX_RADIUS,
     HOME_WANDER_MIN_RADIUS,
     SETTLEMENT_FOOD_TARGET_DAYS,
     SETTLEMENT_WATER_TARGET_DAYS,
+)
+from src.families import (
+    assign_child_family,
+    inherited_profile,
+    link_family_relationships,
+    record_family_birth,
 )
 from src.generations import BIRTH, MEMORY_CHILD, FamilyMemoryRecord
 from src.lifecycle import ADULT, CHILD, OLDER_ADULT, YOUNG_ADULT
@@ -59,7 +69,7 @@ def update_births(world: World) -> list[Agent]:
         parent_ids = {villager_key(candidate.parent_a), villager_key(candidate.parent_b)}
         if used_parents & parent_ids:
             continue
-        chance = min(0.02, BIRTH_DAILY_CHANCE + max(0, candidate.score - 60) * 0.00015)
+        chance = min(BIRTH_DAILY_CHANCE_CAP, BIRTH_DAILY_CHANCE + max(0, candidate.score - 60) * BIRTH_SCORE_CHANCE_FACTOR)
         record_birth_attempt(world)
         if rng.random() > chance:
             continue
@@ -129,6 +139,8 @@ def birth_eligible(world: World, parent_a: Agent, parent_b: Agent) -> bool:
         return False
     if not household_can_support_birth(world, parent_a):
         return False
+    if not household_birth_spacing_allows(world, parent_a, parent_b):
+        return False
     if not resources_support_birth(world):
         return False
     return True
@@ -163,7 +175,56 @@ def resources_support_birth(world: World) -> bool:
     population = max(1, len(world.living_agents()))
     food_target = population * min(BIRTH_FOOD_RESERVE_DAYS, SETTLEMENT_FOOD_TARGET_DAYS)
     water_target = population * min(BIRTH_WATER_RESERVE_DAYS, SETTLEMENT_WATER_TARGET_DAYS)
-    return world.colony_storage.food >= food_target and world.colony_storage.water >= water_target
+    return effective_birth_food(world, population) >= food_target and effective_birth_water(world, population) >= water_target
+
+
+def household_birth_spacing_allows(world: World, parent_a: Agent, parent_b: Agent) -> bool:
+    household_id = getattr(parent_a, "household_id", None)
+    parent_ids = {villager_key(parent_a), villager_key(parent_b)}
+    dependent_children = [
+        agent
+        for agent in world.living_agents()
+        if (
+            getattr(agent, "household_id", None) == household_id
+            and getattr(agent, "lifecycle_stage", None) == CHILD
+        )
+    ]
+    if len(dependent_children) >= BIRTH_MAX_DEPENDENT_CHILDREN_PER_HOUSEHOLD:
+        return False
+    shared_children = [
+        child
+        for child in dependent_children
+        if parent_ids & set(getattr(child, "parent_ids", []) or [])
+    ]
+    if not shared_children:
+        return True
+    youngest_age = min(getattr(child, "age", 0) for child in shared_children)
+    return youngest_age >= BIRTH_MIN_CHILD_SPACING_YEARS
+
+
+def effective_birth_food(world: World, population: int) -> int:
+    settlement = getattr(world, "settlement", None)
+    stored_food = world.colony_storage.food
+    if settlement is None:
+        return stored_food
+    from src.settlement import refresh_local_resource_cache
+
+    refresh_local_resource_cache(world)
+    ready_farm_food = sum(farm.food for farm in settlement.farm_plots if farm.active)
+    local_food = len(getattr(settlement, "local_food", set()))
+    return stored_food + ready_farm_food + min(local_food, population)
+
+
+def effective_birth_water(world: World, population: int) -> int:
+    settlement = getattr(world, "settlement", None)
+    stored_water = world.colony_storage.water
+    if settlement is None:
+        return stored_water
+    from src.settlement import refresh_local_resource_cache
+
+    refresh_local_resource_cache(world)
+    local_water = len(getattr(settlement, "local_water", set()))
+    return stored_water + min(local_water * 3, population)
 
 
 def birth_score(world: World, parent_a: Agent, parent_b: Agent) -> int:
@@ -220,14 +281,21 @@ def create_child(world: World, parent_a: Agent, parent_b: Agent, rng: random.Ran
         daily_role=None,
         home_wander_radius=rng.randint(HOME_WANDER_MIN_RADIUS, HOME_WANDER_MAX_RADIUS),
     )
+    child.inheritance_profile = inherited_profile(parent_a, parent_b, trait, rng)
+    from src.renewal import ensure_expected_lifespan
+
+    ensure_expected_lifespan(world, child)
 
     world.agents.append(child)
     if household is not None:
         world.add_agent_to_household(child, household)
+    family = assign_child_family(world, child, parent_a, parent_b)
     link_parent_child(parent_a, child)
     link_parent_child(parent_b, child)
+    link_family_relationships(world, child, parent_a, parent_b)
     record_birth_memories(world, parent_a, parent_b, child, household)
     record_birth_history(world, parent_a, parent_b, child, household)
+    record_family_birth(world, family, parent_a, parent_b, child)
     record_birth_success(world)
     world.update_settlement_population()
     child.sync_generation_architecture()

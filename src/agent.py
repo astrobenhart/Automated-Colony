@@ -84,6 +84,7 @@ class Agent:
     birth_day: int | None = None
     death_year: int | None = None
     death_day: int | None = None
+    expected_lifespan: int | None = None
     parent_a_id: str | None = None
     parent_b_id: str | None = None
     mother_id: str | None = None
@@ -97,6 +98,7 @@ class Agent:
     partnership_start_year: int | None = None
     partnership_duration: int = 0
     generation: int = 0
+    family_id: str | None = None
     lifecycle_record: LifecycleRecord = field(default_factory=LifecycleRecord)
     family_links: FamilyLinks = field(default_factory=FamilyLinks)
     inheritance_profile: InheritanceProfile = field(default_factory=InheritanceProfile)

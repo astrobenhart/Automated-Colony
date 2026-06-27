@@ -342,9 +342,9 @@ Future v0.8 reproduction flow:
 3. Evaluate household-based reproduction eligibility.
 4. Create a child with parent IDs, household ID, generation, inherited trait profile, and birth Chronicle entry.
 5. Add household historical membership and family memories.
-6. Keep old-age death disabled until renewal is stable.
+6. Apply renewal through probabilistic old-age mortality, household succession, and family Chronicle entries once births and adulthood are stable.
 
-This architecture does not implement reproduction, pregnancy, childbirth, marriages, genetics, inheritance logic, population growth, old-age death, or family-tree UI.
+This architecture avoids pregnancy, childbirth complications, marriages, genetics, inheritance law, romance drama, and family-tree UI.
 
 ## v0.8 Partnership Foundation
 
@@ -418,6 +418,97 @@ Children are members of their household and remain tied to the same home. They d
 The aging pass runs daily. Starting adults keep their seeded ages, while children born during simulation age from `birth_year` and `birth_day`. When a child reaches the adulthood threshold, the villager enters the adult-stage population as a Young Adult, preserves inherited traits and household membership, and becomes eligible for existing workforce assignment.
 
 Lifecycle events are intentionally low-volume. A child reaching adulthood creates a personal memory, parent memories when parent links exist, and a Chronicle family entry for later-generation villagers. No education system, apprenticeship path, child profession, elder transition, old-age death, inheritance law, or family tree visualization is implemented in this phase.
+
+## v0.8 Family Identity
+
+Family identity is the fourth v0.8 generational loop foundation.
+
+Families are persistent lineage and history entities. They are separate from households:
+- households describe where villagers live
+- families describe who villagers descend from
+
+Every villager belongs to exactly one family. Starting villagers are assigned to founding family records during world creation. Children inherit family membership at birth, and moving households does not change family identity.
+
+Family records track:
+- unique family id and display name
+- founders and founding year
+- living and deceased members
+- generation count
+- parent family links for future genealogy
+- low-volume family memories
+- births by year for diagnostics and balancing
+
+Biological relationship tracking remains lightweight. Children store parent ids, parents store child ids, and siblings are linked when children share a parent. These relationships are queryable when needed; the simulation does not rebuild expensive family trees every frame.
+
+Trait inheritance remains simple and display-first. Births now create an inheritance profile from parent traits, roles, experience labels, and appearance metadata with small variation. The child's direct trait is still lightweight; no genetics, aptitude math, inherited professions, or inheritance law is introduced.
+
+Family memories are permanent family-level records. They survive individual villager deaths and record milestone events such as first child, adulthood, and family loss. Major family milestones may also feed the Chronicle as narrative entries.
+
+Diagnostics include number of families, average family size, largest family, oldest family, current generation depth, and births by family this year.
+
+Design boundaries:
+- no marriage system
+- no surname simulator
+- no family tree UI
+- no family reputation
+- no inheritance law
+- no politics or legal family structures
+- no per-frame genealogy computation
+
+Future work can add genealogy viewers, ancestral homes, inherited professions, famous bloodlines, surnames, or dynasty display by reading the family registry rather than redesigning villager or household data.
+
+## v0.8 Renewal
+
+Renewal is the fifth v0.8 generational loop foundation.
+
+The first complete loop is now:
+- adults form stable partnerships
+- partnered households may have children
+- children age into working adults
+- families persist across generations
+- elders die naturally
+- households choose successors
+- the Chronicle remembers the passing of generations
+
+Natural death is lifespan-based rather than fixed-age. Each villager receives an expected lifespan derived from deterministic village seed data and light identity variation. Mortality begins conservatively in old age, rises after the expected lifespan, and is modestly influenced by long-term wellbeing signals such as hunger, thirst, and fatigue pressure.
+
+Deaths run in the daily renewal pass, not every tick. This keeps mortality aligned with Simulation LOD and prevents expensive or noisy per-frame checks.
+
+Household succession preserves household identity after a head dies. The successor preference order is:
+- surviving partner
+- adult child
+- oldest adult resident
+- oldest resident as a fallback if no adult remains
+
+Household succession appends compact succession history to the household and records a Chronicle entry. Household members and historical member records remain intact; the household does not vanish because a founder dies.
+
+Family succession remains simpler: families continue as persistent lineage records. Founder deaths move members from living to deceased, add family memory, and may add a Chronicle entry when the family has surviving continuity.
+
+Household division remains part of the Residential Growth Model. When an overcrowded max-size household has adult partnered residents and a new home is constructed, the partnered pair can establish a new household. The split is recorded as a renewal Chronicle event.
+
+Birth balance now uses effective support rather than stored food alone. Birth eligibility considers stored food, ready farm food, bounded local food, stored water, and local water access. Births remain uncommon through low per-pair probability, dependent-child spacing, and a cap on dependent children per household.
+
+Diagnostics expose:
+- age distribution
+- expected deaths this year
+- natural deaths this year
+- generation distribution
+- household succession events
+- household split events
+- family generation depth
+- births by family this year
+
+Design boundaries:
+- no inheritance law
+- no wills or property transfer
+- no elder wisdom mechanics yet
+- no heirlooms
+- no family professions
+- no dynasty/reputation mechanics
+- no family-tree UI
+- no deterministic fixed-age death
+
+Future inheritance, ancestral homes, elder wisdom, heirlooms, family professions, and dynasty presentation should build from household succession history, family records, and death records rather than changing the renewal loop.
 
 ## Residential Growth Model
 

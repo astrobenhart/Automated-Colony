@@ -68,6 +68,7 @@ def identity_rows(agent, world=None) -> list[tuple[str, object]]:
         ("Experience", getattr(agent, "experience_level", None)),
         ("Role Years", getattr(agent, "years_in_role", None)),
         ("Trait", getattr(agent, "trait", None)),
+        ("Family", family_name(agent, world)),
         ("Parents", parent_names(agent, world)),
         ("Home", getattr(agent, "home_settlement_name", None)),
     ])
@@ -165,6 +166,16 @@ def parent_names(agent, world=None) -> str | None:
         return ", ".join(parent_ids)
     names_by_id = {other.agent_id or other.name: other.name for other in getattr(world, "agents", [])}
     return ", ".join(names_by_id.get(parent_id, parent_id) for parent_id in parent_ids)
+
+
+def family_name(agent, world=None) -> str | None:
+    family_id = getattr(agent, "family_id", None)
+    if not family_id:
+        return None
+    family = getattr(world, "families", {}).get(family_id) if world is not None else None
+    if family is not None:
+        return family.family_name
+    return family_id
 
 
 def status_rows(agent, world=None) -> list[tuple[str, object]]:

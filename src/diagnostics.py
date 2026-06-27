@@ -6,15 +6,18 @@ from dataclasses import dataclass
 from src.births import (
     birth_candidates,
     household_can_support_birth,
+    household_birth_spacing_allows,
     is_birth_parent,
     resources_support_birth,
     settlement_id,
 )
 from src.config import SETTLEMENT_FOOD_TARGET_DAYS, SETTLEMENT_WATER_TARGET_DAYS
+from src.families import family_rows
 from src.generations import BIRTH
 from src.lifecycle import CHILD
 from src.lifecycle_progression import days_until_adulthood
 from src.partnerships import partnership_candidates
+from src.renewal import age_distribution, expected_deaths_this_year, generation_distribution
 from src.residential import all_household_statuses, residential_demand
 from src.roles import BUILDER, FORAGER, GENERALIST
 from src.settlement_planner import WORK_CONSTRUCTION, WORK_FARMING, WORK_FOOD, WORK_SUPPORT, WORK_WATER, WORK_WOOD
@@ -33,6 +36,7 @@ def diagnostics_sections(world, renderer_metrics: dict[str, object] | None = Non
         DiagnosticSection("Children", children_rows(world)),
         DiagnosticSection("Adults", adults_rows(world)),
         DiagnosticSection("Lifecycle", lifecycle_rows(world)),
+        DiagnosticSection("Families", family_rows(world)),
         DiagnosticSection("Households", household_rows(world)),
         DiagnosticSection("Housing", housing_rows(world)),
         DiagnosticSection("Partnerships", partnership_rows(world)),
@@ -97,10 +101,16 @@ def adults_rows(world) -> list[tuple[str, object]]:
 
 
 def lifecycle_rows(world) -> list[tuple[str, object]]:
+    age_buckets = age_distribution(world)
+    generations = generation_distribution(world)
     return [
         ("Adults This Year", getattr(world, "adults_this_year", {}).get(world.year, 0)),
         ("Births This Year", getattr(world, "successful_births_by_year", {}).get(world.year, 0)),
         ("Deaths This Year", deaths_this_year(world)),
+        ("Natural Deaths This Year", getattr(world, "natural_deaths_by_year", {}).get(world.year, 0)),
+        ("Expected Deaths This Year", f"{expected_deaths_this_year(world):.2f}"),
+        ("Age Distribution", format_counter(age_buckets)),
+        ("Generation Distribution", format_generation_counter(generations)),
     ]
 
 
@@ -128,6 +138,8 @@ def household_rows(world) -> list[tuple[str, object]]:
         ("Households Without Homes", sum(1 for status in statuses if status.homeless)),
         ("Households Requesting Expansion", requesting_expansion),
         ("Households Requesting New Housing", requesting_new),
+        ("Succession Events This Year", getattr(world, "household_succession_events_by_year", {}).get(world.year, 0)),
+        ("Split Events This Year", getattr(world, "household_split_events_by_year", {}).get(world.year, 0)),
     ]
 
 
@@ -233,6 +245,8 @@ def birth_blocker_for_pair(world, parent_a, parent_b) -> str | None:
         return "other"
     if not household_can_support_birth(world, parent_a):
         return "housing"
+    if not household_birth_spacing_allows(world, parent_a, parent_b):
+        return "household"
     if not resources_support_birth(world):
         return "resources"
     return None
@@ -345,3 +359,15 @@ def performance_rows(world, renderer_metrics: dict[str, object]) -> list[tuple[s
         ("Path Requests", getattr(world, "pathfinding_calls", 0)),
         ("Cached Paths", cached_paths),
     ]
+
+
+def format_counter(counter: Counter) -> str:
+    if not counter:
+        return "None"
+    return " ".join(f"{key}:{counter[key]}" for key in sorted(counter))
+
+
+def format_generation_counter(counter: Counter) -> str:
+    if not counter:
+        return "None"
+    return " ".join(f"G{key}:{counter[key]}" for key in sorted(counter))

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from src.config import ADULTHOOD_CHRONICLE_MIN_GENERATION, CHILD_ADULTHOOD_AGE, DAYS_PER_SEASON, SEASONS
+from src.families import record_family_adulthood
 from src.generations import FAMILY, MEMORY_CHILD, FamilyMemoryRecord
 from src.lifecycle import CHILD, NOVICE, YOUNG_ADULT, lifecycle_stage_for_age
 from src.roles import GENERALIST
@@ -113,6 +114,7 @@ def remember_adulthood(world, agent):
             year=world.year,
             day=world.day,
         ))
+    record_family_adulthood(world, agent)
 
 
 def parent_agents(world, agent):
