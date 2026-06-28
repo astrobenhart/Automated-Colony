@@ -17,6 +17,7 @@ if str(ROOT) not in sys.path:
 
 from src.config import DAYS_PER_SEASON, SEASONS
 from src.generations import BIRTH, FAMILY, SUCCESSION
+from src.lifecycle import CHILD, ELDER
 from src.residential import all_household_statuses
 from src.simulation_runner import DAYS_PER_YEAR, SimulationRunner
 from src.world import create_world
@@ -95,6 +96,9 @@ def run_validation(
     renderer = renderer_metrics(world) if render_sample else {"frame_ms": None, "fps": None, "cold_frame_ms": None}
 
     living = world.living_agents()
+    children = [agent for agent in living if getattr(agent, "lifecycle_stage", None) == CHILD]
+    elders = [agent for agent in living if getattr(agent, "lifecycle_stage", None) == ELDER]
+    adults = [agent for agent in living if getattr(agent, "lifecycle_stage", None) != CHILD]
     statuses = all_household_statuses(world)
     final_population = len(living)
     births = getattr(world, "successful_births_total", None)
@@ -166,6 +170,9 @@ def run_validation(
         "cpu_system_seconds": round(runner_metrics.cpu_system_seconds, 3) if runner_metrics.cpu_system_seconds is not None else None,
         "starting_population": start_population,
         "final_population": final_population,
+        "children": len(children),
+        "adults": len(adults),
+        "elders": len(elders),
         "min_population": min(collector.daily_populations),
         "max_population": max(collector.daily_populations),
         "average_population": round(statistics.mean(collector.daily_populations), 2),
@@ -215,9 +222,13 @@ def has_residential_demand(world) -> bool:
 
 
 def snapshot(world) -> dict:
+    living = world.living_agents()
     return {
         "year": world.year,
-        "population": len(world.living_agents()),
+        "population": len(living),
+        "children": sum(1 for agent in living if getattr(agent, "lifecycle_stage", None) == CHILD),
+        "adults": sum(1 for agent in living if getattr(agent, "lifecycle_stage", None) != CHILD),
+        "elders": sum(1 for agent in living if getattr(agent, "lifecycle_stage", None) == ELDER),
         "births": getattr(world, "successful_births_total", 0),
         "deaths": len(world.death_records),
         "natural_deaths": sum(getattr(world, "natural_deaths_by_year", {}).values()),

@@ -474,17 +474,17 @@ Validate that the first complete generational simulation remains stable over lon
 
 Validation checklist:
 
-- [ ] 50-year autonomous simulation
-- [ ] 100-year autonomous simulation
+- [x] 50-year autonomous simulation
+- [x] 100-year autonomous simulation
 - [ ] Population remains stable
-- [ ] Households persist across generations
-- [ ] Families continue beyond founders
+- [x] Households persist across generations
+- [x] Families continue beyond founders
 - [ ] Renderer performance remains stable
-- [ ] Chronicle continues to generate interesting historical events
-- [ ] No long-term simulation deadlocks
-- [ ] No irreversible resource collapse
-- [ ] No runaway population explosion
-- [ ] No extinction under normal starting conditions
+- [x] Chronicle continues to generate interesting historical events
+- [x] No long-term simulation deadlocks
+- [x] No irreversible resource collapse
+- [x] No runaway population explosion
+- [x] No extinction under normal starting conditions
 
 Notes:
 
