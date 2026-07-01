@@ -505,6 +505,8 @@ Household division remains part of the Residential Growth Model. When an overcro
 
 Birth balance now uses effective support rather than stored food alone. Birth eligibility considers stored food, ready farm food, bounded local food, stored water, and local water access. Births remain uncommon through low per-pair probability, dependent-child spacing, and a cap on dependent children per household.
 
+Population renewal also applies a final birth-probability multiplier after a couple has passed every existing eligibility gate. The multiplier depends only on settlement population pressure, measured as current population divided by housing capacity. Lower pressure increases the final probability according to the configured renewal tiers, while high housing pressure returns the multiplier to 1.0x. This does not bypass housing, food, water, household, partnership, parent-age, child-spacing, or dependent-child requirements. It represents peaceful, well-supported villages naturally tending toward larger families.
+
 Diagnostics expose:
 - age distribution
 - expected deaths this year

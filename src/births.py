@@ -13,6 +13,12 @@ from src.config import (
     BIRTH_MAX_PER_DAY,
     BIRTH_MIN_CHILD_SPACING_YEARS,
     BIRTH_MIN_PARTNERSHIP_YEARS,
+    BIRTH_RENEWAL_MULTIPLIER_CRITICAL_PRESSURE,
+    BIRTH_RENEWAL_MULTIPLIER_LOW_PRESSURE,
+    BIRTH_RENEWAL_MULTIPLIER_VERY_LOW_PRESSURE,
+    BIRTH_RENEWAL_PRESSURE_LOW,
+    BIRTH_RENEWAL_PRESSURE_STABLE,
+    BIRTH_RENEWAL_PRESSURE_VERY_LOW,
     BIRTH_SCORE_CHANCE_FACTOR,
     BIRTH_WATER_RESERVE_DAYS,
     HOME_WANDER_MAX_RADIUS,
@@ -63,13 +69,14 @@ def update_births(world: World) -> list[Agent]:
 
     births: list[Agent] = []
     used_parents: set[str] = set()
+    renewal_multiplier = population_renewal_multiplier(world)
     for candidate in candidates:
         if len(births) >= BIRTH_MAX_PER_DAY:
             break
         parent_ids = {villager_key(candidate.parent_a), villager_key(candidate.parent_b)}
         if used_parents & parent_ids:
             continue
-        chance = min(BIRTH_DAILY_CHANCE_CAP, BIRTH_DAILY_CHANCE + max(0, candidate.score - 60) * BIRTH_SCORE_CHANCE_FACTOR)
+        chance = birth_chance(candidate.score, renewal_multiplier=renewal_multiplier)
         record_birth_attempt(world)
         if rng.random() > chance:
             continue
@@ -144,6 +151,36 @@ def birth_eligible(world: World, parent_a: Agent, parent_b: Agent) -> bool:
     if not resources_support_birth(world):
         return False
     return True
+
+
+def birth_chance(score: int, renewal_multiplier: float = 1.0) -> float:
+    base_chance = min(BIRTH_DAILY_CHANCE_CAP, BIRTH_DAILY_CHANCE + max(0, score - 60) * BIRTH_SCORE_CHANCE_FACTOR)
+    return min(1.0, base_chance * max(1.0, renewal_multiplier))
+
+
+def population_renewal_multiplier(world: World) -> float:
+    """Slightly lift birth chance when homes are underused.
+
+    Eligibility gates stay unchanged; this only affects the final probability
+    after a partnered household already qualifies for birth.
+    """
+    capacity = total_housing_capacity(world)
+    if capacity <= 0:
+        return 1.0
+    pressure = len(world.living_agents()) / max(1, capacity)
+    if pressure < BIRTH_RENEWAL_PRESSURE_VERY_LOW:
+        return BIRTH_RENEWAL_MULTIPLIER_CRITICAL_PRESSURE
+    if pressure < BIRTH_RENEWAL_PRESSURE_LOW:
+        return BIRTH_RENEWAL_MULTIPLIER_VERY_LOW_PRESSURE
+    if pressure < BIRTH_RENEWAL_PRESSURE_STABLE:
+        return BIRTH_RENEWAL_MULTIPLIER_LOW_PRESSURE
+    return 1.0
+
+
+def total_housing_capacity(world: World) -> int:
+    from src.residential import all_household_statuses
+
+    return sum(status.capacity for status in all_household_statuses(world))
 
 
 def is_birth_parent(agent: Agent) -> bool:

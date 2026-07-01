@@ -2,12 +2,21 @@ import json
 
 from src.births import (
     BIRTH_PARENT_STAGES,
+    birth_chance,
     birth_eligible,
     create_child,
     household_birth_spacing_allows,
     inherited_trait,
+    population_renewal_multiplier,
     update_births,
 )
+from src.config import (
+    BIRTH_DAILY_CHANCE_CAP,
+    BIRTH_RENEWAL_MULTIPLIER_CRITICAL_PRESSURE,
+    BIRTH_RENEWAL_MULTIPLIER_LOW_PRESSURE,
+    BIRTH_RENEWAL_MULTIPLIER_VERY_LOW_PRESSURE,
+)
+from src.agent import Agent
 from src.generations import BIRTH
 from src.lifecycle import CHILD
 from src.partnerships import form_partnership, refresh_partnership_durations
@@ -122,6 +131,36 @@ def test_update_births_is_uncommon_but_can_create_child_when_rng_allows(monkeypa
 
     assert len(births) == 1
     assert births[0].lifecycle_stage == CHILD
+
+
+def test_population_renewal_multiplier_responds_only_to_housing_pressure():
+    world, _parent_a, _parent_b = make_birth_world()
+
+    assert population_renewal_multiplier(world) == BIRTH_RENEWAL_MULTIPLIER_CRITICAL_PRESSURE
+
+    for index in range(2):
+        world.agents.append(Agent(f"Adult {index}", 1, 1, agent_id=f"adult-{index}"))
+    assert population_renewal_multiplier(world) == BIRTH_RENEWAL_MULTIPLIER_VERY_LOW_PRESSURE
+
+    world.agents.append(Agent("Adult 2", 1, 1, agent_id="adult-2"))
+    assert population_renewal_multiplier(world) == BIRTH_RENEWAL_MULTIPLIER_LOW_PRESSURE
+
+    for index in range(3, 6):
+        world.agents.append(Agent(f"Adult {index}", 1, 1, agent_id=f"adult-{index}"))
+    assert population_renewal_multiplier(world) == BIRTH_RENEWAL_MULTIPLIER_LOW_PRESSURE
+
+    for index in range(6, 8):
+        world.agents.append(Agent(f"Adult {index}", 1, 1, agent_id=f"adult-{index}"))
+    assert population_renewal_multiplier(world) == 1.0
+
+
+def test_population_renewal_multiplier_never_reduces_birth_chance():
+    boosted = birth_chance(160, renewal_multiplier=BIRTH_RENEWAL_MULTIPLIER_CRITICAL_PRESSURE)
+    baseline = birth_chance(160, renewal_multiplier=1.0)
+
+    assert baseline < BIRTH_DAILY_CHANCE_CAP
+    assert boosted > baseline
+    assert birth_chance(160, renewal_multiplier=0.5) == baseline
 
 
 def test_child_does_not_receive_work_assignment_or_workplace():

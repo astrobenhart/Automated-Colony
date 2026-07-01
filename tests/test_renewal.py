@@ -84,12 +84,11 @@ def test_family_persists_after_founder_death():
 
 def test_household_split_records_renewal_chronicle_entry():
     world = create_world(seed=2302, agent_count=20)
-    household = next(
-        household
-        for household in world.settlement.households
-        if expansion_site_for_household(world, household) is not None
-    )
+    household = next(household for household in world.settlement.households if household.home_id)
     home = world.settlement.home_for_id(household.home_id)
+    for x, y in ((home.x + 1, home.y), (home.x + 2, home.y), (home.x, home.y + 1)):
+        if 0 <= x < world.width and 0 <= y < world.height:
+            world.tile_at(x, y).kind = "grass"
     from src.agent import Agent
     from src.config import HOUSE_TILE_CAPACITY, MAX_HOUSE_TILES_PER_HOUSEHOLD
     from src.partnerships import form_partnership
