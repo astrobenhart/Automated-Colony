@@ -84,6 +84,9 @@ class Agent:
     birth_day: int | None = None
     death_year: int | None = None
     death_day: int | None = None
+    expected_lifespan: int | None = None
+    parent_a_id: str | None = None
+    parent_b_id: str | None = None
     mother_id: str | None = None
     father_id: str | None = None
     parent_ids: list[str] = field(default_factory=list)
@@ -91,7 +94,11 @@ class Agent:
     children_ids: list[str] = field(default_factory=list)
     sibling_ids: list[str] = field(default_factory=list)
     partner_ids: list[str] = field(default_factory=list)
+    partner_id: str | None = None
+    partnership_start_year: int | None = None
+    partnership_duration: int = 0
     generation: int = 0
+    family_id: str | None = None
     lifecycle_record: LifecycleRecord = field(default_factory=LifecycleRecord)
     family_links: FamilyLinks = field(default_factory=FamilyLinks)
     inheritance_profile: InheritanceProfile = field(default_factory=InheritanceProfile)
@@ -144,13 +151,18 @@ class Agent:
             self.children_ids.extend(self.child_ids)
 
         parent_ids = []
-        for parent_id in (self.mother_id, self.father_id):
+        for parent_id in (self.parent_a_id, self.parent_b_id, self.mother_id, self.father_id):
             if parent_id and parent_id not in parent_ids:
                 parent_ids.append(parent_id)
         for parent_id in self.parent_ids:
             if parent_id not in parent_ids:
                 parent_ids.append(parent_id)
         self.parent_ids = parent_ids
+
+        if self.partner_id and self.partner_id not in self.partner_ids:
+            self.partner_ids.append(self.partner_id)
+        if self.partner_ids and self.partner_id is None:
+            self.partner_id = self.partner_ids[0]
 
         self.family_links.mother_id = self.mother_id
         self.family_links.father_id = self.father_id
@@ -246,8 +258,8 @@ class Agent:
         food_radius = self.discovery_radius(FOOD)
         wood_radius = self.discovery_radius(WOOD)
         water_radius = self.discovery_radius(WATER)
-        shelter_radius = 5
-        scan_radius = max(food_radius, wood_radius, water_radius, shelter_radius)
+        home_radius = 5
+        scan_radius = max(food_radius, wood_radius, water_radius, home_radius)
 
         for dy in range(-scan_radius, scan_radius + 1):
             for dx in range(-scan_radius, scan_radius + 1):
@@ -286,9 +298,9 @@ class Agent:
                             self.remembered_water.discard(pos)
                             world.colony_memory.forget_water(pos)
 
-                    # Shelter memory
-                    if distance <= shelter_radius:
-                        if tile.kind == "shelter":
+                    # Home memory. Legacy shelter tiles are still accepted for old saves.
+                    if distance <= home_radius:
+                        if tile.kind in ("home", "shelter"):
                             self.remembered_shelters.add(pos)
                             world.colony_memory.remember_shelter(pos)
                         else:

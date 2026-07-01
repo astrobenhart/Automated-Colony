@@ -2,16 +2,19 @@ import random
 import time
 from dataclasses import dataclass, field
 
-from src.building_priorities import highest_priority, needed_shelters, update_settlement_needs
+from src.building_priorities import highest_priority, needed_houses, needed_shelters, update_settlement_needs
 from src.appearance import appearance_seed_for, appearance_type_for_seed
+from src.births import update_births
 from src.carrying_capacity import carrying_capacity_report
 from src.colony_memory import ColonyMemory
 from src.colony_storage import ColonyStorage
 from src.environment_events import update_environment_events
 from src.farming import maybe_create_farm, update_farms
+from src.families import ensure_family_registry
 from src.history_seed import seed_starting_chronicle
 from src.influence import update_influence_peaks
 from src.death_memory import DeathRecord, expire_remembrances
+from src.lifecycle_progression import update_lifecycle_progression
 from src.seasons import (
     day_of_season,
     next_season_index,
@@ -20,6 +23,7 @@ from src.seasons import (
     transition_progress,
 )
 from src.resource_ecology import apply_resource_ecology
+from src.renewal import ensure_expected_lifespan, update_renewal
 from src.lifecycle import demographic_profiles, profile_for_stage, ADULT, OLDER_ADULT
 from src.roles import role_for_index
 from src.scenarios import scenario_for_key, starting_population_for_scenario
@@ -32,6 +36,7 @@ from src.simulation_lod import (
     LOD_5_HISTORY,
     tier_names,
 )
+from src.partnerships import update_partnerships
 from src.social_memory import update_household_familiarity, update_social_memory
 from src.social_seed import seed_preexisting_social_history
 from src.traits import trait_for_index
@@ -81,6 +86,7 @@ class World:
     death_records: list[DeathRecord] = field(default_factory=list)
     identity: WorldIdentity | None = None
     settlement: Settlement | None = None
+    families: dict = field(default_factory=dict)
     reservations: ReservationManager = field(default_factory=ReservationManager)
 
     day: int = 1
@@ -92,6 +98,14 @@ class World:
     last_settlement_ms: float = 0.0
     last_updated_villagers: int = 0
     pathfinding_calls: int = 0
+    birth_attempts_total: int = 0
+    successful_births_total: int = 0
+    birth_attempts_by_year: dict[int, int] = field(default_factory=dict)
+    successful_births_by_year: dict[int, int] = field(default_factory=dict)
+    adults_this_year: dict[int, int] = field(default_factory=dict)
+    natural_deaths_by_year: dict[int, int] = field(default_factory=dict)
+    household_succession_events_by_year: dict[int, int] = field(default_factory=dict)
+    household_split_events_by_year: dict[int, int] = field(default_factory=dict)
     lod_stats: dict[str, LODProfileStat] = field(
         default_factory=lambda: {tier: LODProfileStat() for tier in tier_names()}
     )
@@ -129,6 +143,12 @@ class World:
         from src.config import DAYS_PER_SEASON, SEASONS
         days_per_year = DAYS_PER_SEASON * len(SEASONS)
         return ((self.day - 1) // days_per_year) + 1
+
+    @property
+    def day_of_year(self) -> int:
+        from src.config import DAYS_PER_SEASON, SEASONS
+        days_per_year = DAYS_PER_SEASON * len(SEASONS)
+        return ((self.day - 1) % days_per_year) + 1
 
     def generate(self, seed: int | None = None):
         if seed is not None:
@@ -198,6 +218,7 @@ class World:
                 idle_until_tick=rng.randint(0, 3),
                 home_wander_radius=rng.randint(HOME_WANDER_MIN_RADIUS, HOME_WANDER_MAX_RADIUS),
             )
+            ensure_expected_lifespan(self, agent)
             self.add_agent_to_household(agent, household)
             assign_daily_role(agent, self)
             self.assign_agent_workplace(agent)
@@ -205,6 +226,7 @@ class World:
 
         self.seed_household_age_variation()
         seed_preexisting_social_history(self)
+        ensure_family_registry(self)
         self.update_settlement_population()
         self.log(f"{amount} villagers enter the world.")
 
@@ -310,6 +332,9 @@ class World:
         if home is not None:
             agent.home_x = home.x
             agent.home_y = home.y
+        else:
+            agent.home_x = None
+            agent.home_y = None
 
     def ensure_household_membership(self):
         if self.settlement is None or not self.settlement.households:
@@ -597,9 +622,13 @@ class World:
         self.record_lod_update(LOD_4_PLANNING, time.perf_counter() - planning_start)
 
         social_start = time.perf_counter()
+        update_lifecycle_progression(self)
+        update_renewal(self)
         update_social_memory(self)
         self.ensure_household_membership()
         update_household_familiarity(self)
+        update_partnerships(self)
+        update_births(self)
         update_influence_peaks(self)
         self.record_lod_update(LOD_3_SOCIAL, time.perf_counter() - social_start)
 
@@ -755,8 +784,14 @@ class World:
     def needed_shelters(self):
         return needed_shelters(self)
 
+    def needed_houses(self):
+        return needed_houses(self)
+
     def needs_more_shelters(self):
         return self.building_priority() is not None
+
+    def needs_more_houses(self):
+        return self.needs_more_shelters()
 
     def building_priority(self):
         return highest_priority(self)

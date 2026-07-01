@@ -3,7 +3,7 @@ from __future__ import annotations
 from math import inf
 from typing import TYPE_CHECKING
 
-from src.building_priorities import SHELTER
+from src.building_priorities import HOUSE, LEGACY_SHELTER, SHELTER
 from src.reservations import BUILD_SITE
 
 if TYPE_CHECKING:
@@ -34,6 +34,12 @@ def find_build_site_near_settlement(world: World, building_type: str, agent: Age
     settlement = world.settlement
     if settlement is None:
         return None
+
+    if building_type == HOUSE:
+        priority = world.building_priority()
+        build_site = getattr(priority, "build_site", None)
+        if build_site is not None and _candidate_buildable_for_agent(world, build_site[0], build_site[1], building_type, agent):
+            return build_site
 
     local = _best_site_in_radius(world, building_type, settlement.radius, agent)
     if local is not None:
@@ -193,8 +199,10 @@ def _existing_buildings_near_settlement(world: World, building_type: str | None 
                 continue
             tile = world.tile_at(x, y)
             if building_type is None:
-                if tile.kind == SHELTER:
+                if tile.kind in (HOUSE, LEGACY_SHELTER):
                     yield x, y
+            elif building_type == HOUSE and tile.kind in (HOUSE, LEGACY_SHELTER):
+                yield x, y
             elif tile.kind == building_type:
                 yield x, y
 
@@ -207,7 +215,8 @@ def _neighbor_building_count(world: World, x: int, y: int, building_type: str, r
                 continue
             if max(abs(nx - x), abs(ny - y)) > radius:
                 continue
-            if world.tile_at(nx, ny).kind == building_type:
+            tile_kind = world.tile_at(nx, ny).kind
+            if tile_kind == building_type or (building_type == HOUSE and tile_kind == LEGACY_SHELTER):
                 count += 1
     return count
 

@@ -60,7 +60,7 @@ def main():
                     renderer.pan_camera(-CAMERA_STEP, 0)
 
                 elif event.key == pygame.K_d:
-                    renderer.pan_camera(CAMERA_STEP, 0)
+                    renderer.toggle_diagnostics_overlay()
 
                 elif event.key == pygame.K_UP:
                     sim_speed = min(60, sim_speed + 1)

@@ -146,7 +146,8 @@ def test_building_material_reduces_shelter_wood_cost():
     assert BuildShelterAction().can_do(agent, world)
     BuildShelterAction().execute(agent, world)
 
-    assert world.tile_at(2, 2).kind == "shelter"
+    assert world.tile_at(2, 2).kind == "home"
+    assert world.home_at(2, 2) is not None
     assert agent.wood == 0
     assert world.colony_storage.building_materials == 0
 
@@ -160,7 +161,8 @@ def test_shelter_construction_still_works_without_building_materials():
     assert BuildShelterAction().can_do(agent, world)
     BuildShelterAction().execute(agent, world)
 
-    assert world.tile_at(2, 2).kind == "shelter"
+    assert world.tile_at(2, 2).kind == "home"
+    assert world.home_at(2, 2) is not None
     assert agent.wood == 0
 
 

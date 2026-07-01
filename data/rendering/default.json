@@ -1,0 +1,75 @@
+{
+  "master_vegetation_palettes": {
+    "Spring": [[74, 138, 74], [84, 152, 82], [96, 164, 90], [62, 118, 66]],
+    "Summer": [[82, 132, 68], [92, 142, 74], [104, 150, 82], [116, 132, 72]],
+    "Autumn": [[104, 126, 66], [136, 130, 62], [156, 112, 56], [122, 92, 58]],
+    "Winter": [[92, 92, 72], [104, 100, 78], [78, 88, 70], [118, 110, 86]]
+  },
+  "vegetation_harmony_strength": {
+    "Spring": 0.62,
+    "Summer": 0.68,
+    "Autumn": 0.12,
+    "Winter": 0.58
+  },
+  "terrain_palette_factors": {
+    "grass": [1.0, 1.0, 1.0],
+    "plain": [1.04, 1.03, 0.94],
+    "hill": [1.06, 1.0, 0.9]
+  },
+  "terrain_motifs": {
+    "forest": ["dense_canopy", "canopy_mass", "small_clearing", "shrub_patch"],
+    "grass": ["dense_tuft", "sparse_tuft", "flowering_patch", "worn_patch"],
+    "plain": ["meadow", "dry_meadow", "soft_tuft", "open_sward"],
+    "hill": ["highland_grass", "rocky_tuft", "wind_swept", "soft_slope"],
+    "water": ["calm_surface", "ripple_cluster", "muted_reflection", "rain_disturbance"],
+    "trampled_grass": ["worn_shoulder", "dusty_patch", "faint_track", "sparse_tuft"],
+    "worn_grass": ["worn_shoulder", "compacted_earth", "faint_track", "sparse_tuft"],
+    "dirt_path": ["compacted_earth", "wheel_rut", "worn_shoulder", "packed_track"],
+    "path": ["compacted_earth", "wheel_rut", "packed_track", "worn_shoulder"]
+  },
+  "path_palettes": {
+    "trampled_grass": {
+      "Dry": [[138, 128, 82], [150, 136, 92], [116, 112, 78], [160, 148, 104]],
+      "Normal": [[118, 112, 74], [130, 120, 82], [104, 104, 72], [142, 132, 92]],
+      "Wet": [[86, 82, 62], [98, 92, 68], [108, 100, 74], [74, 72, 56]]
+    },
+    "worn_grass": {
+      "Dry": [[154, 134, 82], [168, 146, 92], [136, 122, 78], [178, 158, 108]],
+      "Normal": [[132, 112, 74], [146, 124, 84], [116, 104, 70], [156, 136, 96]],
+      "Wet": [[90, 76, 58], [104, 86, 62], [116, 96, 70], [78, 66, 52]]
+    },
+    "dirt_path": {
+      "Dry": [[170, 136, 82], [184, 148, 92], [150, 120, 76], [196, 160, 106]],
+      "Normal": [[142, 104, 68], [156, 116, 76], [126, 94, 64], [168, 128, 88]],
+      "Wet": [[86, 62, 50], [98, 70, 54], [112, 82, 62], [72, 54, 46]]
+    },
+    "path": {
+      "Dry": [[184, 146, 88], [198, 158, 100], [164, 130, 82], [210, 170, 112]],
+      "Normal": [[152, 112, 72], [166, 124, 82], [136, 100, 66], [178, 136, 92]],
+      "Wet": [[82, 58, 46], [96, 68, 52], [108, 78, 58], [70, 50, 42]]
+    }
+  },
+  "ambient_occlusion": {
+    "forest_receivers": ["grass", "plain", "dry", "wetland"],
+    "first_microtile_darken": 0.06,
+    "second_microtile_darken": 0.035,
+    "density_bonus": 0.005,
+    "max_density_bonus": 0.025,
+    "first_microtile_chance": 78,
+    "second_microtile_chance": 42,
+    "density_chance_bonus": 2,
+    "max_chance_bonus": 12
+  },
+  "path_visual_language": {
+    "edge_shaping_enabled": false,
+    "encroachment_enabled": true,
+    "forest_encroachment_chance": 16,
+    "forest_encroachment_strength": 0.18,
+    "encroachment_terrains": ["trampled_grass", "worn_grass", "dirt_path", "path"]
+  },
+  "sprite_pipeline": {
+    "reserved_layers": ["terrain", "terrain_detail", "structure", "agent", "overlay"],
+    "seasonal_tinting": true,
+    "environmental_tinting": true
+  }
+}

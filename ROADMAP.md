@@ -1,5 +1,7 @@
 # Roadmap
 
+Current Development Branch: v0.9-development
+
 ## North Star - Slow Autonomous Village Simulation
 
 Automated Colony is moving from an automated survival colony toward a slow autonomous generational village simulation.
@@ -350,41 +352,159 @@ Notes:
 
 ## v0.8 - Generational Village
 
-Goal: Add the smallest complete generational loop: partnerships, reproduction, children, aging, inheritance, family relationships, and Chronicle continuity.
+Goal: Prove the smallest complete generational loop.
 
-### Generations
-- [ ] Partnership formation
-- [ ] Household partnerships
-- [ ] Reproduction system
-- [ ] Pregnancy system
-- [ ] Birth events
-- [ ] Child lifecycle
-- [ ] Aging progression
-- [ ] Workforce entry
-- [ ] Family relationships
-- [ ] Family memories
-- [ ] Trait inheritance
-- [ ] Household succession
-- [ ] Natural death from aging
-- [ ] Family chronicle integration
+Core question:
+Can a village replace itself across generations?
 
-### Society
-- [ ] Family trees
-- [ ] Multi-generation households
-- [ ] Inheritance of homes
-- [ ] Family reputation
+v0.8 is intentionally narrow. It should prove believable continuity and long-term village life without expanding into a complete family simulation.
 
-### Storytelling
-- [ ] Birth chronicle entries
-- [ ] Family milestone events
-- [ ] Generational history tracking
+### Phase 1 - Partnerships
+
+Purpose:
+Create stable long-term pair bonds that can support later generational systems.
+
+Features:
+- [x] Partnership formation
+- [x] Household partnerships
 
 Notes:
-- v0.8 should stay intentionally small: prove the first generational loop before expanding it.
-- Reproduction should not be a simple population counter.
-- Children should inherit traits from parents with room for variation.
-- Old-age death should remain tied to renewal systems so villages do not collapse automatically.
-- Avoid pregnancy mechanics, inheritance law, romance drama, detailed domestic economy, and full family-tree UI unless a later design explicitly needs them.
+- Partnerships are social bonds, not romance simulation.
+- No marriage system.
+- No romance drama.
+- No legal family structures.
+
+### Phase 2 - Births
+
+Purpose:
+Introduce population renewal.
+
+Features:
+- [x] Reproduction system
+- [x] Birth events
+
+Notes:
+- Births should emerge from established partnerships.
+- Do not treat reproduction as a simple population counter.
+- Pregnancy mechanics are deferred unless explicitly needed later.
+
+### Phase 3 - Children
+
+Purpose:
+Allow villagers to progress through life stages.
+
+Features:
+- [x] Child lifecycle
+- [x] Aging progression
+- [x] Workforce entry
+
+Notes:
+- Children remain members of their household.
+- Children eventually become working adults.
+- Avoid education systems or child-specific professions.
+
+### Phase 4 - Family Identity
+
+Purpose:
+Create continuity between generations.
+
+Features:
+- [x] Family relationships
+- [x] Family memories
+- [x] Trait inheritance
+
+Notes:
+- Children inherit traits from parents with variation.
+- Family memories should feed the Chronicle and village history systems.
+- Families are persistent lineage/history entities, separate from households.
+- Family identity is permanent and survives household movement.
+- Full family tree UI, surnames, reputation, inheritance law, and genealogy visualization remain future enhancements.
+
+### Phase 5 - Renewal
+
+Purpose:
+Close the generational loop.
+
+Features:
+- [x] Household succession
+- [x] Natural death from aging
+- [x] Family Chronicle integration
+
+Notes:
+- Villages must be capable of replacing older generations naturally.
+- Deaths should connect to renewal rather than creating automatic settlement collapse.
+- Old-age death is probabilistic and lifespan-based rather than fixed-age.
+- Household heads are succeeded by a surviving partner, adult child, or oldest adult resident.
+- Household division and family passing events feed the Chronicle without adding inheritance law or family-tree UI.
+
+### Future Backlog - Not Core v0.8
+- [ ] Family trees
+- [ ] Family reputation
+
+Status:
+Future enhancement after the core generational loop is proven.
+
+Reasons:
+- Family trees are primarily visualization and record-keeping rather than simulation behavior.
+- Family reputation does not contribute to proving the first generational loop and adds additional social complexity.
+
+Notes:
+- v0.8 exists to prove the first generational loop.
+- Keep implementation intentionally small.
+- Prioritize simulation behavior over UI complexity.
+- Avoid pregnancy mechanics, inheritance law systems, romance drama, politics, detailed domestic economies, and complex social simulation.
+- Focus on partnerships, births, children, aging, trait inheritance, succession, natural death, and village renewal.
+- Residential planning should use houses and housing capacity. Legacy shelter terminology remains only for completed-history notes and compatibility debt.
+- Residential growth should emerge from households, overcrowding, house expansion, and new household formation rather than artificial future housing reserves.
+- Family trees and family reputation are secondary to proving long-term village continuity.
+
+Success Criteria:
+- Partnerships form.
+- Children are born.
+- Children age into working adults.
+- Traits inherit with variation.
+- Family relationships and memories persist.
+- Elder villagers can die of old age.
+- Households can continue through successors.
+- The village can continue into the next generation without advanced social simulation systems.
+
+### Release Validation
+
+Purpose:
+
+Validate that the first complete generational simulation remains stable over long-running autonomous play.
+
+Validation checklist:
+
+- [x] 50-year autonomous simulation
+- [x] 100-year autonomous simulation
+- [x] Population remains stable
+- [x] Households persist across generations
+- [x] Families continue beyond founders
+- [x] Renderer performance remains stable
+- [x] Chronicle continues to generate interesting historical events
+- [x] No long-term simulation deadlocks
+- [x] No irreversible resource collapse
+- [x] No runaway population explosion
+- [x] No extinction under normal starting conditions
+
+Notes:
+
+- This is a validation milestone, not a feature milestone.
+- Prefer identifying balancing issues over adding new systems.
+- Any failures should become GitHub issues rather than expanding the scope of v0.8.
+- v0.8 is accepted for release. Long-matrix headless validation throughput remains future optimization work, not a release blocker.
+
+### Release Blocker - Century-Scale Population Renewal
+
+- [x] Investigate why births no longer replace natural deaths during century-scale simulations despite functioning partnerships, households, residential growth, succession, and family systems.
+
+Completion criteria:
+
+- Root cause identified.
+- Demographic investigation completed.
+- Investigation report written.
+- Evidence gathered before any gameplay balancing begins.
 
 ## v0.9 - Workplaces, Professions, and Delivery Networks
 

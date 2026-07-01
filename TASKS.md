@@ -646,6 +646,83 @@ Notes:
 
 ## Completed
 
+### TASK-85
+Title: v0.8 Renewal
+
+Owner: Gameplay Agent / Architect Agent / AI Agent / Social Systems Agent / History Agent / Balance Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement Phase 5 of the v0.8 generational loop by adding natural old-age mortality, household succession, and renewal Chronicle integration.
+
+Expected Output:
+Villagers can age through a complete lifecycle, elders can die naturally, households can continue through successors, families persist after founder deaths, and renewal events become visible in Diagnostics and the Chronicle.
+
+Acceptance Criteria:
+- Villagers receive deterministic expected lifespan values.
+- Natural death is probabilistic, age-weighted, and evaluated in the daily renewal pass.
+- Old-age deaths use the shared death-memory and family-memory path.
+- Household heads are succeeded by a surviving partner, adult child, oldest adult resident, or oldest resident fallback.
+- Household succession history is persisted on households.
+- Household division records renewal Chronicle entries when partnered adults establish new homes.
+- Families continue after founders die.
+- Family and household renewal events feed the Chronicle without becoming noisy.
+- Birth eligibility uses effective food and water support rather than stored food alone.
+- Birth balance remains slow through low probability, dependent-child spacing, and dependent-child household caps.
+- Diagnostics expose age distribution, expected deaths, natural deaths, generation distribution, household succession events, and split events.
+- No inheritance law, family-tree UI, romance mechanics, elder wisdom, heirlooms, family professions, or dynasty systems are introduced.
+- Existing tests pass.
+
+Dependencies:
+- TASK-84
+- v0.8 Phase 1 - Partnerships
+- v0.8 Phase 2 - Births
+- v0.8 Phase 3 - Children
+
+Notes:
+- Renewal closes the first complete v0.8 generational loop while keeping the implementation intentionally small.
+- Household succession preserves homes as social units; family persistence preserves lineage as historical memory.
+
+---
+
+### TASK-84
+Title: v0.8 Family Identity
+
+Owner: Gameplay Agent / Architect Agent / Social Systems Agent / History Agent / Tester Agent / Docs Agent
+
+Status: Completed
+
+Description:
+Implement Phase 4 of the v0.8 generational loop by making families persistent lineage and history entities separate from households.
+
+Expected Output:
+Villagers belong to durable families, children inherit family membership and traits, biological relationships are queryable, family memories persist, and family milestones feed Diagnostics and the Chronicle.
+
+Acceptance Criteria:
+- Every villager belongs to one persistent family.
+- Families track founders, founding year, living members, deceased members, generation count, memories, and births by year.
+- Children inherit family membership from parents at birth.
+- Parent, child, and sibling relationships are linked without rebuilding family trees every frame.
+- Trait inheritance creates a simple inheritance profile with parental influence and variation.
+- Family memories persist beyond individual villagers.
+- Major family events can feed the Chronicle without becoming noisy.
+- Diagnostics expose family count, size, age, generation depth, and births by family.
+- Family identity remains separate from household membership.
+- No marriage system, surname simulator, family tree UI, reputation, inheritance law, or romance mechanics are introduced.
+- Existing tests pass.
+
+Dependencies:
+- v0.8 Phase 1 - Partnerships
+- v0.8 Phase 2 - Births
+- v0.8 Phase 3 - Children
+
+Notes:
+- Families answer who villagers descend from. Households answer where villagers live.
+- Future genealogy, ancestral homes, inheritance, family reputation, and surname display can build on the family registry later.
+
+---
+
 ### TASK-83
 Title: Social Bond Labels
 

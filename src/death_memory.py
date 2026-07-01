@@ -3,8 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from src.families import record_family_death
 from src.influence import influence_label, peak_influence_label
 from src.social_memory import FAMILIAR, familiarity_level, villager_key
+from src.succession import handle_household_death_succession
 from src.world_history import DEATH
 
 if TYPE_CHECKING:
@@ -36,6 +38,7 @@ class DeathRecord:
     birth_settlement_name: str | None = None
     birth_year: int | None = None
     death_year: int | None = None
+    expected_lifespan: int | None = None
     mother_id: str | None = None
     father_id: str | None = None
     parent_ids: list[str] = field(default_factory=list)
@@ -43,6 +46,7 @@ class DeathRecord:
     sibling_ids: list[str] = field(default_factory=list)
     household_id: str | None = None
     home_id: str | None = None
+    family_id: str | None = None
     generation: int = 0
     remembered_by: list[str] = field(default_factory=list)
 
@@ -53,6 +57,7 @@ def record_death(world: World, agent: Agent, cause_of_death: str) -> DeathRecord
     if existing is not None:
         return existing
 
+    agent.alive = False
     remembered_by = remembered_villagers(world, agent)
     agent.death_year = world.year
     agent.death_day = world.day
@@ -77,6 +82,7 @@ def record_death(world: World, agent: Agent, cause_of_death: str) -> DeathRecord
         birth_settlement_name=getattr(agent, "birth_settlement_name", None),
         birth_year=getattr(agent, "birth_year", None),
         death_year=world.year,
+        expected_lifespan=getattr(agent, "expected_lifespan", None),
         mother_id=getattr(agent, "mother_id", None),
         father_id=getattr(agent, "father_id", None),
         parent_ids=list(getattr(agent, "parent_ids", [])),
@@ -84,12 +90,18 @@ def record_death(world: World, agent: Agent, cause_of_death: str) -> DeathRecord
         sibling_ids=list(getattr(agent, "sibling_ids", [])),
         household_id=getattr(agent, "household_id", None),
         home_id=getattr(agent, "home_id", None),
+        family_id=getattr(agent, "family_id", None),
         generation=getattr(agent, "generation", 0),
         remembered_by=remembered_by,
     )
     world.death_records.append(record)
     create_remembrance(world, agent, remembered_by)
     record_death_history(world, record)
+    record_family_death(world, agent)
+    handle_household_death_succession(world, agent)
+    from src.partnerships import end_partnership_due_to_death
+
+    end_partnership_due_to_death(world, agent)
     return record
 
 

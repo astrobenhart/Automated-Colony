@@ -47,9 +47,10 @@ v0.5.0, Colony Roles and Production, turns the prototype survival sandbox into a
 ## Controls
 
 - `SPACE` - Pause or unpause
-- `W`, `A`, `S`, `D` - Pan the camera
+- `W`, `A`, `S`, arrow keys - Pan the camera
 - `V` - Toggle Villagers overlay
 - `H` - Toggle History overlay
+- `D` - Toggle Diagnostics overlay
 - `UP` - Increase simulation speed
 - `DOWN` - Decrease simulation speed
 - `R` - Restart the world

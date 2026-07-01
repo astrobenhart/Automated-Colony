@@ -55,7 +55,7 @@ def test_stable_capacity_report_explains_supporting_factors():
     assert report.population == 4
     assert report.capacity >= 4
     assert "support the living population" in report.reason
-    assert any("Shelter:" in line for line in report.reason_lines)
+    assert any("Housing:" in line for line in report.reason_lines)
     assert any("Food:" in line for line in report.reason_lines)
     assert any("Water:" in line for line in report.reason_lines)
 
@@ -85,9 +85,9 @@ def test_shelter_strained_report_when_beds_are_limiting():
 
     report = carrying_capacity_report(world)
 
-    assert report.capacity == 3
+    assert report.capacity == 5
     assert report.status == SHELTER_STRAINED
-    assert report.reason == "Shelter space is the limiting factor."
+    assert report.reason == "Housing capacity is the limiting factor."
 
 
 def test_home_tiles_count_toward_housing_capacity():
@@ -98,8 +98,20 @@ def test_home_tiles_count_toward_housing_capacity():
 
     report = carrying_capacity_report(world)
 
-    assert report.shelter_capacity == 6
-    assert report.reason_lines[1] == "Shelter: 6 capacity from 2 housing structures (0 shelters, 2 homes)"
+    assert report.shelter_capacity == 10
+    assert report.reason_lines[1] == "Housing: 10 capacity from 2 houses (2 houses, 0 legacy shelters)"
+
+
+def test_legacy_shelter_tiles_still_count_as_housing_capacity():
+    world = make_world(population=4)
+    add_shelters(world, 2)
+    world.colony_storage.deposit_food(30)
+    world.settlement.local_water = {(1, 1), (2, 1)}
+
+    report = carrying_capacity_report(world)
+
+    assert report.housing_capacity == 10
+    assert "legacy shelters" in report.reason_lines[1]
 
 
 def test_water_strained_report_when_water_access_is_limiting():

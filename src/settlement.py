@@ -21,7 +21,7 @@ WATER = "water"
 LOW = "LOW"
 MEDIUM = "MEDIUM"
 HIGH = "HIGH"
-NEED_SHELTER = "shelter"
+NEED_SHELTER = "home"
 NEED_WOOD = "wood"
 NEED_MATERIALS = "materials"
 SETTLEMENT_NEEDS = (NEED_SHELTER, NEED_WOOD, NEED_MATERIALS)
@@ -130,6 +130,14 @@ class Settlement:
     work_assignments: dict[str, str] = field(default_factory=dict)
     construction_progress: dict[tuple[int, int], int] = field(default_factory=dict)
     last_planned_day: int | None = None
+    overcrowded_households: int = 0
+    homeless_households: int = 0
+    household_split_candidates: int = 0
+    house_expansion_candidates: int = 0
+    total_house_tiles: int = 0
+    total_house_capacity: int = 0
+    partnered_pairs: int = 0
+    mature_partnered_pairs: int = 0
     scenario_key: str = DEFAULT_SCENARIO_KEY
     maturity_label: str = "Growing Village"
     age_years: int = 0
@@ -159,6 +167,11 @@ class Settlement:
     def household_for_home(self, home_id: str | None) -> Household | None:
         if home_id is None:
             return None
+        home = self.home_for_id(home_id)
+        if home is not None and home.household_id is not None:
+            household = self.household_for(home.household_id)
+            if household is not None:
+                return household
         for household in self.households:
             if household.home_id == home_id or household.home_building_id == home_id:
                 return household
@@ -819,6 +832,26 @@ def is_home_tile(world, x: int, y: int) -> bool:
     if settlement is None:
         return False
     return any(home.x == x and home.y == y for home in settlement.homes)
+
+
+def register_house(world, x: int, y: int) -> Home | None:
+    settlement = world.settlement
+    if settlement is None:
+        return None
+    existing = next((home for home in settlement.homes if home.x == x and home.y == y), None)
+    if existing is not None:
+        return existing
+
+    index = len(settlement.homes)
+    existing_ids = {home.home_id for home in settlement.homes}
+    home_id = f"home-{index}"
+    while home_id in existing_ids:
+        index += 1
+        home_id = f"home-{index}"
+
+    home = Home(x, y, home_id=home_id)
+    settlement.homes.append(home)
+    return home
 
 
 def is_adjacent_to_stockpile(world, x: int, y: int, stockpile_type: str) -> bool:

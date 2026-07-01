@@ -9,7 +9,8 @@ from src.config import SHELTER_CAPACITY
 STABLE = "Stable"
 FOOD_STRAINED = "Food Strained"
 WATER_STRAINED = "Water Strained"
-SHELTER_STRAINED = "Shelter Strained"
+HOUSING_SHORTAGE = "Housing Shortage"
+SHELTER_STRAINED = HOUSING_SHORTAGE
 NO_SETTLEMENT = "No Settlement"
 
 
@@ -21,6 +22,7 @@ class CarryingCapacityReport:
     reason: str
     reason_lines: list[str] = field(default_factory=list)
     shelter_capacity: int = 0
+    housing_capacity: int = 0
     food_capacity: int = 0
     water_capacity: int = 0
 
@@ -49,7 +51,7 @@ def carrying_capacity_report(world) -> CarryingCapacityReport:
     )
     if population <= capacity:
         status = STABLE
-        reason = "Current shelter, food, and water can support the living population."
+        reason = "Current housing, food, and water can support the living population."
     else:
         status = limiting_status
         reason = limiting_reason
@@ -75,6 +77,7 @@ def carrying_capacity_report(world) -> CarryingCapacityReport:
         reason=reason,
         reason_lines=reason_lines,
         shelter_capacity=shelter_capacity,
+        housing_capacity=shelter_capacity,
         food_capacity=food_capacity,
         water_capacity=water_capacity,
     )
@@ -114,7 +117,7 @@ def _limiting_status(
     limits = [
         (food_capacity, FOOD_STRAINED, "Food is the limiting factor."),
         (water_capacity, WATER_STRAINED, "Water access is the limiting factor."),
-        (shelter_capacity, SHELTER_STRAINED, "Shelter space is the limiting factor."),
+        (shelter_capacity, HOUSING_SHORTAGE, "Housing capacity is the limiting factor."),
     ]
     _, status, reason = min(limits, key=lambda item: (item[0], item[1]))
     return status, reason
@@ -135,7 +138,7 @@ def _reason_lines(
 ) -> list[str]:
     return [
         f"Population: {population}",
-        f"Shelter: {shelter_capacity} capacity from {housing_structures_from_counts(shelters, homes)} housing structures ({shelters} shelters, {homes} homes)",
+        f"Housing: {shelter_capacity} capacity from {housing_structures_from_counts(shelters, homes)} houses ({homes} houses, {shelters} legacy shelters)",
         f"Food: {food_capacity} capacity from {stored_food} stored, {local_food} local, {ready_farm_food} farm-ready",
         f"Water: {water_capacity} capacity from {local_water} local water sources",
         f"Farms: {farm_plots} active plots",

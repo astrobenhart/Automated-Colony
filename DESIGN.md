@@ -71,7 +71,7 @@ World history should:
 UI should:
 - keep current simulation and colony status visible at a glance
 - prefer compact grouped sections as more systems are added
-- preserve selection, active events, history, legend, controls, and recent event visibility without changing simulation behavior
+- preserve selection, active events, history, contextual tile inspection, controls, and recent event visibility without changing simulation behavior
 - keep the default right panel player-facing, with debug-style internals reserved for selected-object details
 - use role-based villager colors as gameplay readability, so Generalists, Foragers, Builders, and Scouts can be identified without clicking them
 - show the village's discovered resource knowledge rather than perfect food/wood information
@@ -152,7 +152,7 @@ v0.7 mixed starting population:
 - Lifecycle stages are Young Adult, Adult, Older Adult, and Elder.
 - Experience labels are Novice, Experienced, and Veteran.
 - Household founding years and established-years metadata imply village history before observation begins.
-- These fields are still static startup metadata; there is no aging progression, child stage, old-age death, reproduction, or inheritance logic yet.
+- In v0.7 these fields were static startup metadata; aging progression, children, births, and inheritance were left for v0.8 generational systems.
 
 v0.7 should not implement reproduction casually. It should prepare the settlement model, start generation, and identity/history layers so reproduction, children, parent links, inherited traits, and aging can arrive as coherent systems later.
 
@@ -342,9 +342,256 @@ Future v0.8 reproduction flow:
 3. Evaluate household-based reproduction eligibility.
 4. Create a child with parent IDs, household ID, generation, inherited trait profile, and birth Chronicle entry.
 5. Add household historical membership and family memories.
-6. Keep old-age death disabled until renewal is stable.
+6. Apply renewal through probabilistic old-age mortality, household succession, and family Chronicle entries once births and adulthood are stable.
 
-This architecture does not implement reproduction, pregnancy, childbirth, marriages, genetics, inheritance logic, population growth, old-age death, or family-tree UI.
+This architecture avoids pregnancy, childbirth complications, marriages, genetics, inheritance law, romance drama, and family-tree UI.
+
+## v0.8 Partnership Foundation
+
+Partnerships are the first v0.8 generational loop foundation.
+
+They are:
+- stable long-term pair bonds
+- derived from existing social familiarity
+- limited to one active partner per villager
+- evaluated as an infrequent daily social pass
+- recorded in villager memory and the Chronicle
+- lightly integrated with households when doing so does not disrupt existing stable homes
+
+They are not:
+- marriage
+- dating
+- romance drama
+- legal family structures
+- attraction mechanics
+- a reproduction or birth system
+
+Eligibility stays deliberately narrow:
+- living adult-stage villagers
+- same settlement
+- no current partner
+- no direct parent, child, or sibling relationship
+- sufficient existing familiarity from household, workplace, or routine history
+
+Household integration is renewal-oriented. Partners already sharing a household stay there. If one partner lacks a household or lives alone, they may join the other partner's household. If both partners belong to established multi-person households, they form a new household record with no home yet; the existing residential planner then creates normal housing demand and builders construct the new home through the usual task pipeline. This keeps partnerships as social bonds, not marriage or romance simulation, while ensuring stable adult partnerships can become shared households across generations.
+
+Future birth systems should use partnerships as one input into household-based renewal, not as a complete family simulation.
+
+## v0.8 Partnership Lifecycle
+
+The partnership lifecycle is:
+
+Adult
+-> Partnership
+-> Household Formation
+-> Household Growth
+-> Household Expansion
+-> Next Generation
+
+Partnerships describe stable adult social relationships. Households describe the physical living arrangement. Births require both: an established partnership and a shared household.
+
+When partners can safely share an existing household, one partner joins the other household. When both partners are already embedded in established households, they found a new household and become a residential demand for the normal construction system. The simulation should not rely on a lucky overcrowding side effect before partners can live together.
+
+Death naturally ends an active partnership. The deceased villager remains in memories and history, but the surviving partner's active `partner_id` state is cleared so they can eventually participate in future partnership formation. This is lifecycle cleanup, not a breakup or romance mechanic.
+
+## v0.8 Birth Foundation
+
+Births are the second v0.8 generational loop foundation.
+
+They follow the simple loop:
+- partnership
+- shared household
+- birth
+- child villager enters the world
+
+Births require:
+- both partners alive
+- an established partnership
+- shared household membership
+- adult-stage parents
+- same settlement membership
+- available housing space
+- basic food and water reserves
+
+The birth pass runs daily with low probability and a cap on new children per day. It is resource-aware, but it is not a population-balancing system and does not create children to fill labor shortages.
+
+Children are real villagers with parent IDs, household membership, generation number, inherited trait identity, memories, and Chronicle birth entries. They are dependents until lifecycle progression moves them into adult-stage village life.
+
+The birth phase does not implement pregnancy, gestation timers, fertility simulation, childbirth risks, child jobs, inheritance law, family trees, or family reputation.
+
+## v0.8 Lifecycle Progression
+
+Lifecycle progression is the third v0.8 generational loop foundation.
+
+It follows the simple loop:
+- child villager exists in a household
+- child consumes food, water, and housing capacity
+- daily lifecycle pass updates age from birth date
+- child reaches adulthood
+- new adult becomes eligible for work and future partnerships
+
+Children are members of their household and remain tied to the same home. They do not gather resources, build, farm, form partnerships, or receive profession-specific work while they are children. Their daily behavior remains lightweight: stay near home, satisfy emergency needs, and age normally.
+
+The aging pass runs daily. Starting adults keep their seeded ages, while children born during simulation age from `birth_year` and `birth_day`. When a child reaches the adulthood threshold, the villager enters the adult-stage population as a Young Adult, preserves inherited traits and household membership, and becomes eligible for existing workforce assignment.
+
+Lifecycle events are intentionally low-volume. A child reaching adulthood creates a personal memory, parent memories when parent links exist, and a Chronicle family entry for later-generation villagers. No education system, apprenticeship path, child profession, elder transition, old-age death, inheritance law, or family tree visualization is implemented in this phase.
+
+## v0.8 Family Identity
+
+Family identity is the fourth v0.8 generational loop foundation.
+
+Families are persistent lineage and history entities. They are separate from households:
+- households describe where villagers live
+- families describe who villagers descend from
+
+Every villager belongs to exactly one family. Starting villagers are assigned to founding family records during world creation. Children inherit family membership at birth, and moving households does not change family identity.
+
+Family records track:
+- unique family id and display name
+- founders and founding year
+- living and deceased members
+- generation count
+- parent family links for future genealogy
+- low-volume family memories
+- births by year for diagnostics and balancing
+
+Biological relationship tracking remains lightweight. Children store parent ids, parents store child ids, and siblings are linked when children share a parent. These relationships are queryable when needed; the simulation does not rebuild expensive family trees every frame.
+
+Trait inheritance remains simple and display-first. Births now create an inheritance profile from parent traits, roles, experience labels, and appearance metadata with small variation. The child's direct trait is still lightweight; no genetics, aptitude math, inherited professions, or inheritance law is introduced.
+
+Family memories are permanent family-level records. They survive individual villager deaths and record milestone events such as first child, adulthood, and family loss. Major family milestones may also feed the Chronicle as narrative entries.
+
+Diagnostics include number of families, average family size, largest family, oldest family, current generation depth, and births by family this year.
+
+Design boundaries:
+- no marriage system
+- no surname simulator
+- no family tree UI
+- no family reputation
+- no inheritance law
+- no politics or legal family structures
+- no per-frame genealogy computation
+
+Future work can add genealogy viewers, ancestral homes, inherited professions, famous bloodlines, surnames, or dynasty display by reading the family registry rather than redesigning villager or household data.
+
+## v0.8 Renewal
+
+Renewal is the fifth v0.8 generational loop foundation.
+
+The first complete loop is now:
+- adults form stable partnerships
+- partnered households may have children
+- children age into working adults
+- families persist across generations
+- elders die naturally
+- households choose successors
+- the Chronicle remembers the passing of generations
+
+Natural death is lifespan-based rather than fixed-age. Each villager receives an expected lifespan derived from deterministic village seed data and light identity variation. Mortality begins conservatively in old age, rises after the expected lifespan, and is modestly influenced by long-term wellbeing signals such as hunger, thirst, and fatigue pressure.
+
+Deaths run in the daily renewal pass, not every tick. This keeps mortality aligned with Simulation LOD and prevents expensive or noisy per-frame checks.
+
+Household succession preserves household identity after a head dies. The successor preference order is:
+- surviving partner
+- adult child
+- oldest adult resident
+- oldest resident as a fallback if no adult remains
+
+Household succession appends compact succession history to the household and records a Chronicle entry. Household members and historical member records remain intact; the household does not vanish because a founder dies.
+
+Family succession remains simpler: families continue as persistent lineage records. Founder deaths move members from living to deceased, add family memory, and may add a Chronicle entry when the family has surviving continuity.
+
+Household division remains part of the Residential Growth Model. When an overcrowded max-size household has adult partnered residents and a new home is constructed, the partnered pair can establish a new household. The split is recorded as a renewal Chronicle event.
+
+Birth balance now uses effective support rather than stored food alone. Birth eligibility considers stored food, ready farm food, bounded local food, stored water, and local water access. Births remain uncommon through low per-pair probability, dependent-child spacing, and a cap on dependent children per household.
+
+Population renewal also applies a final birth-probability multiplier after a couple has passed every existing eligibility gate. The multiplier depends only on settlement population pressure, measured as current population divided by housing capacity. Lower pressure increases the final probability according to the configured renewal tiers, while high housing pressure returns the multiplier to 1.0x. This does not bypass housing, food, water, household, partnership, parent-age, child-spacing, or dependent-child requirements. It represents peaceful, well-supported villages naturally tending toward larger families.
+
+Diagnostics expose:
+- age distribution
+- expected deaths this year
+- natural deaths this year
+- generation distribution
+- household succession events
+- household split events
+- family generation depth
+- births by family this year
+
+Design boundaries:
+- no inheritance law
+- no wills or property transfer
+- no elder wisdom mechanics yet
+- no heirlooms
+- no family professions
+- no dynasty/reputation mechanics
+- no family-tree UI
+- no deterministic fixed-age death
+
+Future inheritance, ancestral homes, elder wisdom, heirlooms, family professions, and dynasty presentation should build from household succession history, family records, and death records rather than changing the renewal loop.
+
+## Residential Growth Model
+
+Housing growth is household-driven.
+
+The settlement no longer maintains artificial reserve beds for possible future births. Instead, residential demand emerges from actual household state:
+- a household has no residence
+- a household is overcrowded and can expand
+- a partnered adult pair in an overcrowded max-size household can split into a new household
+
+Each house tile provides physical household capacity. A household's capacity is the number of connected house tiles assigned to that household multiplied by the house-tile capacity constant. Households may temporarily exceed capacity; overcrowding creates pressure to expand or split rather than immediate failure.
+
+House expansion rules:
+- expansion must create a new house tile orthogonally adjacent to an existing house tile owned by the household
+- diagonal expansion does not count
+- each household has a maximum number of house tiles
+- expansion uses normal construction work and resource costs
+
+When a household reaches maximum physical size, partnered adult members may eventually found a new household. New households begin with a single house tile; future growth happens through the same expansion path.
+
+Developer diagnostics on the settlement track:
+- overcrowded households
+- homeless households
+- household split candidates
+- house expansion candidates
+- total house tiles
+- total house capacity
+
+Birth requirements remain strict and household-based. Births can create manageable overcrowding when a household has room to expand, which lets the village respond physically after family growth instead of pre-building spare capacity.
+
+## Residential System Transition
+
+The active residential model is now House.
+
+A house represents:
+- a household residence
+- living space
+- family space
+- population capacity
+
+Earlier versions used shelter as the survival-era residential concept. That distinction no longer maps cleanly to households, partnerships, births, parent links, Chronicle history, or future inheritance and succession.
+
+New residential construction creates houses and registers them with the settlement home list. Housing capacity is calculated from houses, with legacy shelter tiles still counted for backwards compatibility until a future save migration can convert or retire them.
+
+Planner and UI language should use housing, houses, and housing capacity. Legacy code names such as `BuildShelterAction`, `needed_shelters`, or `shelter_capacity` may remain temporarily as compatibility aliases, but they should be treated as migration debt rather than current design language.
+
+## Settlement Diagnostics Window
+
+The Diagnostics overlay is a development and balancing tool toggled with `D`.
+
+It is read-only and intentionally separate from the compact right-hand colony panel. The panel remains player-facing and at-a-glance; diagnostics exposes internal state for debugging households, partnerships, births, housing, resources, workforce, mood pressure, and performance.
+
+Diagnostics sections include:
+- population and generations
+- child, adult, and lifecycle transition counts
+- household and housing pressure
+- partnership eligibility and duration
+- birth attempts, successes, eligible pairs, and current blockers
+- resource storage, targets, and estimated flow
+- workforce assignment counts
+- derived mood pressure from needs and overcrowding
+- simulation/render/pathfinding performance counters
+
+The window should remain lightweight. Expensive historical analysis, family-tree rendering, inheritance reports, and detailed production ledgers should be added as explicit future diagnostics rather than folded into the right panel.
 
 ## Simulation Scale and Level of Detail
 
@@ -689,6 +936,372 @@ Rendering rules:
 - Forest terrain remains visible even when harvestable wood on that forest tile is unknown.
 - Farms, stockpiles, shelters, workshops, the settlement center, villagers, and wildlife remain visible.
 - Colony memory is the source of truth for resource visibility.
+
+## Living Forest Rendering
+
+Forest rendering is visual only. A forest tile remains one simulation tile, one pathfinding tile, and one harvestable wood/food resource node.
+
+Each visible forest tile is rendered as a deterministic microtile canopy. Microtile colours are derived from world seed, tile coordinates, render detail, and the tile's current visual season. No frame-randomness is used, so forests do not flicker.
+
+Seasonal forest palettes:
+- Spring: cohesive green shades with uncommon fresh growth accents
+- Summer: dense dark/bright greens with rare trunk-brown subcells
+- Autumn: green, yellow, orange, red, and muted brown transitions
+- Winter: brown, dark brown, grey-brown, with occasional evergreen green
+
+Forest appearance is stable within a season. When a new season begins, each forest tile receives a deterministic transition day within the first few days of that season based on world seed, tile coordinates, and season. Until its assigned day, the tile keeps the previous season's canopy. On its assigned day, it switches once to the new season palette.
+
+The cached map surface is rebuilt only when the visible camera region, season transition state, environmental state, discovery counts, or structure counts change. Villager rendering remains dynamic and independent of the terrain cache.
+
+Future biome presentation can reuse the same pattern for young forest, mature forest, ancient forest, harvested forest, burned forest, or magical forest states without adding new simulation behaviour.
+
+## Living Water Rendering
+
+Water rendering is visual only. A water tile remains one simulation tile, one unwalkable pathfinding tile, and one stable water source for villager behaviour.
+
+Each visible water tile is rendered as a deterministic microtile surface. Microtile colours are derived from world seed, tile coordinates, render detail, and the tile's current visual weather state. No frame-randomness is used, so lakes, rivers, and ponds do not flicker.
+
+Initial water weather palettes:
+- Clear: deep blue, blue, and light blue with subtle variation
+- Rain: lighter blues, muted reflection tones, and occasional grey-blue subcells
+- Heavy Rain: brighter highlights, darker pockets, and cooler disturbed-water tones
+
+Weather state is renderer-facing and derived from active environmental events. Heavy rain events render water as Heavy Rain. Future rain-like event types can render as Rain without changing tile semantics.
+
+When water weather changes, each water tile receives a deterministic transition tick over a short in-game-hours window based on world seed, tile coordinates, weather state, and transition id. Until its assigned tick, it keeps the previous weather palette. On its assigned tick, it switches once to the new weather palette.
+
+The cached map surface is rebuilt only when the visible camera region, seasonal transition state, water weather transition state, environmental state, discovery counts, or structure counts change. This keeps water responsive to weather without continuous animation or per-frame work.
+
+Future environmental presentation can reuse the same pattern for storms, drought shoreline tinting, frozen water, flooding, or magical corruption without changing pathfinding or water availability.
+
+## Living Grass Rendering
+
+Grass rendering is visual only. A grass tile remains one simulation tile, one ordinary walkable terrain tile, and keeps the same pathfinding, building, resource, and save behaviour.
+
+Each visible grass tile is rendered as a deterministic microtile surface. Microtile colours are derived from world seed, tile coordinates, render detail, season, base moisture from the generated moisture map, and the current visual moisture mode. No frame-randomness is used, so grass does not flicker.
+
+Grass visual moisture states:
+- Dry: yellow-green, brown-green, and dry patch tones
+- Normal: medium seasonal greens
+- Wet: deeper, richer greens or darker dormant tones
+
+Seasonal grass palettes:
+- Spring: rich greens, bright new growth, and healthy vegetation
+- Summer: medium greens, faded tones, and occasional dry highlights
+- Autumn: muted greens, yellow-green, and brown-green
+- Winter: brown, muted green, and dormant vegetation
+
+Environmental events modify visual moisture without changing gameplay. Heavy rain and future rain-like events push grass toward Wet. Drought pushes grass toward Dry. Clear weather returns grass to its base moisture state from the world moisture map.
+
+When visual moisture mode changes, each grass tile receives a deterministic transition tick over a short in-game-hours window based on world seed, tile coordinates, moisture mode, and transition id. Until its assigned tick, it keeps the previous moisture palette. On its assigned tick, it switches once to the new palette.
+
+Future terrain presentation can reuse this pattern for irrigation, snow cover, burnt terrain, overgrazed grass, marsh expansion, magical corruption, or farmland visual progression without changing movement or resource rules.
+
+## Terrain Rendering Framework
+
+Terrain rendering is presentation-only. Terrain tile kinds, pathfinding, resource rules, saves, and simulation behaviour remain owned by world and tile systems.
+
+All visible terrain tiles now render through the shared `TerrainRenderer` pipeline:
+- Build a renderer-facing visual state from world state, tile kind, season, weather, moisture, and environmental events.
+- Build a renderer-only neighbourhood snapshot from the eight adjacent terrain tiles.
+- Select colours through the centralized `TerrainPaletteManager`.
+- Generate a deterministic microtile pattern through `TerrainPatternGenerator`.
+- Apply deterministic edge masks so neighbouring terrain can soften tile boundaries.
+- Draw the tile while preserving gameplay overlays such as farms, resources, homes, workplaces, villagers, and wildlife.
+
+The visual state layer separates simulation state from appearance. A forest tile remains `forest`, a water tile remains `water`, and a path tile remains path-like even when their rendered palettes change. Renderer-facing fields such as visual season, visual weather, and visual moisture are presentation inputs only.
+
+Every terrain tile uses the same adaptive microtile visual language. Specialized terrain palettes remain available for grass, forest, and water, while other terrain types derive subtle palette variation from their seasonal/environmental base colour. This keeps existing terrain recognizable while removing the old split between custom microtile terrain and single-colour terrain.
+
+Pattern generation is deterministic. The renderer uses world seed, tile coordinates, terrain type, and visual state identity; it does not use frame-based randomness. Cached map rebuilding remains driven by existing cache keys for camera region, seasonal transition state, weather/moisture transition state, environmental state, discovery counts, and structure counts.
+
+Future environmental presentation should extend the palette and visual state layers rather than adding new one-off draw paths. Planned extensions include snow cover, drought stress, burnt terrain, magical corruption, frozen water, flooding, crop growth stages, ancient forests, biome-specific palettes, and terrain wear variations.
+
+### Renderer Configuration
+
+Renderer art direction is loaded from `data/rendering/default.json` through `src/renderer_config.py`. The configuration is loaded once and normalized into immutable tuples for fast renderer use. This separates simulation, renderer logic, and art assets:
+
+```
+Simulation state
+  -> TerrainRenderer
+  -> Renderer art config
+  -> Final microtile output
+```
+
+The current config owns:
+- Master seasonal vegetation palettes.
+- Vegetation harmony strengths.
+- Terrain palette adjustment factors.
+- Terrain motif lists.
+- Path wear palettes.
+- Ambient occlusion strengths and mask chances.
+- Path visual language flags and forest encroachment tuning.
+- Reserved sprite pipeline layers for future assets.
+
+This is not live-reloaded yet, but the loader is centralized so future live tuning can clear and refresh the config cache without rewriting terrain systems. Future sprite assets should use the same config family for seasonal tinting, environmental tinting, sprite layer ordering, offsets, and theme selection.
+
+Renderer style rules:
+- Natural terrain should feel irregular, clustered, organic, and softly varied.
+- Constructed terrain should feel deliberate, geometric, ordered, and readable.
+- Paths are constructed terrain. Their normal rendering keeps crisp route identity instead of using organic edge shaping.
+- Nature may subtly reclaim constructed terrain only through explicit effects, such as forest-adjacent path encroachment.
+
+### Neighbour-Aware Edge Shaping
+
+The simulation remains a square grid. The renderer hides some of that grid by letting each terrain tile inspect the eight surrounding terrain kinds:
+
+```
+NW N NE
+ W X E
+SW S SE
+```
+
+This neighbourhood is copied into `TerrainRenderContext` during rendering. It is read-only, is not saved, and does not affect movement, resources, pathfinding, AI, ownership, terrain kind, or construction.
+
+`TerrainEdgeShaper` applies deterministic edge ownership masks after the base microtile pattern is generated. Edge masks operate on the selected microtile resolution, so the same logic works for LOW, MEDIUM, HIGH, and ULTRA detail. The masks may assign an outer-ring edge or corner microtile to either the owning tile terrain or a neighbouring terrain, but they do not mix terrain palettes together. No alpha blending, transparency, cross-terrain colour interpolation, frame-randomness, or simulation state mutation is used.
+
+Terrain identity is preserved by design:
+- The centre microtile remains representative of the owning terrain.
+- Neighbour influence is limited to the outermost microtile ring.
+- Every microtile is drawn from exactly one terrain's palette.
+- Edge masks shape silhouettes rather than melting terrain types together.
+
+Terrain transition priority gives boundaries consistent visual behavior:
+- Water can own shoreline edge microtiles while remaining visually crisp.
+- Paths and worn ground keep readable route identity while gaining less rigid shoulders.
+- Forests can create irregular canopy outlines without dissolving into grassland.
+- Hills, plains, and grass can exchange occasional edge ownership while retaining their own palette identity.
+
+Path rendering no longer uses natural edge shaping by default. Roads are part of the constructed visual language: straight sections remain crisp, corners remain readable, and intersections should communicate deliberate human construction. The path-border helper remains available for tests and future debug views, but ordinary roads should read as ordered worn terrain rather than bordered squares.
+
+Forest-adjacent paths can receive subtle deterministic encroachment from the seasonal vegetation palette. This is a separate renderer effect, not generic edge shaping, and should never obscure road readability.
+
+Future edge-aware terrain can reuse the same ownership system for snowlines, beaches, wetlands, crop field edges, frozen rivers, burnt terrain, cliffs, magical corruption, and biome transitions.
+
+### Ambient Terrain Occlusion
+
+Ambient terrain occlusion is a renderer-only depth effect. It is not a lighting engine, does not use directional shadows, and does not change terrain, movement, resources, pathfinding, AI, construction, saves, or simulation state.
+
+The first supported contributor is forest canopy. Forest tiles do not darken themselves and do not gain a visible outline. Instead, eligible neighbouring ground can receive a very subtle deterministic shade where it sits under implied canopy overhang. The shadow belongs to the receiving terrain, not to the forest.
+
+Current receiving terrain is intentionally narrow:
+- Grass, plains, dry grass, and sparse wetland-like vegetation may receive canopy shade.
+- Water, paths, farms, buildings, construction, workshops, stockpiles, mountains, hills, and forest tiles do not receive this effect.
+
+The effect is constrained to preserve readability:
+- Normal canopy influence reaches at most one microtile from a forest edge.
+- At ULTRA detail, dense continuous forest can influence a second microtile with rapid falloff.
+- The centre of the receiving tile remains unchanged.
+- Colours are only darkened versions of the receiver's own colours, never black, grey, transparent, or forest-coloured overlays.
+
+Masks are deterministic and use world seed, tile coordinates, neighbouring forest density, microtile position, and render detail. The result should feel like canopy height and volume rather than a visible forest border.
+
+### Visual Cohesion Pass
+
+Terrain rendering uses a shared seasonal vegetation palette from the renderer config to keep grass, plains, hills, forests, crops, and future vegetation within the same ecosystem. Terrain-specific palettes still exist, but the shared `TerrainPaletteManager` harmonizes them toward a master seasonal palette:
+- Spring: fresh cohesive greens with restrained bright accents.
+- Summer: mature greens and slightly dry meadow tones.
+- Autumn: intentionally broader yellow, orange, red, and brown-green variation.
+- Winter: muted dormant greens, browns, and grey-browns.
+
+Spring and Summer palette contrast is deliberately reduced so large terrain regions read as continuous meadows and canopy masses. Autumn keeps stronger colour diversity as the visually expressive season. Winter remains restrained and quiet.
+
+`TerrainPatternGenerator` now selects deterministic terrain motifs before placing microtile colours. Motifs replace independent per-microtile colour rolls with clustered, low-frequency structure:
+- Forest: dense canopy, canopy mass, small clearing, shrub patch.
+- Grass and plains: dense tuft, sparse tuft, meadow, flowering patch, worn patch.
+- Water: calm surface, ripple cluster, muted reflection, rain disturbance.
+- Paths: compacted earth, wheel rut, worn shoulder, packed track.
+
+Motifs are selected from world seed, tile coordinates, terrain, visual state, and render detail. Adjacent microtiles often share a cluster colour, while small accents remain rare outside Autumn or specific motifs. This keeps interiors of forests, lakes, grasslands, and plains visually calmer, leaving most complexity to edges and gameplay overlays.
+
+Edge shaping is intentionally crisp during the cohesion pass. Edge masks still create organic forest borders, water banks, path shoulders, and grassland transitions, but they use deterministic terrain ownership instead of blending terrain colours. This avoids muddy borders while preserving the renderer-only neighbourhood system.
+
+Farms and crop visuals are harmonized with the same seasonal vegetation palette. Crop state remains gameplay-owned; only the final crop palette is adjusted so fields sit naturally inside the surrounding landscape.
+
+Spring forests deliberately retain a darker, richer identity than grasslands. They share the Spring colour family but use reduced harmony strength so woodland still reads as woodland.
+
+### Adaptive Microtile Detail
+
+The simulation owns terrain tiles. The renderer owns visual detail.
+
+Terrain rendering no longer assumes a fixed microtile resolution. `TerrainRenderer` requests a render detail level, and `MicrotileGrid` maps that level to a square visual grid:
+- LOW: 1x1
+- MEDIUM: 2x2
+- HIGH: 3x3
+- ULTRA: 5x5
+
+The project default is HIGH, so each simulation tile currently renders as a 3x3 microtile pattern. This is a visual quality setting only. A terrain tile remains one simulation tile for movement, resources, saves, pathfinding, farming, construction, and inspection.
+
+Palette selection is independent of detail level. `TerrainPaletteManager` chooses colours from terrain and visual state. `TerrainPatternGenerator` places those colours into as many microtiles as the selected detail level requires. Changing detail level must not require new palettes or gameplay data.
+
+Future camera work can choose detail level based on zoom, viewport density, map size, or performance budget. That logic should call the renderer's detail-level API and should not touch world generation, pathfinding, AI, or terrain rules.
+
+### Cached Terrain Pipeline
+
+Terrain rendering now separates base surface invalidation from environmental visual transitions. The current renderer still uses one viewport-sized map surface, but it treats that surface as cached terrain rather than a frame-by-frame procedural render target.
+
+Renderer invalidation is split into revision families:
+- Terrain: broad viewport/detail/world surface changes.
+- Season: season labels, distributed forest transitions, and final-day seasonal colour interpolation.
+- Weather: renderer-facing water state transitions.
+- Moisture: renderer-facing grass/path moisture transitions.
+- Construction: construction and farm visual state changes.
+- Overlays: resource, structure, workplace, and other map-symbol visibility changes.
+
+Base cache changes still rebuild the viewport surface. Weather, moisture, season, and environmental transition changes use per-tile visual signatures instead. Each signature combines the tile's renderer-facing `TerrainVisualState`, neighbour signature, and lightweight overlay state. During a transition tick, the renderer scans the visible tiles and redraws only tiles whose signature has actually changed.
+
+The terrain renderer also caches deterministic intermediate results:
+- Palette and neighbour-palette lookups.
+- Palette weight lookups.
+- Motif pattern generation.
+- Edge mask selection from neighbour signatures.
+- Final microtile patterns by tile, visual state, neighbour state, render detail, and environment key.
+
+This preserves the visual output while avoiding repeated full-surface regeneration during weather and moisture transitions. Future rendering should reuse the same visual signatures and revision families rather than introducing separate invalidation logic.
+
+### Chunk Terrain Cache
+
+The viewport terrain surface has been replaced by independent cached terrain chunks. Each chunk currently covers `16x16` simulation tiles and owns:
+- A fixed-size Pygame surface.
+- Dirty/full-dirty status.
+- A set of dirty tiles for partial chunk updates.
+- A cache state and visual revision counter.
+- Last rebuild/redraw counts for profiling.
+
+Frame rendering now determines visible chunks, rebuilds only dirty chunks, clips drawing to the map viewport, and blits cached chunk surfaces. Camera movement no longer invalidates terrain. If the camera moves within already cached chunks, frame rendering performs only surface blits. If the camera crosses into uncached territory, only the newly visible chunk row or column is built.
+
+Dirty tracking works at two levels:
+- Full-dirty chunks rebuild their full `16x16` surface. This is used for first builds, detail changes, and broad renderer invalidation.
+- Tile-dirty chunks redraw only the changed tiles on the existing chunk surface. This is used by weather, moisture, season, and overlay signature changes.
+
+The renderer exposes dirty helpers for future simulation hooks:
+- `mark_tile_dirty(x, y)` for isolated visual updates.
+- `mark_tile_and_neighbours_dirty(x, y)` for terrain edits that can affect edge shaping, ambient occlusion, or neighbouring silhouettes.
+
+Weather and seasonal transitions still scan visible tile signatures to discover which tiles changed, then dirty only the affected chunks/tiles. Future simulation systems should eventually emit explicit dirty tile events for harvesting, construction, path wear, farm changes, fire, snow, flooding, and magic so the renderer does not need to infer those changes from cache-key scans.
+
+The architecture is now:
+
+```
+Simulation
+  -> Terrain visual state
+  -> Dirty chunk queue
+  -> Chunk surface cache
+  -> Frame compositor
+  -> Dynamic agents, selection, overlays, and UI
+```
+
+This is still synchronous, but the rebuild boundary is now chunk-local and ready for future background building, zoom-aware chunk variants, sprite layers, biome layers, and lighting layers.
+
+### Layered Scene Compositor
+
+The renderer is now organized as a scene compositor rather than a single terrain renderer. The initial frame pipeline is:
+
+```
+Terrain Layer
+Vegetation Layer
+Structures Layer
+Agent Layer
+Effects Layer
+UI Layer
+```
+
+Layer responsibilities:
+- Terrain Layer owns cached terrain chunks, terrain palettes, motifs, adaptive microtiles, environmental state, path rendering, edge shaping, and ambient terrain occlusion.
+- Vegetation Layer is reserved for future vegetation sprites such as trees, shrubs, flowers, crop detail, and grass accents. Forest canopy detail remains baked into terrain chunks until sprite assets exist.
+- Structures Layer represents human-built and static map objects such as houses, farms, workshops, stockpiles, workplace markers, and resource symbols. In this phase these are still composed into the terrain chunk surface to preserve existing visuals and cache behaviour, but the chunk rebuild path now calls structure-layer methods separately from terrain drawing.
+- Agent Layer renders dynamic villagers and future mobile entities independently from cached terrain.
+- Effects Layer is reserved for future transient visuals such as rain, snow, smoke, fire, particles, and magical effects.
+- UI Layer owns selection highlights, right-panel information, diagnostics/history/villager overlays, cursor-level UI, and `pygame_gui` drawing.
+
+The main frame renderer calls `compose_scene()`, which renders layers in order. UI and agent drawing never invalidates terrain chunks. Static chunk contents are still cached together for now, but the architecture now has explicit ownership boundaries for splitting vegetation and structure surfaces into their own chunk caches later.
+
+Current render flow:
+
+```
+World state
+  -> Renderer revision state
+  -> Dirty chunk/tile tracking
+  -> Terrain chunk cache updates
+  -> Layer compositor
+  -> Display
+```
+
+Future renderer events should target layers directly. Examples: tree harvested -> Vegetation/Terrain dirty, construction completed -> Structures dirty, villager moved -> Agent layer redraw, weather particle event -> Effects layer update. This keeps simulation behaviour independent from renderer implementation while allowing each layer to become independently cacheable.
+
+### Environmental Reactivity
+
+The shared terrain renderer consumes existing world state and does not create new simulation rules. Environmental rendering inputs are:
+- Season and distributed seasonal transition timing.
+- Weather events through renderer-facing moisture and water states.
+- Moisture map values generated by worldgen.
+- Existing path wear terrain kinds created by foot traffic thresholds.
+
+Terrain-to-environment mapping:
+- Forest: season only. Forests keep deterministic microtile canopy rendering and transition gradually during the first few days of a new season. There is no daily canopy drift.
+- Water: weather only. Clear, Rain, and Heavy Rain choose weather-specific water palettes and transition over short in-game-hour windows.
+- Grass, plains, and hills: season plus moisture. These terrain types share grassland moisture logic while retaining distinct palette adjustments for readability.
+- Trampled grass, worn grass, dirt path, and established path: wear stage plus moisture. Existing traffic thresholds choose the terrain kind; the renderer darkens paths under wet conditions and uses lighter dusty earth tones under dry conditions.
+- Other terrain: seasonal/environmental base colour with subtle microtile variation.
+
+Transitions remain deterministic and distributed. Seasonal grassland and forest transitions use world seed, tile coordinates, season, and day of season. Weather and moisture transitions use world seed, tile coordinates, transition id, and current tick. No visual state relies on frame-randomness.
+
+Path rendering intentionally uses existing wear stages rather than raw foot traffic counts. This keeps the map cache stable during ordinary movement while still making frequently travelled routes clearer as they cross trampled, worn, dirt, and established path thresholds.
+
+### Gameplay-Driven Rendering
+
+The terrain renderer answers what a tile currently looks like. Gameplay systems expose state; they do not own renderer branching.
+
+The final palette is composed through a modifier stack:
+- Base terrain
+- Season
+- Weather
+- Moisture
+- Gameplay state
+- Special modifiers
+- Deterministic microtile pattern
+- Render
+
+Current gameplay visual inputs:
+- Farm plots expose crop state, growth, food, and fertility. The renderer maps current farm states into visual stages: Empty, Planted, Sprouting, Growing, Mature, Harvested, and Fallow. Existing farm symbols and borders remain as lightweight readability overlays.
+- Construction sites expose existing settlement construction progress. The renderer maps progress into Foundation, Under Construction, and Completed visual stages. Construction mechanics and costs are unchanged.
+- Path wear continues to use existing trampled, worn, dirt, and established path terrain kinds.
+
+Future renderer-ready gameplay inputs are represented as optional visual modifiers rather than new terrain types:
+- Forest lifecycle: Young Forest, Mature Forest, Ancient Forest, Harvested Forest, Recovering Forest, Dead Forest, Burned Forest.
+- Construction/building state: Foundation, Under Construction, Completed, Expanded, Damaged, Ruined.
+- Fire: Burning, Charred, Ash, Regrowth.
+- Snow: Light Snow, Medium Snow, Deep Snow, Melting Snow.
+- Flooding: Water Expansion, Wet Shoreline, Floodplain, Mud.
+- Magic: Blessed, Corrupted, Enchanted, Cursed, Mystical.
+- Biome presentation: Temperate, Boreal, Grassland, Wetland, Highland, Ancient Forest.
+
+These are renderer states only. They do not create fire, snow, flooding, magic, crop mechanics, biome generation, damage, pathfinding changes, or resource changes. Future gameplay systems should attach or expose visual state and let `TerrainModifierStack` compose the final appearance.
+
+## Contextual Tile Inspector
+
+The right-hand panel no longer includes a permanent terrain legend. Terrain is expected to be readable from the rendered map itself: adaptive microtile terrain patterns, seasonal palettes, weather-reactive water, moisture-reactive grasslands, path wear, and farm/construction visual states carry the visual meaning.
+
+The reclaimed panel space is used for a contextual Tile section:
+- If a tile is selected, the inspector shows that tile.
+- If no tile is selected and the mouse is over the map, the inspector shows the hovered tile.
+- If neither is available, the inspector shows a compact empty prompt.
+
+The Tile Inspector is data-driven. It combines base tile facts with renderer-facing visual state and gameplay state:
+- terrain label
+- visual season
+- moisture state
+- water weather state
+- path wear and foot traffic
+- discovered food and wood values
+- walkability
+- farms, crop state, crop stage, growth, yield, and fertility
+- homes and household details
+- stockpiles, workplaces, and workshops
+- construction visual stage
+- future visual modifiers such as snow, fire, flood, magic, damage, biome, or forest lifecycle state
+
+The inspector is read-only and does not affect simulation, pathfinding, resource discovery, or renderer state. Future systems should contribute rows by exposing gameplay or visual state rather than expanding the right panel with new permanent diagnostics.
 
 ## Role-Based Resource Discovery
 
@@ -1286,6 +1899,27 @@ Design boundaries:
 - do not recompute settlement-wide social, family, or planner state per tick
 - keep active visible work responsive even as background systems slow down
 - prefer event-driven updates whenever a future system changes rarely
+
+## Headless Simulation Runner
+
+Long-running validation must measure the actual game, not a calendar shortcut.
+
+`SimulationRunner` is the canonical execution path for release validation, balance testing, regression probes, and performance benchmarking. It advances the world by calling `World.update()` for every simulation tick. It does not call `World.advance_day()` directly, because direct day advancement bypasses villager AI, movement, task execution, construction progress, residential completion, and household splitting.
+
+Runner modes:
+- Interactive: renderer enabled, UI enabled, frame limiting enabled, human-facing presentation active.
+- Headless: renderer disabled, UI disabled, frame limiting removed, every gameplay tick still executed.
+- Validation: headless execution with metrics, callbacks, seed batching, and report generation.
+
+All modes must execute identical gameplay logic. Acceleration is allowed only by removing presentation overhead: rendering, UI, sleeps, frame limiting, and noisy debug display. It must not skip ticks, batch multiple gameplay updates into one, bypass AI, skip construction, skip planner work, or bypass household, birth, death, Chronicle, or resource systems.
+
+The validation runner records wall-clock runtime, ticks executed, simulated days and years per second, estimated speedup over interactive play, peak memory when available, and domain metrics such as population, births, natural deaths, household splits, residential construction, resources, housing capacity, and Chronicle activity.
+
+Design boundaries:
+- use `SimulationRunner` or an equivalent `World.update()` loop for release validation
+- keep `World.advance_day()` for targeted calendar tests only
+- do not use daily fast-forward results as proof that construction-driven or task-driven systems are stable
+- future validation infrastructure should add metrics around this runner rather than inventing new shortcuts
 
 ## Design Priorities
 

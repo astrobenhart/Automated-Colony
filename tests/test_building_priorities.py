@@ -26,15 +26,15 @@ def test_colony_needs_shelter_when_below_capacity():
 
     priority = highest_priority(world)
 
-    assert world.needed_shelters() == 2
+    assert world.needed_shelters() == 1
     assert world.needs_more_shelters()
     assert world.highest_building_priority() == SHELTER
     assert priority is not None
     assert priority.building_type == SHELTER
     assert priority.existing_count == 0
-    assert priority.needed_count == 2
-    assert priority.missing_count == 2
-    assert priority.wood_needed == 6
+    assert priority.needed_count == 1
+    assert priority.missing_count == 1
+    assert priority.wood_needed == 3
 
 
 def test_colony_does_not_need_shelter_when_capacity_met():

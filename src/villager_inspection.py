@@ -38,6 +38,7 @@ def villager_detail_sections(agent, world=None) -> list[tuple[str, list[tuple[st
     return [
         ("Identity", identity_rows(agent, world)),
         ("Household", household_rows(agent, world)),
+        ("Partnership", partnership_rows(agent, world)),
         ("Status", status_rows(agent, world)),
         ("Relationships", relationship_rows(agent)),
         ("Bonds", bond_rows(agent)),
@@ -67,15 +68,27 @@ def identity_rows(agent, world=None) -> list[tuple[str, object]]:
         ("Experience", getattr(agent, "experience_level", None)),
         ("Role Years", getattr(agent, "years_in_role", None)),
         ("Trait", getattr(agent, "trait", None)),
+        ("Family", family_name(agent, world)),
+        ("Parents", parent_names(agent, world)),
         ("Home", getattr(agent, "home_settlement_name", None)),
     ])
 
 
 def household_rows(agent, world=None) -> list[tuple[str, object]]:
     household = household_for_agent(agent, world)
+    occupancy = None
+    house_size = None
+    if household is not None and world is not None:
+        from src.residential import household_status
+
+        status = household_status(world, household)
+        occupancy = f"{status.occupants} / {status.capacity}"
+        house_size = f"{status.house_tiles} Tile" if status.house_tiles == 1 else f"{status.house_tiles} Tiles"
     rows = [
         ("Household", household.household_name if household is not None else getattr(agent, "household_id", None)),
         ("Home", home_label(agent, world)),
+        ("Occupants", occupancy),
+        ("House Size", house_size),
         ("Members", household_member_names(household, world) if household is not None else None),
     ]
     return present_rows(rows) or [("", "None")]
@@ -114,6 +127,55 @@ def household_member_names(household, world=None) -> str | None:
         return ", ".join(household.member_ids)
     names_by_id = {agent.agent_id or agent.name: agent.name for agent in world.agents}
     return ", ".join(names_by_id.get(member_id, member_id) for member_id in household.member_ids)
+
+
+def partnership_rows(agent, world=None) -> list[tuple[str, object]]:
+    partner_id = getattr(agent, "partner_id", None)
+    if not partner_id:
+        return [("Partner", "None")]
+    return [
+        ("Partner", partner_name(partner_id, world)),
+        ("Partnership", partnership_duration_label(agent)),
+    ]
+
+
+def partner_name(partner_id: str, world=None) -> str:
+    if world is None:
+        return partner_id
+    for agent in getattr(world, "agents", []):
+        if (agent.agent_id or agent.name) == partner_id:
+            return agent.name
+    return partner_id
+
+
+def partnership_duration_label(agent) -> str:
+    years = getattr(agent, "partnership_duration", 0)
+    if years == 1:
+        return "1 year"
+    return f"{years} years"
+
+
+def parent_names(agent, world=None) -> str | None:
+    parent_ids = list(getattr(agent, "parent_ids", []) or [])
+    for parent_id in (getattr(agent, "parent_a_id", None), getattr(agent, "parent_b_id", None)):
+        if parent_id and parent_id not in parent_ids:
+            parent_ids.append(parent_id)
+    if not parent_ids:
+        return None
+    if world is None:
+        return ", ".join(parent_ids)
+    names_by_id = {other.agent_id or other.name: other.name for other in getattr(world, "agents", [])}
+    return ", ".join(names_by_id.get(parent_id, parent_id) for parent_id in parent_ids)
+
+
+def family_name(agent, world=None) -> str | None:
+    family_id = getattr(agent, "family_id", None)
+    if not family_id:
+        return None
+    family = getattr(world, "families", {}).get(family_id) if world is not None else None
+    if family is not None:
+        return family.family_name
+    return family_id
 
 
 def status_rows(agent, world=None) -> list[tuple[str, object]]:

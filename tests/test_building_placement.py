@@ -124,7 +124,8 @@ def test_shelter_construction_uses_placement_helper():
 
     BuildShelterAction().execute(agent, world)
 
-    assert world.tile_at(site[0], site[1]).kind == "shelter"
+    assert world.tile_at(site[0], site[1]).kind == "home"
+    assert world.home_at(site[0], site[1]) is not None
 
 
 def test_builder_seeks_placement_helper_site_before_building_elsewhere():

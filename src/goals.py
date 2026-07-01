@@ -132,7 +132,7 @@ class GatherWoodGoal(Goal):
 
 
 class BuildShelterGoal(Goal):
-    name = "Build shelter"
+    name = "Build house"
     action_types = (
         BuildShelterAction,
         SeekBuildSiteAction,

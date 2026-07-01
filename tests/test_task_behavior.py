@@ -436,7 +436,8 @@ def test_build_progress_persists_on_settlement_site():
 
     assert run_villager_task(agent, world)
 
-    assert world.tile_at(5, 5).kind == "shelter"
+    assert world.tile_at(5, 5).kind == "home"
+    assert world.home_at(5, 5) is not None
     assert (5, 5) not in world.settlement.construction_progress
 
 
