@@ -1,5 +1,7 @@
 # Roadmap
 
+Current Development Branch: v0.9-development
+
 ## North Star - Slow Autonomous Village Simulation
 
 Automated Colony is moving from an automated survival colony toward a slow autonomous generational village simulation.
@@ -476,10 +478,10 @@ Validation checklist:
 
 - [x] 50-year autonomous simulation
 - [x] 100-year autonomous simulation
-- [ ] Population remains stable
+- [x] Population remains stable
 - [x] Households persist across generations
 - [x] Families continue beyond founders
-- [ ] Renderer performance remains stable
+- [x] Renderer performance remains stable
 - [x] Chronicle continues to generate interesting historical events
 - [x] No long-term simulation deadlocks
 - [x] No irreversible resource collapse
@@ -491,11 +493,11 @@ Notes:
 - This is a validation milestone, not a feature milestone.
 - Prefer identifying balancing issues over adding new systems.
 - Any failures should become GitHub issues rather than expanding the scope of v0.8.
-- Only merge v0.8 once the simulation demonstrates believable long-term continuity.
+- v0.8 is accepted for release. Long-matrix headless validation throughput remains future optimization work, not a release blocker.
 
 ### Release Blocker - Century-Scale Population Renewal
 
-- [ ] Investigate why births no longer replace natural deaths during century-scale simulations despite functioning partnerships, households, residential growth, succession, and family systems.
+- [x] Investigate why births no longer replace natural deaths during century-scale simulations despite functioning partnerships, households, residential growth, succession, and family systems.
 
 Completion criteria:
 
