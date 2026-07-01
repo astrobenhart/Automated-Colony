@@ -12,10 +12,16 @@ The player should feel like they are observing a place with homes, paths, jobs, 
 
 The settlement should not feel like a blank map where every villager starts from scratch. The player is not founding every story. The player is arriving partway through ongoing village life.
 
+As of v0.8, the foundational generational simulation is complete. Future development should now ask a different question:
+
+"What memorable stories naturally emerge from this village?"
+
+Perfect realism is no longer the main objective. Interesting, believable villages are. When a more accurate simulation conflicts with a more memorable emergent story, prefer the story unless realism directly improves it.
+
 Long-term direction:
 - A slow autonomous village simulation where generations of villagers live, work, form households, reproduce, inherit traits, reshape the land, and create emergent stories over long periods of time.
 - The project is not a colony manager. The observer watches the world unfold; they do not assign jobs, command households, place every building, or micromanage production.
-- Survival remains important, but the future emphasis is long-running village continuity, daily life, generational memory, and visible accumulated history.
+- Survival remains important, but the future emphasis is memorable moments, personality, traditions, relationships, mystery, atmosphere, village identity, generational memory, and visible accumulated history.
 
 ## Release Notes
 
@@ -506,137 +512,248 @@ Completion criteria:
 - Investigation report written.
 - Evidence gathered before any gameplay balancing begins.
 
-## v0.9 - Workplaces, Professions, and Delivery Networks
+## Current Development - v0.9 Stories
 
-Goal: Make daily work legible and useful without turning the project into a colony-management job board.
+Purpose:
 
-Features:
-- [ ] Deeper professions
-- [ ] Workplace routines
-- [ ] Workshop routines such as opening, working, closing, and returning home
-- [ ] Production chains
-- [ ] Delivery/resource movement between homes, farms, storage, workshops, and future workplaces
-- [ ] Role-specific daily work
-- [ ] More visible job identity without player job assignment
+Transform the simulation from a functioning generational village into one that creates memorable stories.
 
-Future-facing example:
-- A blacksmith wakes early, walks to the forge, starts the forge, receives raw materials, crafts goods, sends goods into storage or delivery networks, closes the forge, returns home, eats, spends time with household, sleeps, and wakes again the next day.
+The emphasis is character, relationships, village identity, atmosphere, mystery, and the Chronicle. Systems should stay lightweight and observable. v0.9 should make the player think, "I can't believe that happened," rather than, "The simulation was technically impressive."
 
-Notes:
-- The blacksmith example is aspirational behavior, not a v0.7 acceptance requirement.
-- Resource Reservation v1 remains the current coordination layer until richer production chains justify deeper logistics.
-- Full delivery/logistics should stay autonomous and should not become player work orders.
+Design priorities:
 
-## v1.0 - Large Autonomous Settlement Screensaver
+- Prefer memorable emergent stories over stricter realism.
+- Keep behaviour autonomous and readable.
+- Avoid micromanagement, player work orders, social spreadsheets, and complex management UI.
+- Use existing households, families, memories, and Chronicle systems as the foundation.
+- Let rare events remain rare so they feel meaningful.
 
-Goal: Support long-running observation of a large settlement whose people, land, buildings, paths, households, and history change over years.
+### Phase 1 - Village Society
 
-Features:
-- [ ] Hundreds of villagers through simulation level of detail
-- [ ] Visible / nearby villagers with detailed movement, current task/state, animation, local interactions, and pathfinding
-- [ ] Offscreen / less relevant villagers with simplified schedule state, approximate location, work progress, and resource consumption/production
-- [ ] Background villagers with hourly/daily summaries, social updates, births/deaths, work completion, and history events
-- [ ] Long-term history across births, deaths, households, work, settlement change, land change, and major events
-- [ ] Land transformed over years by paths, farms, cleared woods, buildings, workshops, storage, worn ground, abandoned homes, and ruins
-- [ ] Natural forces that continue reshaping the world through seasons, drought, heavy rain, vegetation changes, wildlife movement, and eventual water/river changes
-- [ ] Stable screensaver mode for slow, readable, long-running observation
+Purpose:
 
-Scale Targets:
-- Short-term v0.7 target: 30-60 villagers.
-- Medium-term target: 100-200 villagers.
-- Long-term target: hundreds of villagers.
+Villagers should begin to feel like members of a community rather than isolated workers.
 
-Performance Notes:
-- Hundreds of fully pathfinding villagers every tick is not a requirement and should be avoided.
-- Simulation LOD is required before large populations become a default target.
-- The player-facing goal is believable continuity, not perfect per-tick simulation for every person.
+Possible features:
 
-## Future Systems / Backlog
-
-### Paths and Lived-In Land
-
-Goal: Make paths, worn ground, fields, buildings, and abandoned places show that people have lived here for a long time.
-
-Features:
-- [ ] Pre-generated paths between homes, farms, storage, and workplaces
-- [ ] Path wear from repeated travel
-- [ ] Road improvement
-- [ ] Abandoned paths fading
-- [ ] Paths around ruins, old homes, or former workplaces
-- [ ] Cleared woods, expanded fields, worn ground, and visible village expansion
-
-### Migration, Multi-Settlement History, and Ruins
-
-Goal: Preserve the earlier migration and ruins vision as long-term history work under the lived-in settlement direction.
-
-Features:
-- [ ] Migration pressure from crowding, carrying capacity, food pressure, or settlement status
-- [ ] Departure groups
-- [ ] Arrival/newcomer events if appropriate
-- [ ] Splinter settlement foundations
-- [ ] Named settlements and founding records
-- [ ] Migration paths
-- [ ] Splinter settlement history
-- [ ] Ruins of failed or abandoned settlements
-- [ ] Timeline view
-- [ ] Myths or legends generated from real events
-- [ ] Historical links between settlements, ruins, migration, households, and notable villagers
+- [ ] Friendships
+- [ ] Favourite companions
+- [ ] Visiting households
+- [ ] Shared meals
+- [ ] Family gatherings
+- [ ] Village celebrations
+- [ ] Mourning
+- [ ] Gathering places
+- [ ] Social routines
 
 Notes:
-- Migration remains a future renewal/expansion mechanism.
-- Multiple settlements should emerge from pressure and history, not player placement.
-- Ruins and lineage should connect past settlement stories to current play.
 
-### Mysteries and Wanderers
+- Keep systems lightweight.
+- Avoid complex social simulation.
+- Prioritise visible moments that can become memories or Chronicle entries.
 
-Goal: Let the living world occasionally surprise the observer with rare visitors, strange events, and unexplained landmarks that create stories without becoming another management layer.
+### Phase 2 - Romance
 
-Features:
-- [ ] Rare visitor framework
-- [ ] Wandering Wizard as one possible visitor
-- [ ] Strange hermits, lost knights, travelling merchants, dreaming pilgrims, golden stags, and other unusual passersby
-- [ ] Strange events such as meteor strikes, falling stars, auroras, ghost lights, singing forests, sudden mist, or animals gathering silently at night
-- [ ] Mystical landmarks such as ancient standing stones, hidden ruins, crystal springs, sleeping giant trees, marked groves, or forgotten shrines
-- [ ] Villager reactions to wonders, visitors, and omens
-- [ ] History entries for mysteries, arrivals, departures, and strange outcomes
+Purpose:
 
-Notes:
-- Rare means rare; mysteries should not happen constantly.
-- The player does not summon visitors or command them.
-- Visitors are autonomous and should not become another colony role.
-- The wizard should be one possible visitor, not the entire system.
-- Mysteries become stronger once households, paths, memories, and long-term history can react to them.
+Give partnerships more personality without turning the project into a dating simulator.
 
-### Deeper Logistics
+Possible features:
 
-Goal: Add full logistics only when the simulation has enough production chains and destinations to justify the complexity.
+- [ ] Affection growing over time
+- [ ] Spending free time together
+- [ ] Small gifts
+- [ ] Companionship
+- [ ] Happiness from successful relationships
+- [ ] Sadness after losing a long-term partner
 
-Features:
-- [ ] Full hauling and autonomous task claiming system
-- [ ] Hauling chains between resource sources, stockpiles, workshops, farms, roads, homes, and future buildings
-- [ ] Item stacks or explicit carried-resource destinations
-- [ ] Autonomous job board if needed internally
-- [ ] Inventory and resource reservations beyond simple target claims
-- [ ] Multi-step production logistics
+Do not implement:
+
+- jealousy
+- love triangles
+- dating mechanics
+- relationship graphs
 
 Notes:
-- Do not add player job assignment, player work orders, or micromanagement UI.
-- Reconsider deeper logistics only after roads, workplaces, professions, and richer production chains make it worthwhile.
 
-### Deferred Non-Goals
+- Romance should be subtle, warm, and generational.
+- Partnerships remain stable adult bonds, not player-managed relationships.
 
-Keep these out of v0.7:
-- full blacksmith production chain
-- full delivery/logistics network
-- full economy
-- full family tree UI
-- pregnancy mechanics
-- inheritance law
-- romance drama
-- politics
-- formal leaders
-- multi-settlement trade
-- hundreds of fully pathfinding villagers
-- micromanagement UI
-- player job assignment
-- player work orders
+### Phase 3 - Wanderers
+
+Purpose:
+
+The outside world should occasionally visit the village.
+
+Possible features:
+
+- [ ] Travelling merchants
+- [ ] Storytellers
+- [ ] Hunters
+- [ ] Pilgrims
+- [ ] Scholars
+- [ ] Refugees
+- [ ] Craftsmen
+- [ ] Arrival, departure, and stay decisions
+- [ ] Visitor memories and Chronicle entries
+
+Notes:
+
+- Some visitors leave.
+- Some visitors stay.
+- Some become memorable members of the village.
+- Visitors should be autonomous and should not become player-assigned colony roles.
+
+### Phase 4 - Mysteries
+
+Purpose:
+
+The world should feel larger, older, and stranger than the village.
+
+Possible features:
+
+- [ ] Strange lights
+- [ ] Ancient ruins
+- [ ] Magical weather
+- [ ] Forgotten shrines
+- [ ] Mysterious travellers
+- [ ] Impossible events
+- [ ] Unusual creatures
+- [ ] Villager reactions to omens and wonders
+- [ ] Chronicle entries for strange events
+
+Notes:
+
+- Keep explanations intentionally ambiguous.
+- Mysteries should create curiosity rather than provide answers.
+- Rare mysteries are stronger than constant mysteries.
+
+### Phase 5 - Living Chronicle
+
+Purpose:
+
+The Chronicle should become one of the defining features of Automated Colony.
+
+Possible features:
+
+- [ ] Village legends
+- [ ] Famous families
+- [ ] Remembered heroes
+- [ ] Traditions
+- [ ] Anniversaries
+- [ ] Historical references
+- [ ] Stories passed through generations
+- [ ] Chronicle callbacks to older events
+
+Notes:
+
+- The Chronicle should feel like reading the history of a real place.
+- Avoid spam. Prioritise events that change how the village will be remembered.
+- Use families, households, partnerships, deaths, visitors, mysteries, and disasters as story anchors.
+
+### Phase 6 - Personality
+
+Purpose:
+
+Villagers should become recognisable individuals.
+
+Possible features:
+
+- [ ] Habits
+- [ ] Quirks
+- [ ] Favourite places
+- [ ] Favourite people
+- [ ] Personal ambitions
+- [ ] Reputation
+- [ ] Memorable achievements
+- [ ] Personality-informed memories and Chronicle mentions
+
+Notes:
+
+- Avoid micromanagement.
+- Keep behaviour emergent.
+- Personality should help explain memorable moments, not become a stat sheet.
+
+## Planned Follow-Up - v0.9.1 Living World
+
+Purpose:
+
+Transform Automated Colony into a beautiful retro simulation that players enjoy simply watching.
+
+This release focuses almost entirely on presentation. The simulation should remain largely unchanged. The renderer becomes presentation-first rather than debug-first.
+
+### Phase 1 - Presentation Architecture
+
+Purpose:
+
+Separate simulation timing from rendering so the world can look fluid without changing gameplay.
+
+Features:
+
+- [ ] Snapshot-based renderer
+- [ ] Renderer interpolation between simulation updates
+- [ ] Independent render timeline
+- [ ] Animation framework
+- [ ] Sprite pipeline
+- [ ] Camera smoothing
+- [ ] Future replay and cinematic support
+
+Notes:
+
+- The simulation remains deterministic.
+- Presentation becomes independent from simulation timing.
+- Movement should appear continuous while gameplay continues to use discrete simulation updates.
+
+### Phase 2 - Visual Overhaul
+
+Purpose:
+
+Replace debug-style visuals with a beautiful retro-inspired world.
+
+Features:
+
+- [ ] Pixel-art sprites
+- [ ] Animated villagers
+- [ ] Smooth movement interpolation
+- [ ] Animated trees
+- [ ] Animated water
+- [ ] Wind effects
+- [ ] Clouds
+- [ ] Dynamic shadows
+- [ ] Smoke
+- [ ] Fire animation
+- [ ] Weather particles
+- [ ] Seasonal artwork
+- [ ] Ambient environmental effects
+- [ ] Lighting improvements
+- [ ] Terrain polish
+
+Notes:
+
+- The goal is atmosphere, not realism.
+- The world should feel alive even when nothing important is happening.
+- Players should want to leave the simulation running because it is beautiful to watch.
+
+## Technical Debt
+
+Purpose:
+
+Track important engineering work without letting optimisation dominate the main story and presentation roadmap.
+
+Tasks:
+
+- [ ] Headless simulation performance
+- [ ] Validation performance
+- [ ] Renderer optimisation
+- [ ] AI profiling
+- [ ] Large-world performance
+- [ ] Memory optimisation
+- [ ] Simulation level-of-detail research for future large villages
+- [ ] Renderer cache and layer profiling as sprite systems arrive
+
+Notes:
+
+- These remain important.
+- They should support the living-world goal rather than replace it.
+- Long-matrix validation throughput is future optimisation work, not a v0.8 release blocker.
+- Large autonomous settlements remain a long-term ambition, but the immediate priority is story quality and atmosphere.
