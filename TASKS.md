@@ -8,6 +8,22 @@ No active task.
 
 ## Release Notes
 
+### v0.9 - Stories
+
+Status: In development.
+
+Completed systems:
+- Friendships emerge from shared households, workplaces, nearby time, and shared activity.
+- Villagers keep a small capped set of meaningful friends.
+- Close friendships can appear in villager inspection, diagnostics, mood context, mourning, and sparse Chronicle entries.
+
+Known limitations:
+- v0.9 friendship effects are intentionally subtle.
+- There is no conversation system, social scheduling, relationship graph, jealousy, rivalry, or romance drama.
+- Future v0.9 phases should build on friendships without turning them into player-managed mechanics.
+
+---
+
 ### v0.7 - Lived-In Settlements
 
 Status: Released.

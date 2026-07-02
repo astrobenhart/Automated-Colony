@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from src.families import record_family_death
+from src.friendships import handle_friend_death
 from src.influence import influence_label, peak_influence_label
 from src.social_memory import FAMILIAR, familiarity_level, villager_key
 from src.succession import handle_household_death_succession
@@ -95,6 +96,7 @@ def record_death(world: World, agent: Agent, cause_of_death: str) -> DeathRecord
         remembered_by=remembered_by,
     )
     world.death_records.append(record)
+    handle_friend_death(world, agent)
     create_remembrance(world, agent, remembered_by)
     record_death_history(world, record)
     record_family_death(world, agent)

@@ -11,6 +11,7 @@ from src.colony_storage import ColonyStorage
 from src.environment_events import update_environment_events
 from src.farming import maybe_create_farm, update_farms
 from src.families import ensure_family_registry
+from src.friendships import update_friendships
 from src.history_seed import seed_starting_chronicle
 from src.influence import update_influence_peaks
 from src.death_memory import DeathRecord, expire_remembrances
@@ -106,6 +107,9 @@ class World:
     natural_deaths_by_year: dict[int, int] = field(default_factory=dict)
     household_succession_events_by_year: dict[int, int] = field(default_factory=dict)
     household_split_events_by_year: dict[int, int] = field(default_factory=dict)
+    friendship_formations_by_year: dict[int, int] = field(default_factory=dict)
+    friendship_losses_by_year: dict[int, int] = field(default_factory=dict)
+    recorded_friendship_pairs: set[tuple[str, str]] = field(default_factory=set)
     lod_stats: dict[str, LODProfileStat] = field(
         default_factory=lambda: {tier: LODProfileStat() for tier in tier_names()}
     )
@@ -627,6 +631,7 @@ class World:
         update_social_memory(self)
         self.ensure_household_membership()
         update_household_familiarity(self)
+        update_friendships(self)
         update_partnerships(self)
         update_births(self)
         update_influence_peaks(self)

@@ -536,7 +536,7 @@ Villagers should begin to feel like members of a community rather than isolated 
 
 Possible features:
 
-- [ ] Friendships
+- [x] Friendships
 - [ ] Favourite companions
 - [ ] Visiting households
 - [ ] Shared meals

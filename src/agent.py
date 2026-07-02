@@ -29,6 +29,7 @@ from src.goals import (
     Goal,
 )
 from src.generations import FamilyLinks, FamilyMemoryRecord, InheritanceProfile, LifecycleRecord
+from src.friendships import FriendshipEntry
 from src.profiler import profiler
 from src.lifecycle import ADULT, EXPERIENCED
 from src.roles import FOOD, WATER, WOOD, GENERALIST, discovery_radius, role_goal_bonus
@@ -116,6 +117,7 @@ class Agent:
     remembered_wood: set[tuple[int, int]] = field(default_factory=set, repr=False)
     remembered_shelters: set[tuple[int, int]] = field(default_factory=set, repr=False)
     social_memory: dict[str, SocialMemoryEntry] = field(default_factory=dict, repr=False)
+    friendships: dict[str, FriendshipEntry] = field(default_factory=dict, repr=False)
     personal_memories: list[str] = field(default_factory=list, repr=False)
     family_memories: list[FamilyMemoryRecord] = field(default_factory=list, repr=False)
 

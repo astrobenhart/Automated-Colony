@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from src.death_memory import active_remembrance_name
+from src.friendships import friendship_displays
 from src.influence import influence_label
 from src.social_bonds import social_bonds
 from src.social_memory import relationship_summary
@@ -40,6 +41,7 @@ def villager_detail_sections(agent, world=None) -> list[tuple[str, list[tuple[st
         ("Household", household_rows(agent, world)),
         ("Partnership", partnership_rows(agent, world)),
         ("Status", status_rows(agent, world)),
+        ("Friends", friendship_rows(agent)),
         ("Relationships", relationship_rows(agent)),
         ("Bonds", bond_rows(agent)),
         ("Memories", memory_rows(agent)),
@@ -194,6 +196,13 @@ def relationship_rows(agent) -> list[tuple[str, object]]:
     if not relationships:
         return [("", "None")]
     return relationships
+
+
+def friendship_rows(agent) -> list[tuple[str, object]]:
+    friends = friendship_displays(agent)
+    if not friends:
+        return [("", "None")]
+    return [(friend.label, f"{friend.name} ({friend.strength})") for friend in friends]
 
 
 def bond_rows(agent) -> list[tuple[str, object]]:

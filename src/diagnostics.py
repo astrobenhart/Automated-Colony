@@ -13,6 +13,7 @@ from src.births import (
 )
 from src.config import SETTLEMENT_FOOD_TARGET_DAYS, SETTLEMENT_WATER_TARGET_DAYS
 from src.families import family_rows
+from src.friendships import friendship_diagnostics, has_nearby_close_friend
 from src.generations import BIRTH
 from src.lifecycle import CHILD
 from src.lifecycle_progression import days_until_adulthood
@@ -40,6 +41,7 @@ def diagnostics_sections(world, renderer_metrics: dict[str, object] | None = Non
         DiagnosticSection("Households", household_rows(world)),
         DiagnosticSection("Housing", housing_rows(world)),
         DiagnosticSection("Partnerships", partnership_rows(world)),
+        DiagnosticSection("Friendships", friendship_rows(world)),
         DiagnosticSection("Births", birth_rows(world)),
         DiagnosticSection("Resources", resource_rows(world)),
         DiagnosticSection("Workforce", workforce_rows(world)),
@@ -211,6 +213,10 @@ def birth_rows(world) -> list[tuple[str, object]]:
     ]
 
 
+def friendship_rows(world) -> list[tuple[str, object]]:
+    return friendship_diagnostics(world)
+
+
 def birth_blockers(world) -> Counter:
     blockers: Counter[str] = Counter()
     living_by_id = {villager_key(agent): agent for agent in world.living_agents()}
@@ -324,6 +330,10 @@ def derived_mood_score(agent, world) -> int:
         status = statuses.get(household.household_id)
         if status is not None and status.overcrowded_by > 0:
             score -= min(20, status.overcrowded_by * 5)
+    if has_nearby_close_friend(agent, world):
+        score += 3
+    if getattr(agent, "remembering", None):
+        score -= 4
     return max(0, min(100, score))
 
 
@@ -331,6 +341,8 @@ def mood_modifiers(agent, world) -> tuple[str, str]:
     positive = "Household stability" if getattr(agent, "household_id", None) else "Basic needs met"
     if getattr(agent, "partner_id", None):
         positive = "Partnered"
+    if has_nearby_close_friend(agent, world):
+        positive = "Near close friend"
     negative = "None"
     if getattr(agent, "thirst", 0) >= 70:
         negative = "Thirst"
@@ -338,6 +350,8 @@ def mood_modifiers(agent, world) -> tuple[str, str]:
         negative = "Hunger"
     elif getattr(agent, "fatigue", 0) >= 70:
         negative = "Fatigue"
+    elif getattr(agent, "remembering", None):
+        negative = "Mourning"
     else:
         household = world.household_for_agent(agent) if hasattr(world, "household_for_agent") else None
         if household is not None:

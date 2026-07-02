@@ -773,6 +773,59 @@ Social Bond Labels do not affect AI, movement, pathfinding, gathering, building,
 
 In v0.6 these labels remain non-family and non-romantic. Household foundations, reproduction, ancestry, children, and parent-link systems should be designed explicitly through the lived-in settlement and generational roadmap rather than inferred from Social Bond Labels.
 
+## Friendships
+
+Friendships are memories created by shared life.
+
+They are not jobs, commands, conversations, dialogue, quests, or a relationship graph. Villagers do not decide to run a `become friends` task. Instead, friendship grows when existing village life repeatedly places people together.
+
+Purpose:
+- make villagers feel like members of a community
+- let the player recognise small social groups over time
+- provide a foundation for romance, mourning, celebrations, wanderers, personality, and the Living Chronicle
+- support memorable stories without creating a complex social simulator
+
+Formation rules:
+- household members strengthen friendship through daily cohabitation
+- assigned coworkers strengthen friendship through shared workplace life
+- nearby idle or routine presence can strengthen friendship slowly
+- shared activity such as construction, harvesting, gathering, or other visible work can strengthen friendship
+- repeated interaction matters more than one dramatic event
+
+Memory model:
+- each villager stores only a small capped set of meaningful friendships
+- friendship entries store friend id, display name, score, first formed day, and last interaction day
+- the active friendship list is capped to the strongest known friends
+- close friendships may be recorded in the Chronicle once when they become meaningful
+- stale friendships may weaken slowly after a very long period without interaction, but they do not disappear quickly
+- deceased friends are removed from active friendship lists so living friendship summaries remain current
+
+Gameplay effects:
+- effects are intentionally subtle
+- idle wandering may sometimes prefer a place near a close friend
+- mood diagnostics can show a small positive effect when a close friend is nearby
+- close friend death can create temporary remembrance and a small mourning signal
+- survival needs always dominate friendship preferences
+- friendships never override hunger, thirst, fatigue, pathfinding safety, work completion, household rules, births, deaths, or construction
+
+Chronicle integration:
+- close friendship formation can create sparse local-story entries such as `Rowan and Ella became close friends.`
+- close friend death can create sparse mourning entries such as `Thomas mourned the loss of Iris.`
+- friendship Chronicle entries should remain uncommon and should prioritise meaningful long-term bonds over frequent social noise
+
+Diagnostics:
+- developer diagnostics expose average friendships per villager, close friendship count, average strength, most connected villager, friendship formations, and friendship losses
+- these diagnostics exist for balancing and story debugging, not player optimisation
+
+Design boundaries:
+- no global all-to-all relationship graph
+- no per-frame friendship comparison
+- no player-managed social scheduling
+- no dialogue system
+- no jealousy, rivalry, social politics, or romance drama in this phase
+- no survival penalties for lacking friends
+- social bond labels remain display-only familiarity labels; friendships are the first lightweight social layer with subtle story-facing effects
+
 ## Pre-Existing Social History
 
 The v0.7 starting village seeds quiet prior life so villagers do not all begin as strangers.
