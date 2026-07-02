@@ -16,9 +16,12 @@ Completed systems:
 - Friendships emerge from shared households, workplaces, nearby time, and shared activity.
 - Villagers keep a small capped set of meaningful friends.
 - Close friendships can appear in villager inspection, diagnostics, mood context, mourning, and sparse Chronicle entries.
+- Village Gatherings encourage free villagers to drift toward socially attractive existing locations without schedules or events.
+- Gathering diagnostics derive active groups, sizes, participants, and destinations from current positions.
 
 Known limitations:
 - v0.9 friendship effects are intentionally subtle.
+- Village Gatherings are ordinary free-time behaviour and do not create Chronicle entries by themselves.
 - There is no conversation system, social scheduling, relationship graph, jealousy, rivalry, or romance drama.
 - Future v0.9 phases should build on friendships without turning them into player-managed mechanics.
 

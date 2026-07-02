@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from src.death_memory import active_remembrance_name
 from src.friendships import friendship_displays
+from src.gatherings import social_state
 from src.influence import influence_label
 from src.social_bonds import social_bonds
 from src.social_memory import relationship_summary
@@ -183,6 +184,7 @@ def family_name(agent, world=None) -> str | None:
 def status_rows(agent, world=None) -> list[tuple[str, object]]:
     rows = [
         ("State", safe_state_label(agent, world) or "Unknown"),
+        ("Social", social_state(agent, world)),
         ("Influence", influence_label(agent, world)),
     ]
     remembering = active_remembrance_name(agent, world)

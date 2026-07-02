@@ -476,12 +476,12 @@ def begin_idle_pause(agent: Agent, world: World, rng=random):
 
 
 def random_tile_near_home(world: World, agent: Agent, rng=random) -> tuple[int, int] | None:
-    from src.friendships import friend_wander_anchor
+    from src.gatherings import gathering_wander_target
 
-    if rng.random() < 0.25:
-        friend_target = friend_wander_anchor(agent, world, rng)
-        if friend_target is not None:
-            return friend_target
+    if rng.random() < 0.45:
+        gathering_target = gathering_wander_target(agent, world, rng)
+        if gathering_target is not None:
+            return gathering_target
 
     home = home_anchor(agent, world)
     if home is None:

@@ -14,6 +14,7 @@ from src.births import (
 from src.config import SETTLEMENT_FOOD_TARGET_DAYS, SETTLEMENT_WATER_TARGET_DAYS
 from src.families import family_rows
 from src.friendships import friendship_diagnostics, has_nearby_close_friend
+from src.gatherings import gathering_diagnostics
 from src.generations import BIRTH
 from src.lifecycle import CHILD
 from src.lifecycle_progression import days_until_adulthood
@@ -42,6 +43,7 @@ def diagnostics_sections(world, renderer_metrics: dict[str, object] | None = Non
         DiagnosticSection("Housing", housing_rows(world)),
         DiagnosticSection("Partnerships", partnership_rows(world)),
         DiagnosticSection("Friendships", friendship_rows(world)),
+        DiagnosticSection("Gatherings", gathering_rows(world)),
         DiagnosticSection("Births", birth_rows(world)),
         DiagnosticSection("Resources", resource_rows(world)),
         DiagnosticSection("Workforce", workforce_rows(world)),
@@ -215,6 +217,10 @@ def birth_rows(world) -> list[tuple[str, object]]:
 
 def friendship_rows(world) -> list[tuple[str, object]]:
     return friendship_diagnostics(world)
+
+
+def gathering_rows(world) -> list[tuple[str, object]]:
+    return gathering_diagnostics(world)
 
 
 def birth_blockers(world) -> Counter:

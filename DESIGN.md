@@ -826,6 +826,66 @@ Design boundaries:
 - no survival penalties for lacking friends
 - social bond labels remain display-only familiarity labels; friendships are the first lightweight social layer with subtle story-facing effects
 
+## Village Gatherings
+
+Village Gatherings are social gravity, not choreography.
+
+They are not events, schedules, parties, conversations, dialogue, or group AI. The simulation does not tell villagers that a gathering is happening. Instead, idle villagers independently prefer places that already feel socially attractive.
+
+Purpose:
+- make free-time village life feel communal
+- create visible small groups without scripting them
+- give future Shared Moments, Celebrations, Wanderers, children playing, and traditions a natural stage
+- let friends, families, households, and visitors influence where people drift
+
+Participation rules:
+- only free villagers can participate
+- urgent hunger, thirst, fatigue, survival, work, construction, farming, hauling, sleeping, and emergencies take priority
+- gatherings never interrupt existing work or survival behaviour
+- children use the same attraction model but favour home, household, family, and trusted nearby adults
+
+Destination selection:
+- no new Gathering Place entity exists
+- villagers score existing village locations such as the village centre, homes, friends' homes, workplaces, farm/workplace edges, and known water sources
+- future taverns, markets, shrines, visitor camps, or celebration sites should become attractive by exposing ordinary world positions rather than requiring a separate gathering system
+
+Social attraction:
+- destinations become more attractive when villagers are already nearby
+- close friends, household members, and family members increase attraction
+- distance reduces attraction
+- the village centre remains a mild shared anchor
+- a small random factor prevents the same perfect destination being chosen every time
+- attraction diminishes after a comfortable group size so large villages naturally form multiple gatherings instead of one crowd
+
+Emergent behaviours:
+- friends gathering
+- families gathering
+- visiting households
+- shared meals
+- children playing nearby
+- wanderers drawing attention
+
+These behaviours should emerge from destination choice. They should not become separate gathering systems.
+
+Inspection and diagnostics:
+- villager inspection can show a compact derived social state such as Working, Resting, Gathering, Visiting Friend, or Idle
+- diagnostics derive active gatherings, average gathering size, largest gathering, idle participants, and destination labels from current villager positions
+- ordinary gatherings do not create Chronicle entries; the Chronicle records meaningful events that may happen at gatherings later
+
+Future integration:
+- Celebrations can temporarily make a location more attractive without redesigning movement
+- Wanderers can attract villagers simply by existing at a place
+- Shared Moments can trigger when villagers are already standing together
+- traditions can arise from repeated gatherings at the same kinds of places
+
+Design boundaries:
+- no explicit gathering schedule
+- no party mechanics
+- no dialogue or conversation system
+- no global social search each frame
+- no persistent gathering records unless a future story system needs them
+- systems should create behaviours; behaviours should not become separate systems
+
 ## Pre-Existing Social History
 
 The v0.7 starting village seeds quiet prior life so villagers do not all begin as strangers.

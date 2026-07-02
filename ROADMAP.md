@@ -537,20 +537,104 @@ Villagers should begin to feel like members of a community rather than isolated 
 Possible features:
 
 - [x] Friendships
-- [ ] Favourite companions
-- [ ] Visiting households
-- [ ] Shared meals
-- [ ] Family gatherings
-- [ ] Village celebrations
-- [ ] Mourning
-- [ ] Gathering places
-- [ ] Social routines
+- [x] Village Gatherings
+- [ ] Shared Moments
+- [ ] Celebrations
+- [ ] Living Community
+
+#### Friendships
+
+Purpose:
+
+Allow villagers to remember people they repeatedly share life with.
+
+Friendships should remain the foundation for later social behaviours such as favourite companions, mourning, visiting, shared moments, celebrations, romance, and Chronicle stories.
+
+#### Village Gatherings
+
+Purpose:
+
+Allow villagers to naturally congregate during free time.
+
+Gatherings should emerge from existing friendships, families, households, idle behaviour, and future visitor systems. The system should create opportunities for villagers to spend time together without introducing explicit schedules.
+
+Expected emergent behaviours include:
+
+- friends gathering
+- families gathering
+- visiting households
+- shared meals
+- children playing
+- wanderers joining gatherings
+
+These are outcomes of the gathering system, not independent systems.
+
+#### Shared Moments
+
+Purpose:
+
+Represent small everyday social interactions.
+
+Examples include:
+
+- sharing meals
+- resting together
+- sitting together
+- chatting
+- warming by a fire
+- watching village events
+
+Shared meals are one type of shared moment, not a standalone system.
+
+#### Celebrations
+
+Purpose:
+
+Represent significant events in village life.
+
+Celebrations should include joyful events, seasonal traditions, community milestones, and solemn ceremonies. They should integrate naturally with families, friendships, gatherings, and the Chronicle.
+
+Possible examples:
+
+- Harvest Festival
+- Founding Day
+- First Snow
+- birth celebrations
+- coming of age
+- seasonal festivals
+- open cremation ceremonies
+
+Open cremations should become an important village ceremony. When a respected villager dies, the community may gather outside the settlement for a funeral fire. Family, close friends, and other villagers may attend depending on their relationships.
+
+The event should strengthen the feeling that the village remembers its people rather than simply removing them from the simulation.
+
+Mourning is not a standalone system. It should emerge through friendships, celebrations, and the Chronicle when meaningful relationships are lost.
+
+#### Living Community
+
+Purpose:
+
+Let the village gradually develop recognisable social groups and traditions.
+
+The player should begin noticing:
+
+- villagers who often spend time together
+- families remaining close
+- regular gathering places
+- recurring community traditions
+
+These behaviours should emerge naturally from the interaction of the underlying systems rather than explicit scripting.
 
 Notes:
 
 - Keep systems lightweight.
 - Avoid complex social simulation.
 - Prioritise visible moments that can become memories or Chronicle entries.
+- Systems should create behaviours.
+- Behaviours should not become separate systems.
+- Whenever multiple roadmap items can naturally emerge from a single gameplay system, prefer implementing the single underlying system rather than several narrowly focused mechanics.
+- The player should observe these behaviours emerging naturally without the simulation explicitly managing each one.
+- This principle should guide all future social systems.
 
 ### Phase 2 - Romance
 
