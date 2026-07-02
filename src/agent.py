@@ -72,6 +72,8 @@ class Agent:
     appearance_type: str | None = None
     remembering: str | None = None
     remembrance_expires_day: int = 0
+    shared_moment: str | None = None
+    shared_moment_started_day: int = 0
     home_settlement_id: str | None = None
     home_settlement_name: str | None = None
     household_id: str | None = None

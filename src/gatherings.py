@@ -84,6 +84,13 @@ def destination_anchors(agent: Agent, world: World) -> dict[str, tuple[int, int]
     if settlement is not None:
         anchors["Village Centre"] = (settlement.x, settlement.y)
 
+    from src.celebrations import celebration_destination
+
+    ceremony = celebration_destination(world)
+    if ceremony is not None:
+        label, anchor = ceremony
+        anchors[label] = anchor
+
     home = home_anchor(agent, world)
     if home is not None:
         anchors["Home"] = home
@@ -133,6 +140,10 @@ def score_destination(
         score += 6
     if label.startswith("Friend ") or label.endswith("'s Home"):
         score += 22
+    if label.startswith("Ceremony:"):
+        from src.celebrations import celebration_attraction
+
+        score += celebration_attraction(agent, world)
     if getattr(agent, "lifecycle_stage", None) == CHILD:
         score += child_safety_bonus(label, friend_count, household_count, family_count)
 

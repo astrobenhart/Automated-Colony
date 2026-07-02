@@ -538,9 +538,9 @@ Possible features:
 
 - [x] Friendships
 - [x] Village Gatherings
-- [ ] Shared Moments
-- [ ] Celebrations
-- [ ] Living Community
+- [x] Shared Moments
+- [x] Celebrations
+- [x] Living Community
 
 #### Friendships
 

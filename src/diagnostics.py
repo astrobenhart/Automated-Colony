@@ -12,6 +12,8 @@ from src.births import (
     settlement_id,
 )
 from src.config import SETTLEMENT_FOOD_TARGET_DAYS, SETTLEMENT_WATER_TARGET_DAYS
+from src.celebrations import celebration_diagnostics
+from src.community import community_diagnostics
 from src.families import family_rows
 from src.friendships import friendship_diagnostics, has_nearby_close_friend
 from src.gatherings import gathering_diagnostics
@@ -23,6 +25,7 @@ from src.renewal import age_distribution, expected_deaths_this_year, generation_
 from src.residential import all_household_statuses, residential_demand
 from src.roles import BUILDER, FORAGER, GENERALIST
 from src.settlement_planner import WORK_CONSTRUCTION, WORK_FARMING, WORK_FOOD, WORK_SUPPORT, WORK_WATER, WORK_WOOD
+from src.shared_moments import current_shared_moment, shared_moment_diagnostics
 from src.social_memory import villager_key
 
 
@@ -44,6 +47,9 @@ def diagnostics_sections(world, renderer_metrics: dict[str, object] | None = Non
         DiagnosticSection("Partnerships", partnership_rows(world)),
         DiagnosticSection("Friendships", friendship_rows(world)),
         DiagnosticSection("Gatherings", gathering_rows(world)),
+        DiagnosticSection("Shared Moments", shared_moment_rows(world)),
+        DiagnosticSection("Celebrations", celebration_rows(world)),
+        DiagnosticSection("Living Community", community_rows(world)),
         DiagnosticSection("Births", birth_rows(world)),
         DiagnosticSection("Resources", resource_rows(world)),
         DiagnosticSection("Workforce", workforce_rows(world)),
@@ -223,6 +229,18 @@ def gathering_rows(world) -> list[tuple[str, object]]:
     return gathering_diagnostics(world)
 
 
+def shared_moment_rows(world) -> list[tuple[str, object]]:
+    return shared_moment_diagnostics(world)
+
+
+def celebration_rows(world) -> list[tuple[str, object]]:
+    return celebration_diagnostics(world)
+
+
+def community_rows(world) -> list[tuple[str, object]]:
+    return community_diagnostics(world)
+
+
 def birth_blockers(world) -> Counter:
     blockers: Counter[str] = Counter()
     living_by_id = {villager_key(agent): agent for agent in world.living_agents()}
@@ -338,6 +356,8 @@ def derived_mood_score(agent, world) -> int:
             score -= min(20, status.overcrowded_by * 5)
     if has_nearby_close_friend(agent, world):
         score += 3
+    if current_shared_moment(agent, world):
+        score += 2
     if getattr(agent, "remembering", None):
         score -= 4
     return max(0, min(100, score))
@@ -349,6 +369,8 @@ def mood_modifiers(agent, world) -> tuple[str, str]:
         positive = "Partnered"
     if has_nearby_close_friend(agent, world):
         positive = "Near close friend"
+    if current_shared_moment(agent, world):
+        positive = "Shared moment"
     negative = "None"
     if getattr(agent, "thirst", 0) >= 70:
         negative = "Thirst"

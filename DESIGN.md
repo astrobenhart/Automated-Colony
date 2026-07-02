@@ -886,6 +886,177 @@ Design boundaries:
 - no persistent gathering records unless a future story system needs them
 - systems should create behaviours; behaviours should not become separate systems
 
+## Shared Moments
+
+Shared Moments are pauses in life.
+
+They answer the question: what are villagers doing while they are already together?
+
+Shared Moments are not jobs, tasks, conversations as gameplay, schedules, or Chronicle events. They are lightweight social states assigned to villagers who are already idle and participating in a Village Gathering.
+
+Purpose:
+- make gatherings feel purposeful
+- add atmosphere to everyday village life
+- provide future renderer animation hooks without changing gameplay
+- let small social interactions gently reinforce friendships
+
+Relationship to Village Gatherings:
+- Village Gatherings decide where idle villagers drift
+- Shared Moments describe what gathered villagers are doing
+- Shared Moments never create new gathering destinations
+- a villager must already be part of a gathering to receive a Shared Moment
+
+Current social states:
+- Conversation
+- Resting
+- Meal
+- Watching
+- Warming
+
+Shared meals are one type of Shared Moment, not a standalone system.
+
+Rules:
+- only idle/free villagers can participate
+- survival, eating, drinking, sleeping, work, construction, farming, hauling, and emergencies always override Shared Moments
+- Shared Moments end naturally when villagers leave the gathering or develop urgent needs
+- ordinary Shared Moments do not create Chronicle entries
+
+Gameplay effects:
+- active Shared Moments may add a very small mood-diagnostic bonus
+- gathered villagers may gain a small amount of friendship from sharing the moment
+- there are no productivity bonuses, no optimisation loop, and no player controls
+
+Renderer preparation:
+- Conversation can later map to a talking animation
+- Meal can later map to an eating animation
+- Resting can later map to sitting or leaning
+- Watching can later map to celebration or spectacle attention
+- Warming can later map to a campfire or funeral-fire animation
+
+Gameplay should expose only the social state. Presentation should decide how to animate it.
+
+Design boundaries:
+- no dialogue system
+- no conversation mechanics
+- no scheduled meals
+- no social task queue
+- no per-frame social search
+- no Chronicle entries for ordinary moments
+
+## Celebrations
+
+Celebrations are community responses to meaningful events.
+
+They are not player-scheduled holidays, minigames, scripted festivals, or a separate AI mode. A celebration briefly changes the social attractiveness of a location, then ordinary Village Gatherings and Shared Moments do the visible work.
+
+Purpose:
+- make major village events feel communal
+- give the village traditions without adding player management
+- let joy, remembrance, and ceremony emerge from existing relationships
+- turn selected important events into concise Chronicle history
+
+Current ceremony support:
+- Open Cremation
+
+Future ceremony types may include:
+- Harvest Festival
+- Founding Day
+- First Snow
+- birth celebrations
+- coming of age
+- seasonal festivals
+
+Open Cremations:
+- may begin when a respected, notable, elder, or well-remembered villager dies
+- choose a valid outdoor location just outside the settlement where a funeral fire can be imagined
+- favour attendance from partners, children, household members, close friends, family, and then other villagers
+- never force attendance from villagers with urgent survival needs or active work
+- record a concise Chronicle entry so the death becomes part of village memory
+
+Relationship to Village Gatherings:
+- celebrations expose a ceremony location as another gathering destination
+- the gathering system scores that destination using normal social attraction plus relationship-based ceremony attraction
+- there is no special movement system, no group AI, and no forced procession
+
+Relationship to Shared Moments:
+- villagers already gathered at a ceremony can receive ordinary Shared Moment states
+- open cremations lean toward Warming, Watching, Conversation, or Resting
+- future renderer work can map those states to funeral-fire, watching, talking, or resting animations without changing gameplay
+
+Relationship to mourning:
+- mourning is not a standalone gameplay system
+- remembrance emerges from death memory, friendships, family relationships, ceremony attendance, and Chronicle entries
+- mood effects remain lightweight and diagnostic rather than a productivity system
+
+Inspection and diagnostics:
+- villager inspection can show the current ceremony and whether the villager is attending
+- diagnostics expose active celebration, current attendance, average attendance context, and celebration history count
+
+Design boundaries:
+- no festival schedule
+- no player-started ceremonies
+- no minigames
+- no dialogue system
+- no special celebration work queue
+- no hard attendance requirement
+- no survival or work interruption
+
+## Living Community
+
+Living Community recognises social patterns that already exist.
+
+It does not create clubs, factions, organisations, social classes, formal memberships, schedules, or new behaviour. It watches the results of Friendships, Village Gatherings, Shared Moments, Celebrations, households, workplaces, and families, then gives repeated patterns a small amount of village memory.
+
+Purpose:
+- let villages develop recognisable social identity over time
+- identify recurring social groups without formal membership
+- recognise important gathering places through repeated use
+- recognise traditions only after ceremonies or behaviours recur
+- let the Chronicle occasionally describe the village as a community
+
+Community Recognition:
+- recurring groups are recognised from repeated gatherings or repeated shared contexts
+- groups are descriptive, not authoritative
+- villagers are not assigned to groups and do not optimise around them
+- groups may stop being observed naturally as villagers age, move, die, or spend time elsewhere
+
+Traditions:
+- traditions are recognised after similar meaningful events occur multiple times
+- current recognition can identify recurring open cremations as Funeral Fires
+- future celebrations such as Harvest Festival, First Snow, Founding Day, births, and coming of age can reuse the same recognition layer
+- traditions are not scheduled by this system
+
+Gathering Places:
+- places become recognised through repeated ordinary gatherings
+- the village centre, homes, workplace edges, fires, riversides, and future visitor or ceremony sites can all become meaningful through use
+- recognised places do not become special terrain or player-designated zones
+
+Families:
+- family behaviour is unchanged
+- long-running families can appear as community associations when they span generations or remain socially connected
+- this is descriptive continuity, not a family reputation or family-tree system
+
+Chronicle integration:
+- the Chronicle may record sparse entries when a community group, gathering place, or tradition becomes recognisable
+- entries should remain rare and story-facing
+- ordinary daily gatherings and Shared Moments still do not become Chronicle spam
+
+Inspection and diagnostics:
+- villager inspection can show compact Community Associations such as Builder Circle, Ash Family, or Village Centre Regular
+- diagnostics expose recognised groups, recognised traditions, recognised gathering places, and the oldest continuing group
+- these surfaces are observational and do not expose raw scoring details
+
+Design boundaries:
+- no factions
+- no clubs
+- no organisations
+- no social classes
+- no permanent group membership
+- no player controls
+- no new AI loop
+- no new pathfinding or movement rules
+- no behaviour changes
+
 ## Pre-Existing Social History
 
 The v0.7 starting village seeds quiet prior life so villagers do not all begin as strangers.

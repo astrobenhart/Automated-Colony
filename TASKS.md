@@ -18,10 +18,19 @@ Completed systems:
 - Close friendships can appear in villager inspection, diagnostics, mood context, mourning, and sparse Chronicle entries.
 - Village Gatherings encourage free villagers to drift toward socially attractive existing locations without schedules or events.
 - Gathering diagnostics derive active groups, sizes, participants, and destinations from current positions.
+- Shared Moments assign lightweight social states to villagers who are already gathered.
+- Shared Moments expose future renderer hooks such as Conversation, Meal, Resting, Watching, and Warming.
+- Celebrations temporarily make meaningful ceremony locations socially attractive without adding separate event AI.
+- Open cremations can arise when respected villagers die, drawing family, friends, and neighbours through the existing gathering system.
+- Living Community recognises recurring social groups, gathering places, traditions, and family continuity without creating formal memberships.
+- Community Recognition can add sparse Chronicle entries when repeated patterns become part of village identity.
 
 Known limitations:
 - v0.9 friendship effects are intentionally subtle.
 - Village Gatherings are ordinary free-time behaviour and do not create Chronicle entries by themselves.
+- Shared Moments are atmosphere only and do not create dialogue, tasks, schedules, productivity bonuses, or Chronicle entries.
+- Celebrations currently focus on open cremations; harvest festivals, first snow, founding day, birth celebrations, and coming-of-age ceremonies remain future ceremony types.
+- Living Community observes existing behaviour only; it does not create factions, clubs, organisations, social classes, schedules, or new AI.
 - There is no conversation system, social scheduling, relationship graph, jealousy, rivalry, or romance drama.
 - Future v0.9 phases should build on friendships without turning them into player-managed mechanics.
 

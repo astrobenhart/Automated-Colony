@@ -6,8 +6,15 @@ from src.building_priorities import highest_priority, needed_houses, needed_shel
 from src.appearance import appearance_seed_for, appearance_type_for_seed
 from src.births import update_births
 from src.carrying_capacity import carrying_capacity_report
+from src.celebrations import ActiveCelebration, update_celebrations
 from src.colony_memory import ColonyMemory
 from src.colony_storage import ColonyStorage
+from src.community import (
+    RecognizedCommunityGroup,
+    RecognizedGatheringPlace,
+    RecognizedTradition,
+    update_community_recognition,
+)
 from src.environment_events import update_environment_events
 from src.farming import maybe_create_farm, update_farms
 from src.families import ensure_family_registry
@@ -38,6 +45,7 @@ from src.simulation_lod import (
     tier_names,
 )
 from src.partnerships import update_partnerships
+from src.shared_moments import update_shared_moments
 from src.social_memory import update_household_familiarity, update_social_memory
 from src.social_seed import seed_preexisting_social_history
 from src.traits import trait_for_index
@@ -85,6 +93,16 @@ class World:
     animals: list = field(default_factory=list)
     history: WorldHistory = field(default_factory=WorldHistory)
     death_records: list[DeathRecord] = field(default_factory=list)
+    active_celebration: ActiveCelebration | None = None
+    celebration_history: list[ActiveCelebration] = field(default_factory=list)
+    community_group_counts: dict[str, int] = field(default_factory=dict)
+    community_group_first_seen: dict[str, int] = field(default_factory=dict)
+    recognized_community_groups: list[RecognizedCommunityGroup] = field(default_factory=list)
+    gathering_place_counts: dict[str, int] = field(default_factory=dict)
+    gathering_place_first_seen: dict[str, int] = field(default_factory=dict)
+    recognized_gathering_places: list[RecognizedGatheringPlace] = field(default_factory=list)
+    recognized_traditions: list[RecognizedTradition] = field(default_factory=list)
+    community_chronicle_keys: set[str] = field(default_factory=set)
     identity: WorldIdentity | None = None
     settlement: Settlement | None = None
     families: dict = field(default_factory=dict)
@@ -632,6 +650,9 @@ class World:
         self.ensure_household_membership()
         update_household_familiarity(self)
         update_friendships(self)
+        update_celebrations(self)
+        update_shared_moments(self)
+        update_community_recognition(self)
         update_partnerships(self)
         update_births(self)
         update_influence_peaks(self)

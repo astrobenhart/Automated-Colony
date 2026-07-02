@@ -99,6 +99,9 @@ def record_death(world: World, agent: Agent, cause_of_death: str) -> DeathRecord
     handle_friend_death(world, agent)
     create_remembrance(world, agent, remembered_by)
     record_death_history(world, record)
+    from src.celebrations import maybe_start_open_cremation
+
+    maybe_start_open_cremation(world, agent, record)
     record_family_death(world, agent)
     handle_household_death_succession(world, agent)
     from src.partnerships import end_partnership_due_to_death

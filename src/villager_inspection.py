@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 from src.death_memory import active_remembrance_name
+from src.celebrations import ceremony_status
+from src.community import community_associations
 from src.friendships import friendship_displays
 from src.gatherings import social_state
 from src.influence import influence_label
+from src.shared_moments import current_shared_moment
 from src.social_bonds import social_bonds
 from src.social_memory import relationship_summary
 from src.state import state_label
@@ -42,6 +45,7 @@ def villager_detail_sections(agent, world=None) -> list[tuple[str, list[tuple[st
         ("Household", household_rows(agent, world)),
         ("Partnership", partnership_rows(agent, world)),
         ("Status", status_rows(agent, world)),
+        ("Community", community_rows(agent, world)),
         ("Friends", friendship_rows(agent)),
         ("Relationships", relationship_rows(agent)),
         ("Bonds", bond_rows(agent)),
@@ -182,15 +186,27 @@ def family_name(agent, world=None) -> str | None:
 
 
 def status_rows(agent, world=None) -> list[tuple[str, object]]:
+    ceremony, ceremony_attendance = ceremony_status(agent, world)
     rows = [
         ("State", safe_state_label(agent, world) or "Unknown"),
         ("Social", social_state(agent, world)),
+        ("Shared Moment", current_shared_moment(agent, world) or "None"),
+        ("Current Ceremony", ceremony),
         ("Influence", influence_label(agent, world)),
     ]
+    if ceremony != "None":
+        rows.append(("Ceremony Status", ceremony_attendance))
     remembering = active_remembrance_name(agent, world)
     if remembering:
         rows.append(("Remembering", remembering))
     return rows
+
+
+def community_rows(agent, world=None) -> list[tuple[str, object]]:
+    associations = community_associations(agent, world)
+    if not associations:
+        return [("Community Associations", "None")]
+    return [("Community Associations", ", ".join(associations))]
 
 
 def relationship_rows(agent) -> list[tuple[str, object]]:
