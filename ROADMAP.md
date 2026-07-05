@@ -644,8 +644,8 @@ Give partnerships more personality without turning the project into a dating sim
 
 Possible features:
 
-- [ ] Affection growing over time
-- [ ] Spending free time together
+- [x] Affection growing over time
+- [x] Spending free time together
 - [ ] Small gifts
 - [ ] Companionship
 - [ ] Happiness from successful relationships

@@ -3,6 +3,13 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass
 
+from src.affection import (
+    affection_label,
+    affection_mood_bonus,
+    average_partnered_gathering_participation,
+    has_nearby_partner,
+    partners_spending_free_time_together,
+)
 from src.births import (
     birth_candidates,
     household_can_support_birth,
@@ -196,12 +203,16 @@ def partnership_rows(world) -> list[tuple[str, object]]:
             partnered_ids.add(agent_id)
             partnered_ids.add(partner_id)
     durations = [getattr(agent, "partnership_duration", 0) for agent in pairs]
+    affection_labels = Counter(affection_label(agent) for agent in pairs)
     partnered_adults = [agent for agent in adults if getattr(agent, "partner_id", None)]
 
     return [
         ("Active Partnerships", len(pairs)),
         ("Eligible Partnerships", len(partnership_candidates(world))),
         ("Average Partnership Duration", f"{(sum(durations) / len(durations)):.1f} years" if durations else "0.0 years"),
+        ("Strong Partnerships", affection_labels["Strong"] + affection_labels["Lifelong"]),
+        ("Partners Spending Free Time Together", partners_spending_free_time_together(world)),
+        ("Partnered Gathering Participation", average_partnered_gathering_participation(world)),
         ("Single Adults", len(adults) - len(partnered_adults)),
         ("Partnered Adults", len(partnered_adults)),
     ]
@@ -356,6 +367,7 @@ def derived_mood_score(agent, world) -> int:
             score -= min(20, status.overcrowded_by * 5)
     if has_nearby_close_friend(agent, world):
         score += 3
+    score += affection_mood_bonus(agent, world)
     if current_shared_moment(agent, world):
         score += 2
     if getattr(agent, "remembering", None):
@@ -367,6 +379,8 @@ def mood_modifiers(agent, world) -> tuple[str, str]:
     positive = "Household stability" if getattr(agent, "household_id", None) else "Basic needs met"
     if getattr(agent, "partner_id", None):
         positive = "Partnered"
+    if has_nearby_partner(agent, world) and affection_label(agent) in {"Established", "Strong", "Lifelong"}:
+        positive = "Near partner"
     if has_nearby_close_friend(agent, world):
         positive = "Near close friend"
     if current_shared_moment(agent, world):

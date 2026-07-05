@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from src.affection import affection_label, partner_nearby_label
 from src.death_memory import active_remembrance_name
 from src.celebrations import ceremony_status
 from src.community import community_associations
@@ -143,6 +144,8 @@ def partnership_rows(agent, world=None) -> list[tuple[str, object]]:
     return [
         ("Partner", partner_name(partner_id, world)),
         ("Partnership", partnership_duration_label(agent)),
+        ("Relationship", affection_label(agent)),
+        ("Partner Nearby", partner_nearby_label(agent, world)),
     ]
 
 

@@ -132,6 +132,7 @@ def score_destination(
     friend_count = sum(1 for other in nearby if villager_key(other) in close_ids)
     household_count = sum(1 for other in nearby if household_id and getattr(other, "household_id", None) == household_id)
     family_count = sum(1 for other in nearby if family_id and getattr(other, "family_id", None) == family_id)
+    partner_nearby = partner_present_at_destination(agent, world, anchor)
 
     score = 12.0
     if label == "Village Centre":
@@ -151,9 +152,33 @@ def score_destination(
     score += friend_count * 10
     score += household_count * 7
     score += family_count * 6
+    if partner_nearby:
+        score += partner_attraction_bonus(agent)
     score -= distance * 1.5
     score += rng.random() * 6
     return GatheringDestination(label, anchor, max(1.0, score), nearby_count)
+
+
+def partner_present_at_destination(agent: Agent, world: World, anchor: tuple[int, int]) -> bool:
+    from src.affection import active_partner
+
+    partner = active_partner(agent, world)
+    if partner is None or not gathering_participant(partner):
+        return False
+    return chebyshev_distance(partner.x, partner.y, anchor[0], anchor[1]) <= GATHERING_RADIUS
+
+
+def partner_attraction_bonus(agent: Agent) -> float:
+    from src.affection import affection_label
+
+    label = affection_label(agent)
+    if label == "Lifelong":
+        return 16.0
+    if label == "Strong":
+        return 14.0
+    if label == "Established":
+        return 12.0
+    return 9.0
 
 
 def gathering_size_attraction(count: int) -> float:

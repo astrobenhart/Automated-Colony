@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from src.generations import FAMILY, RELATIONSHIP_PARTNER
 from src.lifecycle import ADULT, OLDER_ADULT, YOUNG_ADULT
 from src.social_memory import SocialMemoryEntry, villager_key
+from src.affection import clear_affection, reset_affection
 
 if TYPE_CHECKING:
     from src.agent import Agent
@@ -154,6 +155,7 @@ def form_partnership(world: World, first: Agent, second: Agent) -> tuple[Agent, 
     second.partnership_start_year = world.year
     first.partnership_duration = 0
     second.partnership_duration = 0
+    reset_affection(first, second)
     first.sync_generation_architecture()
     second.sync_generation_architecture()
 
@@ -183,6 +185,7 @@ def end_partnership_due_to_death(world: World, deceased: Agent) -> None:
         survivor.partner_ids = [pid for pid in getattr(survivor, "partner_ids", []) if pid != deceased_id]
         survivor.partnership_start_year = None
         survivor.partnership_duration = 0
+        clear_affection(survivor)
         memories = getattr(survivor, "personal_memories", None)
         if memories is not None:
             memory = f"Lost long-term partner {getattr(deceased, 'name', 'a partner')} in Year {world.year}."
@@ -194,6 +197,7 @@ def end_partnership_due_to_death(world: World, deceased: Agent) -> None:
     deceased.partner_ids = [pid for pid in getattr(deceased, "partner_ids", []) if pid != partner_id]
     deceased.partnership_start_year = None
     deceased.partnership_duration = 0
+    clear_affection(deceased)
     deceased.sync_generation_architecture()
 
 

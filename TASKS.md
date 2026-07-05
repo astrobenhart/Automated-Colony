@@ -24,6 +24,11 @@ Completed systems:
 - Open cremations can arise when respected villagers die, drawing family, friends, and neighbours through the existing gathering system.
 - Living Community recognises recurring social groups, gathering places, traditions, and family continuity without creating formal memberships.
 - Community Recognition can add sparse Chronicle entries when repeated patterns become part of village identity.
+- Partnership affection grows from shared life after a partnership already exists.
+- Villager inspection displays partner relationship depth as Growing, Established, Strong, or Lifelong without exposing scores.
+- Strong and lifelong partnerships can create rare Chronicle recognition and deeper mourning when a partner dies.
+- Existing gathering destination scoring gives free partners a mild preference for places where their partner is already present.
+- Partnered free-time diagnostics report partners gathering together without adding couple AI.
 
 Known limitations:
 - v0.9 friendship effects are intentionally subtle.
@@ -31,7 +36,9 @@ Known limitations:
 - Shared Moments are atmosphere only and do not create dialogue, tasks, schedules, productivity bonuses, or Chronicle entries.
 - Celebrations currently focus on open cremations; harvest festivals, first snow, founding day, birth celebrations, and coming-of-age ceremonies remain future ceremony types.
 - Living Community observes existing behaviour only; it does not create factions, clubs, organisations, social classes, schedules, or new AI.
-- There is no conversation system, social scheduling, relationship graph, jealousy, rivalry, or romance drama.
+- Affection does not affect partnership formation, productivity, survival priorities, planning, birth gates, or task selection.
+- Partner free-time preference does not create follow-partner behaviour, partner pathfinding, couple scheduling, or new destinations.
+- There is no conversation system, social scheduling, relationship graph, jealousy, rivalry, courtship, dating mechanics, couple AI, or romance drama.
 - Future v0.9 phases should build on friendships without turning them into player-managed mechanics.
 
 ---

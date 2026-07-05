@@ -3,6 +3,7 @@ import time
 from dataclasses import dataclass, field
 
 from src.building_priorities import highest_priority, needed_houses, needed_shelters, update_settlement_needs
+from src.affection import update_affection
 from src.appearance import appearance_seed_for, appearance_type_for_seed
 from src.births import update_births
 from src.carrying_capacity import carrying_capacity_report
@@ -103,6 +104,7 @@ class World:
     recognized_gathering_places: list[RecognizedGatheringPlace] = field(default_factory=list)
     recognized_traditions: list[RecognizedTradition] = field(default_factory=list)
     community_chronicle_keys: set[str] = field(default_factory=set)
+    affection_chronicle_keys: set[str] = field(default_factory=set)
     identity: WorldIdentity | None = None
     settlement: Settlement | None = None
     families: dict = field(default_factory=dict)
@@ -654,6 +656,7 @@ class World:
         update_shared_moments(self)
         update_community_recognition(self)
         update_partnerships(self)
+        update_affection(self)
         update_births(self)
         update_influence_peaks(self)
         self.record_lod_update(LOD_3_SOCIAL, time.perf_counter() - social_start)

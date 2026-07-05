@@ -1057,6 +1057,82 @@ Design boundaries:
 - no new pathfinding or movement rules
 - no behaviour changes
 
+## Affection
+
+Affection is relationship depth inside an existing partnership.
+
+It is not dating, compatibility, courtship, a love meter, or a second relationship graph. It begins only after two adults have already formed a stable partnership through the partnership system.
+
+Purpose:
+- make long-term partnerships feel meaningful
+- let shared life deepen existing bonds
+- support subtle mood context, mourning, and rare Chronicle recognition
+- prepare future presentation and story systems without changing gameplay balance
+
+Growth rules:
+- partners gain affection from living in the same household
+- Shared Moments and nearby time strengthen affection when partners are already together
+- attending ceremonies together can strengthen affection
+- raising children together can strengthen affection
+- occasional shared work or difficult periods can strengthen affection
+- affection is updated during the daily social pass and is deterministic from existing world state
+
+Gameplay effects:
+- affection never creates a partnership
+- affection never changes partnership eligibility
+- affection never changes birth eligibility
+- affection never changes productivity, survival priorities, planning, pathfinding, construction, farming, or task selection
+- strong affection can provide a tiny diagnostic mood context when partners are near each other
+- long-term partner loss can create stronger remembrance through the existing mourning and Chronicle surfaces
+
+Inspection and Chronicle:
+- villager inspection displays partner depth as Growing, Established, Strong, or Lifelong
+- raw affection scores are not shown to the player
+- Strong and Lifelong partnerships may receive rare Chronicle entries
+- partner mourning entries are sparse and reserved for significant long-term relationships
+
+Design philosophy:
+- affection is built life, not romantic gameplay
+- shared experiences create depth
+- the player should notice couples who have endured together without managing them
+
+## Partners Spending Free Time Together
+
+Established partners can gently prefer spending idle time together through Village Gatherings.
+
+This is not a new social system. Partners do not search for each other, follow each other, schedule time together, or run couple-specific AI. The existing gathering destination scorer simply gives a modest bonus to normal destinations where a villager's active partner is already present and also free.
+
+Relationship to Village Gatherings:
+- Village Gatherings still decide where free villagers drift
+- partner presence only adjusts existing destination scores
+- no partner-specific gathering place is created
+- if a partner is busy, working, resting from urgent needs, or otherwise unable to gather, nothing changes
+- survival, work, planning, construction, farming, hauling, eating, drinking, and sleeping remain higher priority
+
+Relationship to Shared Moments:
+- partners at the same gathering can participate in ordinary Shared Moments
+- there are no partner-only interactions
+- future renderer animations can use Shared Moment state without changing gameplay
+
+Relationship to Affection:
+- shared free time modestly strengthens affection
+- Shared Moments together strengthen affection a little more than simply being nearby
+- exceptional lifelong partnerships can receive rare Chronicle recognition
+- raw destination scoring and affection values are not exposed to the player
+
+Inspection and diagnostics:
+- villager inspection may show whether the current partner is nearby
+- diagnostics can report how many partnered pairs are spending free time together
+- these surfaces are observational and developer-facing where appropriate
+
+Design boundaries:
+- no follow-partner behaviour
+- no partner pathfinding
+- no relationship scheduling
+- no couple AI
+- no productivity bonus
+- no new birth or partnership rules
+
 ## Pre-Existing Social History
 
 The v0.7 starting village seeds quiet prior life so villagers do not all begin as strangers.

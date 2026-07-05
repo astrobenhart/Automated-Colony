@@ -6,7 +6,9 @@ from src.friendships import CLOSE_FRIEND_THRESHOLD, record_friendship_interactio
 from src.gatherings import (
     active_gatherings,
     gathering_diagnostics,
+    gathering_destinations,
     gathering_wander_target,
+    score_destination,
     social_state,
 )
 from src.settlement import Home, Household, Settlement
@@ -46,6 +48,34 @@ def test_close_friends_prefer_gathering_near_each_other():
 
     assert target is not None
     assert max(abs(target[0] - bryn.x), abs(target[1] - bryn.y)) <= 1
+
+
+def test_established_partners_make_existing_destinations_more_attractive():
+    world = make_world()
+    ari = Agent("Ari", 2, 2, agent_id="ari", current_action="Idle", partner_id="bryn")
+    bryn = Agent("Bryn", 7, 7, agent_id="bryn", current_action="Idle", partner_id="ari", partner_affection=40)
+    ari.partner_affection = 40
+    world.agents = [ari, bryn]
+
+    free_score = score_destination(ari, world, "Village Centre", (7, 7), random.Random(5)).score
+    bryn.current_action = "Building"
+    busy_score = score_destination(ari, world, "Village Centre", (7, 7), random.Random(5)).score
+
+    assert free_score > busy_score
+    assert bryn.current_action == "Building"
+
+
+def test_partner_preference_uses_existing_gathering_destinations():
+    world = make_world()
+    ari = Agent("Ari", 2, 2, agent_id="ari", current_action="Idle", partner_id="bryn")
+    bryn = Agent("Bryn", 7, 7, agent_id="bryn", current_action="Idle", partner_id="ari", partner_affection=40)
+    ari.partner_affection = 40
+    world.agents = [ari, bryn]
+
+    destinations = gathering_destinations(ari, world, random.Random(1))
+
+    assert any(destination.label == "Village Centre" for destination in destinations)
+    assert all(not destination.label.startswith("Partner ") for destination in destinations)
 
 
 def test_family_members_naturally_remain_close_during_free_time():
