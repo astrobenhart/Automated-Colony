@@ -688,6 +688,136 @@ Notes:
 - Visitor types should plug into shared behaviour profiles rather than becoming separate systems.
 - Visitors should be autonomous and should not become player-assigned colony roles.
 
+## Current Development – Polish & Quality
+
+Purpose:
+
+Improve the quality, readability, presentation and consistency of existing systems before continuing feature development.
+
+These tasks are intentionally focused and should generally be completed before continuing with later roadmap milestones.
+
+### Permanent World Roads
+
+Priority:
+Highest
+
+Purpose:
+
+Roads generated during world creation represent permanent connections to the outside world.
+
+These roads should never decay into paths or terrain. They are part of the world itself rather than player-created paths.
+
+Notes:
+
+- Permanent roads should not decay.
+- Villager-created paths should continue behaving normally.
+- Future caravans, wanderers and world events will reuse these roads.
+
+### Village Chronicle Export
+
+Priority:
+Highest
+
+Purpose:
+
+Replace the current scrolling history log with a persistent village Chronicle.
+
+Notes:
+
+- Export the Chronicle as Markdown.
+- Store outside the running game.
+- Organise using headings.
+- Group by year and season.
+- Read like a historical record rather than a debug log.
+- Future Chronicle systems should continue writing into this document.
+- The existing in-game History panel may remain as a lightweight recent-events view.
+
+### Persistent Villager Names
+
+Priority:
+Highest
+
+Purpose:
+
+Every villager should receive a proper first and last name.
+
+Notes:
+
+- Children receive names at birth.
+- No villager should retain placeholder names such as "Child 23".
+- Names persist throughout life.
+- Chronicle entries should always use proper names.
+
+### Family Surnames
+
+Priority:
+Highest
+
+Purpose:
+
+Family names should naturally follow partnerships and children.
+
+Notes:
+
+- Villagers have first name + surname.
+- During partnership the woman adopts the household surname.
+- Children inherit the household surname.
+- Family identity should become obvious through names.
+- This should integrate naturally with the existing Family system.
+
+### Season Transition Optimisation
+
+Priority:
+High
+
+Purpose:
+
+Season transitions should remain visually attractive without causing repeated renderer rebuilds.
+
+Notes:
+
+- Seasonal visual changes should occur once per day.
+- Avoid sub-day terrain regeneration.
+- Preserve existing renderer architecture.
+- Maintain smooth performance.
+
+### Natural Rivers and Lakes
+
+Priority:
+High
+
+Purpose:
+
+Improve world generation to create more believable waterways.
+
+Notes:
+
+Replace scattered puddle-like lakes with:
+
+- one or two natural lakes
+- rivers connecting lakes where appropriate
+- or standalone rivers
+
+Generate a permanent bridge where a road crosses a river.
+
+The bridge should simply behave as normal walkable terrain.
+
+Do NOT introduce bridge construction gameplay.
+
+### GUI Scroll Stability
+
+Priority:
+Medium
+
+Purpose:
+
+Fix the scrolling behaviour within inspection and diagnostic panels.
+
+Notes:
+
+- The scrollbar should remain stable while scrolling.
+- Remove unintended automatic movement.
+
 ### Phase 4 - Mysteries
 
 Purpose:

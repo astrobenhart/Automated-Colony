@@ -22,6 +22,8 @@ TRAMPLED_GRASS = "trampled_grass"
 WORN_GRASS = "worn_grass"
 DIRT_PATH = "dirt_path"
 PATH = "path"
+ROAD_ORIGIN_WORLD = "world"
+ROAD_ORIGIN_VILLAGE = "village"
 PATH_BORDER_EDGES = ("north", "south", "west", "east")
 PATH_WEAR_KINDS = (TRAMPLED_GRASS, WORN_GRASS, DIRT_PATH, PATH)
 PATH_WEARABLE_BASE_KINDS = (
@@ -55,7 +57,14 @@ def seed_village_paths(world: World, settlement: Settlement):
         mark_path_tile(world, settlement, *endpoint)
 
 
-def mark_path_tile(world: World, settlement: Settlement, x: int, y: int) -> bool:
+def mark_path_tile(
+    world: World,
+    settlement: Settlement,
+    x: int,
+    y: int,
+    *,
+    road_origin: str | None = ROAD_ORIGIN_VILLAGE,
+) -> bool:
     if not (0 <= x < world.width and 0 <= y < world.height):
         return False
     if is_reserved_village_structure(settlement, x, y):
@@ -66,6 +75,8 @@ def mark_path_tile(world: World, settlement: Settlement, x: int, y: int) -> bool
         return False
 
     tile.foot_traffic = max(tile.foot_traffic, PATH_TRAFFIC_PRESEEDED)
+    if road_origin is not None:
+        tile.road_origin = road_origin
     apply_path_wear(tile)
     tile.food = 0
     tile.wood = 0
@@ -92,6 +103,8 @@ def decay_foot_traffic(world: World, amount: int = PATH_TRAFFIC_DAILY_DECAY) -> 
     for row in world.tiles:
         for tile in row:
             if tile.foot_traffic <= 0:
+                continue
+            if is_permanent_world_road(tile):
                 continue
             tile.foot_traffic = max(0, tile.foot_traffic - amount)
             if apply_path_wear(tile):
@@ -127,6 +140,10 @@ def is_wearable_path_terrain(kind: str) -> bool:
 
 def is_path_like(kind: str) -> bool:
     return kind in PATH_WEAR_KINDS
+
+
+def is_permanent_world_road(tile: Tile) -> bool:
+    return getattr(tile, "road_origin", None) == ROAD_ORIGIN_WORLD and is_path_like(tile.kind)
 
 
 def path_border_edges(world: World, x: int, y: int) -> dict[str, bool]:

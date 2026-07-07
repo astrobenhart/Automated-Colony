@@ -7,6 +7,7 @@ class Tile:
     wood: int = 0
     foot_traffic: int = 0
     food_depleted_days: int = 0
+    road_origin: str | None = None
 
     @property
     def walkable(self):

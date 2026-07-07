@@ -278,6 +278,7 @@ class World:
 
     def establish_settlement(self):
         self.settlement = found_settlement(self)
+        self.history.configure_chronicle(self.settlement.name)
         seed_main_roads(self, self.settlement)
 
     def initial_spawn_positions(self, amount):

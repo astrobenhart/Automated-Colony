@@ -1190,6 +1190,29 @@ Road generation:
 - roads are deterministic from the world seed and settlement identity
 - visitors use these roads for arrival and departure instead of appearing inside the settlement
 
+## Permanent World Roads
+
+World roads are permanent connections to the wider world.
+
+They are not a new terrain type. A world road still uses the ordinary path terrain kind, so rendering, movement, pathfinding, and tile readability remain unchanged. Permanence is stored as lightweight tile metadata.
+
+Road metadata:
+- `Tile.kind` describes what the tile is, such as `path`
+- `Tile.road_origin` describes where the road came from
+- world-generated outside roads use `road_origin = "world"`
+- village-created paths use ordinary path traffic and default village-origin behaviour
+
+Decay behaviour:
+- permanent world roads do not lose foot traffic during daily path decay
+- permanent world roads do not revert to grass, worn grass, trampled grass, or dirt paths
+- villager-created paths continue gaining traffic, decaying, and fading normally
+- no special pathfinding rule is required because the terrain remains the same walkable road terrain
+
+Future extensibility:
+- wanderers, caravans, pilgrims, refugees, rare visitors, and world events can identify permanent roads through road metadata
+- future renderer work may draw world roads differently without changing gameplay or terrain kinds
+- future road classes can extend metadata instead of adding new terrain types
+
 Lifecycle:
 - Arrival: a wanderer starts at a road edge and walks toward the village
 - Purpose: the visitor profile describes why they are present
@@ -1352,6 +1375,41 @@ Seeded Chronicle entries are stored in `WorldHistory` before normal simulation e
 Mystery entries are atmospheric only. They have no explanation, no monsters, no combat, and no direct magical mechanics.
 
 Future Chronicle content may include births, deaths, partnerships, household continuity, inheritance, magical events, major settlement developments, influential villagers, visitors, mysteries, migrations, leaders, ruins, and legends. Those event types should slot into the same Chronicle structure later.
+
+## Village Chronicle
+
+The Markdown Chronicle is the permanent written history of a village.
+
+It is not a manual export generated after the fact. The existing `WorldHistory.record(...)` path remains the single Chronicle-writing API, and each recorded event updates the Markdown document automatically.
+
+File structure:
+- each village writes to `saves/<village-slug>/chronicle.md`
+- the file is created when the settlement is established
+- the file remains readable while the simulation is running
+- local `saves/` output is ignored by source control
+
+Markdown structure:
+- `# Chronicle of <Village Name>`
+- a short village introduction
+- `# Year N` headings
+- `## Season` headings only for seasons containing entries
+- concise bullet entries beneath each season
+
+Writing style:
+- entries should read like historical prose rather than debug output
+- descriptions are preferred over technical titles
+- entries remain concise
+- future systems should write player-facing descriptions into `WorldHistory.record(...)`
+
+Relationship with the History panel:
+- the Markdown Chronicle is the persistent archive
+- the in-game History panel remains a lightweight recent-events viewer
+- the panel should not try to display the full village history
+
+Future extensibility:
+- new Chronicle systems should keep using `WorldHistory.record(...)`
+- grouping, Markdown formatting, and persistence happen in the shared writer
+- future save/load work should preserve the same village Chronicle location
 
 ## Appearance System
 

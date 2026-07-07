@@ -71,6 +71,195 @@ Known limitations:
 
 ## Backlog
 
+### TASK-92
+Title: Permanent World Roads
+
+Owner: Architect Agent / Renderer Agent / Gameplay Agent
+
+Status: Complete
+
+Priority: Highest
+
+Description:
+Make world-generated roads permanent connections to the outside world rather than ordinary footpaths that decay.
+
+Expected Output:
+Permanent road metadata that remains stable over time while villager-created paths continue using normal traffic and decay behaviour.
+
+Acceptance Criteria:
+- World roads generated at creation do not decay into paths or terrain.
+- Villager-created paths still decay and evolve normally.
+- Wanderers continue using world roads for arrival and departure.
+- Future caravans, wanderers, and world events can identify permanent roads through `Tile.road_origin`.
+
+Notes:
+- This is a polish task for existing road behaviour, not a new construction system.
+- Implemented as road metadata on ordinary path terrain. No new terrain type, pathfinding rule, construction system, or renderer visual distinction was added.
+
+---
+
+### TASK-93
+Title: Village Chronicle
+
+Owner: Docs Agent / History Agent / UX Agent
+
+Status: Complete
+
+Priority: Highest
+
+Description:
+Replace the current scrolling history log as the primary historical record with a persistent Markdown Chronicle.
+
+Expected Output:
+A Markdown Chronicle written automatically alongside village save data, organised by year and season, with headings and prose that read like a village history rather than a debug log.
+
+Acceptance Criteria:
+- Chronicle exports as Markdown.
+- Entries are grouped by year and season.
+- The document persists outside the running game.
+- Existing and future Chronicle systems continue writing through `WorldHistory.record(...)`.
+- The in-game History panel can remain as a lightweight recent-events view.
+
+Notes:
+- Implemented as `saves/<village-slug>/chronicle.md`.
+- The Markdown Chronicle updates automatically as history entries are recorded.
+- No new Chronicle event types were added.
+
+---
+
+### TASK-90
+Title: Persistent Villager Names
+
+Owner: Gameplay Agent / Narrative Agent / Docs Agent
+
+Status: Backlog
+
+Priority: Highest
+
+Description:
+Ensure every villager has a proper persistent first and last name throughout life.
+
+Expected Output:
+Name generation and persistence that removes placeholder names such as `Child 23` from villagers and Chronicle entries.
+
+Acceptance Criteria:
+- Children receive proper names at birth.
+- Villagers keep their names throughout life.
+- No villager retains placeholder names such as `Child 23`.
+- Chronicle entries use proper names consistently.
+
+Notes:
+- This task should improve readability without changing demographic balance.
+
+---
+
+### TASK-89
+Title: Family Surnames
+
+Owner: Gameplay Agent / Social Systems Agent / History Agent
+
+Status: Backlog
+
+Priority: Highest
+
+Description:
+Integrate family surnames with partnerships, households, children, and the existing Family system.
+
+Expected Output:
+Villagers display first name plus surname, children inherit household surnames, and family identity becomes readable through names.
+
+Acceptance Criteria:
+- Villagers have first names and surnames.
+- During partnership the woman adopts the household surname.
+- Children inherit the household surname.
+- Surnames integrate with existing family identity and Chronicle references.
+- Family identity becomes obvious through names without replacing the Family system.
+
+Notes:
+- This is a naming and readability improvement, not a redesign of families or partnerships.
+
+---
+
+### TASK-88
+Title: Season Transition Optimisation
+
+Owner: Renderer Agent / Performance Agent / Architect Agent
+
+Status: Backlog
+
+Priority: High
+
+Description:
+Keep season transitions visually attractive while preventing repeated terrain rebuilds during sub-day transition changes.
+
+Expected Output:
+Seasonal visual updates that occur once per day, preserve the renderer architecture, and avoid sub-day terrain cache churn.
+
+Acceptance Criteria:
+- Seasonal visual changes occur once per day.
+- Sub-day terrain regeneration is avoided.
+- Existing renderer architecture and visual quality are preserved.
+- Performance remains smooth during season transitions.
+
+Notes:
+- Optimise invalidation behaviour; do not remove seasonal rendering.
+
+---
+
+### TASK-87
+Title: Natural Rivers and Lakes
+
+Owner: Worldgen Agent / Renderer Agent / Gameplay Agent
+
+Status: Backlog
+
+Priority: High
+
+Description:
+Improve water generation so worlds contain more believable waterways and road crossings.
+
+Expected Output:
+World generation that favours one or two natural lakes, rivers connecting lakes where appropriate, or standalone rivers, plus permanent walkable bridges where generated roads cross rivers.
+
+Acceptance Criteria:
+- Scattered puddle-like lakes are reduced.
+- Worlds can generate natural lakes and/or standalone rivers.
+- Rivers can connect lakes where appropriate.
+- A permanent bridge is generated where a road crosses a river.
+- Bridges behave as normal walkable terrain.
+- No bridge construction gameplay is introduced.
+
+Notes:
+- This is world-generation polish for existing maps, not a new construction feature.
+
+---
+
+### TASK-86
+Title: GUI Scroll Stability
+
+Owner: UX Agent / Tester Agent
+
+Status: Backlog
+
+Priority: Medium
+
+Description:
+Fix unstable scrolling behaviour in inspection and diagnostic panels.
+
+Expected Output:
+Inspection and diagnostic panel scrollbars remain stable while the user scrolls and no longer move automatically unless content genuinely changes.
+
+Acceptance Criteria:
+- Scrollbar position remains stable during manual scrolling.
+- Unintended automatic movement is removed.
+- Inspection and diagnostic panels remain readable.
+- Existing UI layout is preserved.
+
+Notes:
+- This is a UI polish task only.
+
+---
+
 ### TASK-75
 Title: Historical Links Between Settlements
 

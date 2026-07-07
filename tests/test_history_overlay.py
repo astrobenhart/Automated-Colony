@@ -70,6 +70,20 @@ def test_history_event_lines_use_newest_first_ordering():
     assert lines[1].text == "Spring, Year 1 - Old event."
 
 
+def test_history_event_lines_remain_recent_events_view():
+    world = make_world()
+    for day in range(20):
+        world.history.record(day=day + 1, year=1, season="Spring", category=SETTLEMENT, title=f"Event {day}", description=f"Event {day}.")
+
+    lines = history_event_lines(world, limit=3)
+
+    assert [line.text for line in lines] == [
+        "Spring, Year 1 - Event 19.",
+        "Spring, Year 1 - Event 18.",
+        "Spring, Year 1 - Event 17.",
+    ]
+
+
 def test_empty_history_state_is_story_facing():
     world = make_world()
 

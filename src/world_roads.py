@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from src.pathfinding import find_path
-from src.village_paths import mark_path_tile
+from src.village_paths import ROAD_ORIGIN_WORLD, mark_path_tile
 
 if TYPE_CHECKING:
     from src.settlement import Settlement
@@ -44,7 +44,7 @@ def seed_main_roads(world: World, settlement: Settlement) -> list[MainRoad]:
             continue
         full_path = [hub] + route
         for x, y in full_path:
-            mark_path_tile(world, settlement, x, y)
+            mark_path_tile(world, settlement, x, y, road_origin=ROAD_ORIGIN_WORLD)
         roads.append(MainRoad(road_id=f"road-{len(roads)}", edge=edge, path=full_path))
 
     world.main_roads = roads

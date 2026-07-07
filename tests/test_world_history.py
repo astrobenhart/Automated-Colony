@@ -5,6 +5,7 @@ from src.environment_events import (
 )
 from src.tile import Tile
 from src.world import World
+from src.world import create_world
 from src.world_history import (
     DEATH,
     ENVIRONMENT,
@@ -13,6 +14,8 @@ from src.world_history import (
     SETTLEMENT,
     WILDLIFE,
     WorldHistory,
+    entry_prose,
+    slugify,
 )
 
 
@@ -70,6 +73,69 @@ def test_history_records_day_year_season_and_category():
     assert entry.year == 1
     assert entry.season == "Summer"
     assert entry.category == ENVIRONMENT
+
+
+def test_chronicle_file_is_created_and_grouped_by_year_and_season(tmp_path):
+    history = WorldHistory()
+    chronicle_path = history.configure_chronicle("Oak Vale", save_root=tmp_path)
+
+    history.record(day=2, year=1, season="Spring", category=SETTLEMENT, title="Founding", description="Oak Vale was founded.")
+    history.record(day=8, year=1, season="Summer", category=SETTLEMENT, title="Construction Completed", description="Construction completed.")
+    history.record(day=1, year=2, season="Winter", category=DEATH, title="Passing", description="Rowan passed away peacefully.")
+
+    markdown = chronicle_path.read_text(encoding="utf-8")
+
+    assert chronicle_path == tmp_path / "oak-vale" / "chronicle.md"
+    assert markdown.startswith("# Chronicle of Oak Vale")
+    assert "# Year 1" in markdown
+    assert "## Spring" in markdown
+    assert "## Summer" in markdown
+    assert "# Year 2" in markdown
+    assert "## Winter" in markdown
+    assert "- Oak Vale was founded." in markdown
+    assert "- A new home was completed." in markdown
+    assert "- Rowan passed away peacefully." in markdown
+
+
+def test_chronicle_markdown_omits_empty_seasons(tmp_path):
+    history = WorldHistory()
+    chronicle_path = history.configure_chronicle("Riverhome", save_root=tmp_path)
+    history.record(day=2, year=1, season="Autumn", category=SETTLEMENT, title="Harvest", description="The harvest was remembered.")
+
+    markdown = chronicle_path.read_text(encoding="utf-8")
+
+    assert "## Autumn" in markdown
+    assert "## Spring" not in markdown
+    assert "## Summer" not in markdown
+    assert "## Winter" not in markdown
+
+
+def test_chronicle_helpers_keep_markdown_readable():
+    entry = WorldHistory().record(
+        day=1,
+        year=1,
+        season="Spring",
+        category=SETTLEMENT,
+        title="Milestone",
+        description="A milestone was remembered",
+    )
+
+    assert slugify("Oak Vale!") == "oak-vale"
+    assert entry_prose(entry) == "A milestone was remembered."
+
+
+def test_created_world_configures_village_chronicle_automatically(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+
+    world = create_world(seed=515, agent_count=4)
+    chronicle_path = world.history.chronicle_path
+
+    assert chronicle_path is not None
+    assert chronicle_path.name == "chronicle.md"
+    assert chronicle_path.exists()
+    markdown = chronicle_path.read_text(encoding="utf-8")
+    assert f"# Chronicle of {world.settlement.name}" in markdown
+    assert "# Year" in markdown
 
 
 def test_history_filters_by_category_and_recent_limit():
