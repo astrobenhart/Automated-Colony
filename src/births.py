@@ -319,7 +319,7 @@ def create_child(world: World, parent_a: Agent, parent_b: Agent, rng: random.Ran
         child,
         seed=getattr(world, "seed", None),
         key=child_id,
-        surname=inherited_child_surname(parent_a, parent_b),
+        surname=inherited_child_surname(parent_a, parent_b, household),
     )
     child.inheritance_profile = inherited_profile(parent_a, parent_b, trait, rng)
     from src.renewal import ensure_expected_lifespan

@@ -34,7 +34,7 @@ from src.seasons import (
 from src.resource_ecology import apply_resource_ecology
 from src.renewal import ensure_expected_lifespan, update_renewal
 from src.lifecycle import demographic_profiles, profile_for_stage, ADULT, OLDER_ADULT
-from src.names import assign_persistent_name, migrate_world_names
+from src.names import apply_household_surname, assign_persistent_name, migrate_world_names
 from src.roles import role_for_index
 from src.scenarios import scenario_for_key, starting_population_for_scenario
 from src.simulation_lod import (
@@ -359,6 +359,7 @@ class World:
         household.add_member(agent_id)
         agent.household_id = household.household_id
         agent.home_id = household.home_id
+        apply_household_surname(agent, household)
         home = self.settlement.home_for_id(household.home_id) if self.settlement is not None else None
         if home is not None:
             agent.home_x = home.x

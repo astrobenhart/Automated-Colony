@@ -1,5 +1,6 @@
 from src.agent import Agent
 from src.names import assign_persistent_name, is_placeholder_name, migrate_world_names
+from src.settlement import Household, Settlement
 from src.tile import Tile
 from src.world import World, create_world
 
@@ -49,3 +50,25 @@ def test_created_world_starts_with_persistent_villager_names():
         assert agent.surname
         assert agent.name == f"{agent.first_name} {agent.surname}"
         assert not is_placeholder_name(agent.name)
+
+
+def test_existing_save_migration_uses_household_surname():
+    world = World(4, 4, seed=34)
+    world.tiles = [[Tile("grass") for _ in range(4)] for _ in range(4)]
+    world.settlement = Settlement("Test Village", 2, 2, 1, "Spring", settlement_id="settlement-1")
+    household = Household(
+        "household-1",
+        "Willow Hearth",
+        member_ids=["child-23"],
+        founder_ids=["child-23"],
+    )
+    world.settlement.households = [household]
+    child = Agent("Child 23", 1, 1, agent_id="child-23", household_id="household-1")
+    world.agents = [child]
+
+    migrate_world_names(world)
+
+    assert household.surname == "Willow"
+    assert child.surname == "Willow"
+    assert child.name == f"{child.first_name} Willow"
+    assert "Child 23" not in child.name

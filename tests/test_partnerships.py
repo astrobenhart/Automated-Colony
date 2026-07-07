@@ -135,6 +135,23 @@ def test_partners_prefer_shared_household_without_duplicate_membership():
     assert ari.home_id == "home-2"
 
 
+def test_partnership_syncs_visible_household_surname_without_changing_family_identity():
+    world, ari, bryn = make_partnership_world()
+    ari.family_id = "family-ari"
+    bryn.family_id = "family-bryn"
+
+    form_partnership(world, ari, bryn)
+
+    household = world.household_for_agent(ari)
+    assert household.surname == "Willow"
+    assert ari.surname == "Willow"
+    assert bryn.surname == "Willow"
+    assert ari.name == f"{ari.first_name} Willow"
+    assert bryn.name == f"{bryn.first_name} Willow"
+    assert ari.family_id == "family-ari"
+    assert bryn.family_id == "family-bryn"
+
+
 def test_established_partners_found_shared_household_when_existing_homes_are_full_social_units():
     world, ari, bryn = make_partnership_world()
     first_household = world.settlement.household_for("household-1")
@@ -214,7 +231,7 @@ def test_partner_relationship_type_memory_and_chronicle_are_recorded():
     entry = ari.social_memory["bryn"]
     assert entry.familiarity_score >= PARTNER_FAMILIARITY_FLOOR
     assert RELATIONSHIP_PARTNER in entry.relationship_types
-    assert ("Partner", "Bryn") in relationship_summary(ari)
+    assert ("Partner", bryn.name) in relationship_summary(ari)
     assert any("long-term partnership" in memory for memory in ari.personal_memories)
     assert world.history.by_category(FAMILY)
 
@@ -237,5 +254,5 @@ def test_villager_inspection_shows_partner_compactly():
 
     sections = dict(villager_detail_sections(ari, world))
 
-    assert ("Partner", "Bryn") in sections["Partnership"]
+    assert ("Partner", bryn.name) in sections["Partnership"]
     assert ("Partnership", "0 years") in sections["Partnership"]

@@ -155,12 +155,12 @@ Notes:
 
 ---
 
-### TASK-89
+### TASK-95
 Title: Family Surnames
 
 Owner: Gameplay Agent / Social Systems Agent / History Agent
 
-Status: Backlog
+Status: Complete
 
 Priority: Highest
 
@@ -178,6 +178,8 @@ Acceptance Criteria:
 - Family identity becomes obvious through names without replacing the Family system.
 
 Notes:
+- Implemented as household-level surname metadata plus shared naming helpers.
+- Household membership updates visible surnames while Family lineage remains unchanged.
 - This is a naming and readability improvement, not a redesign of families or partnerships.
 
 ---

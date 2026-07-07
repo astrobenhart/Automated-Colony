@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from src.generations import FAMILY, RELATIONSHIP_PARTNER
 from src.lifecycle import ADULT, OLDER_ADULT, YOUNG_ADULT
+from src.names import apply_household_surname, household_surname
 from src.social_memory import SocialMemoryEntry, villager_key
 from src.affection import clear_affection, reset_affection
 from src.wanderers import is_active_wanderer
@@ -161,12 +162,13 @@ def form_partnership(world: World, first: Agent, second: Agent) -> tuple[Agent, 
     first.sync_generation_architecture()
     second.sync_generation_architecture()
 
+    moved = prefer_shared_household(world, first, second)
+    sync_partner_household_surnames(world, first, second)
     mark_partner_relationship(first, second, world.day)
     mark_partner_relationship(second, first, world.day)
     add_partnership_memory(first, second, world)
     add_partnership_memory(second, first, world)
 
-    moved = prefer_shared_household(world, first, second)
     record_partnership_history(world, first, second, moved)
     return first, second
 
@@ -279,6 +281,15 @@ def prefer_shared_household(world: World, first: Agent, second: Agent) -> bool:
     return False
 
 
+def sync_partner_household_surnames(world: World, first: Agent, second: Agent) -> None:
+    first_household = world.household_for_agent(first) if hasattr(world, "household_for_agent") else None
+    second_household = world.household_for_agent(second) if hasattr(world, "household_for_agent") else None
+    if first_household is not None:
+        apply_household_surname(first, first_household)
+    if second_household is not None:
+        apply_household_surname(second, second_household)
+
+
 def create_partner_household(world: World, first: Agent, second: Agent, source_household: Household | None) -> Household | None:
     settlement = getattr(world, "settlement", None)
     if settlement is None:
@@ -286,7 +297,8 @@ def create_partner_household(world: World, first: Agent, second: Agent, source_h
     household_id = next_household_id(settlement)
     household = type(source_household)(
         household_id=household_id,
-        household_name=partner_household_name(settlement, first, second),
+        household_name=partner_household_name(settlement, first, second, source_household),
+        surname=partner_household_surname(first, second, source_household),
         home_id=None,
         home_building_id=None,
         member_ids=[],
@@ -306,8 +318,17 @@ def next_household_id(settlement) -> str:
     return f"household-{index}"
 
 
-def partner_household_name(settlement, first: Agent, second: Agent) -> str:
-    base = f"{getattr(first, 'name', 'New')} {getattr(second, 'name', 'Hearth')}"
+def partner_household_surname(first: Agent, second: Agent, source_household: Household | None = None) -> str:
+    return (
+        household_surname(source_household)
+        or getattr(first, "surname", None)
+        or getattr(second, "surname", None)
+        or "New"
+    )
+
+
+def partner_household_name(settlement, first: Agent, second: Agent, source_household: Household | None = None) -> str:
+    base = partner_household_surname(first, second, source_household)
     existing = {household.household_name for household in settlement.households}
     name = f"{base} Hearth"
     if name not in existing:

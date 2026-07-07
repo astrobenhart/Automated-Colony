@@ -94,6 +94,7 @@ def household_rows(agent, world=None) -> list[tuple[str, object]]:
         house_size = f"{status.house_tiles} Tile" if status.house_tiles == 1 else f"{status.house_tiles} Tiles"
     rows = [
         ("Household", household.household_name if household is not None else getattr(agent, "household_id", None)),
+        ("Household Surname", getattr(household, "surname", None) if household is not None else None),
         ("Home", home_label(agent, world)),
         ("Occupants", occupancy),
         ("House Size", house_size),

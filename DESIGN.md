@@ -771,6 +771,32 @@ Backward compatibility:
 
 Surname changes caused by partnerships, household names, or later family-name rules are intentionally handled by the Family Surnames polish task. Persistent Identity only guarantees that every villager has a readable first name and surname throughout life.
 
+## Household Surnames
+
+Surnames are visible social identity. Family records are ancestry.
+
+A household maintains a `surname` used as the common visible name for its current members. When villagers join a household, their displayed surname is synchronised with the household surname. The underlying Family system remains unchanged: `family_id`, lineage links, family memories, and Family Chronicle records continue to describe ancestry independently of the current displayed surname.
+
+Partnership relationship:
+- existing partnership and household formation logic remains the authority for where partners live.
+- once partners share a household, household membership applies the household surname to the joining partner.
+- partner-founded households receive a shared household surname so both partners become readable as one household in UI and Chronicle text.
+- the implementation is household-based so future naming customs can change surname policy without redesigning partnerships or ancestry.
+
+Children:
+- children receive a proper first name at birth.
+- children inherit the surname of the household into which they are born.
+- child family membership still comes from the Family lineage system, not from the displayed surname.
+
+Backward compatibility:
+- households without stored surnames derive one from their household name.
+- existing villagers with placeholder, first-name-only, or mismatched names are migrated through the shared naming helper.
+- migration updates display names only; it does not change demographics, partnerships, family IDs, lineage, memories, or household membership.
+
+Chronicle and inspection:
+- Chronicle entries continue using `Agent.name`, which now carries the current full display name.
+- villager inspection shows both the display name and Family identity so players can distinguish the current household name from underlying lineage.
+
 ## Social Bond Labels
 
 Social bonds should describe familiarity before they imply family.

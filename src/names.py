@@ -22,6 +22,7 @@ SURNAMES = (
 )
 
 PLACEHOLDER_NAME_RE = re.compile(r"^(?:(?:Child|Adult|Villager)\s+\d+|child-\d+|villager-\d+)$", re.IGNORECASE)
+HOUSEHOLD_SUFFIXES = {"Hearth", "Home", "House", "Household"}
 
 
 def is_placeholder_name(name: str | None) -> bool:
@@ -41,6 +42,15 @@ def split_full_name(name: str | None) -> tuple[str | None, str | None]:
 
 def full_name(first_name: str, surname: str) -> str:
     return f"{first_name} {surname}"
+
+
+def surname_from_household_name(name: str | None) -> str:
+    parts = [part for part in str(name or "").strip().split() if part]
+    if not parts:
+        return "House"
+    if len(parts) >= 2 and parts[-1] in HOUSEHOLD_SUFFIXES:
+        return parts[0]
+    return parts[0]
 
 
 def generated_name(seed: object, key: object, *, surname: str | None = None) -> tuple[str, str]:
@@ -81,8 +91,39 @@ def assign_persistent_name(
     return agent
 
 
-def inherited_child_surname(parent_a: Agent, parent_b: Agent) -> str | None:
-    return getattr(parent_a, "surname", None) or getattr(parent_b, "surname", None)
+def set_agent_surname(agent: Agent, surname: str | None) -> bool:
+    if not surname:
+        return False
+    first_name = getattr(agent, "first_name", None)
+    if not first_name:
+        parsed_first, _parsed_surname = split_full_name(getattr(agent, "name", None))
+        first_name = parsed_first
+    if not first_name or is_placeholder_name(first_name):
+        return False
+
+    before = getattr(agent, "name", None)
+    agent.first_name = first_name
+    agent.surname = surname
+    agent.name = full_name(first_name, surname)
+    return getattr(agent, "name", None) != before
+
+
+def household_surname(household) -> str | None:
+    if household is None:
+        return None
+    surname = getattr(household, "surname", None)
+    if not surname:
+        surname = surname_from_household_name(getattr(household, "household_name", None))
+        household.surname = surname
+    return surname
+
+
+def apply_household_surname(agent: Agent, household) -> bool:
+    return set_agent_surname(agent, household_surname(household))
+
+
+def inherited_child_surname(parent_a: Agent, parent_b: Agent, household=None) -> str | None:
+    return household_surname(household) or getattr(parent_a, "surname", None) or getattr(parent_b, "surname", None)
 
 
 def migrate_world_names(world: World) -> int:
@@ -94,4 +135,17 @@ def migrate_world_names(world: World) -> int:
         assign_persistent_name(agent, seed=getattr(world, "seed", None), key=key)
         if getattr(agent, "name", None) != before:
             changed += 1
+    settlement = getattr(world, "settlement", None)
+    if settlement is None:
+        return changed
+    agents_by_id = {
+        getattr(agent, "agent_id", None) or getattr(agent, "name", None): agent
+        for agent in getattr(world, "agents", [])
+    }
+    for household in getattr(settlement, "households", []):
+        surname = household_surname(household)
+        for member_id in getattr(household, "member_ids", []):
+            agent = agents_by_id.get(member_id)
+            if agent is not None and set_agent_surname(agent, surname):
+                changed += 1
     return changed

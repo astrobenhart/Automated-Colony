@@ -39,6 +39,7 @@ class Home:
 class Household:
     household_id: str
     household_name: str
+    surname: str | None = None
     home_id: str | None = None
     home_building_id: str | None = None
     member_ids: list[str] = field(default_factory=list)
@@ -52,6 +53,10 @@ class Household:
     succession_history: list[dict[str, object]] = field(default_factory=list)
 
     def __post_init__(self):
+        if self.surname is None:
+            from src.names import surname_from_household_name
+
+            self.surname = surname_from_household_name(self.household_name)
         if self.home_building_id is None:
             self.home_building_id = self.home_id
         if self.home_id is None:

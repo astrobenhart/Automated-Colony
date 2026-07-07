@@ -69,11 +69,13 @@ def test_create_child_adds_first_class_child_villager_to_household():
 
 def test_child_receives_persistent_name_at_birth():
     world, parent_a, parent_b = make_birth_world()
+    household = world.household_for_agent(parent_a)
 
     child = create_child(world, parent_a, parent_b)
 
     assert child.first_name
     assert child.surname
+    assert child.surname == household.surname
     assert child.name == f"{child.first_name} {child.surname}"
     assert not is_placeholder_name(child.name)
     assert "Child " not in child.name
