@@ -751,6 +751,26 @@ There are no factions, politics, migration, settlement conflict, player controls
 
 Future systems may use this identity layer for migration, splinter settlements, founders, settlement histories, multi-settlement worlds, ruins, and long-term lineage/history links.
 
+## Persistent Identity
+
+Names are part of villager identity, not role state.
+
+Every villager should have a persistent first name and surname from the start of their life. Children receive proper names at birth, and starting villagers receive proper names during world creation. Placeholder labels such as `Child 23` are not valid gameplay-facing identities and should not appear in inspection panels, diagnostics, memories, or Chronicle entries.
+
+Implementation notes:
+- `Agent.name` remains the display name used by existing UI, history, and Chronicle surfaces.
+- `Agent.first_name` and `Agent.surname` store the persistent identity components.
+- birth creation assigns a permanent name immediately after the child agent is created.
+- startup world generation assigns names to founders before family, social, and Chronicle seed systems run.
+- legacy agents with placeholder or first-name-only identities are migrated by the shared naming helper without changing age, role, household, family, partnership, or demographic state.
+
+Backward compatibility:
+- existing saves or test worlds containing names such as `Child 23` are transparently assigned proper names.
+- existing first names are preserved where practical, with only a surname added.
+- already complete names remain stable across repeated migration passes.
+
+Surname changes caused by partnerships, household names, or later family-name rules are intentionally handled by the Family Surnames polish task. Persistent Identity only guarantees that every villager has a readable first name and surname throughout life.
+
 ## Social Bond Labels
 
 Social bonds should describe familiarity before they imply family.

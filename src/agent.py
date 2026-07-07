@@ -66,6 +66,8 @@ class Agent:
     household_familiarity: int = 0
     workplace_familiarity: int = 0
     trait: str = CALM
+    first_name: str | None = None
+    surname: str | None = None
     agent_id: str | None = None
     peak_influence_score: int = 0
     appearance_seed: int | None = None
@@ -154,6 +156,12 @@ class Agent:
     no_progress_ticks: int = 0
 
     def __post_init__(self):
+        if not self.first_name or not self.surname:
+            parts = [part for part in self.name.split() if part]
+            if parts and not self.first_name:
+                self.first_name = parts[0]
+            if len(parts) >= 2 and not self.surname:
+                self.surname = parts[-1]
         self.sync_generation_architecture()
         self.sync_render_position()
 

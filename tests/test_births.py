@@ -19,6 +19,7 @@ from src.config import (
 from src.agent import Agent
 from src.generations import BIRTH
 from src.lifecycle import CHILD
+from src.names import is_placeholder_name
 from src.partnerships import form_partnership, refresh_partnership_durations
 from src.villager_inspection import villager_detail_sections
 from test_partnerships import make_partnership_world
@@ -66,6 +67,18 @@ def test_create_child_adds_first_class_child_villager_to_household():
     assert child.workplace_id is None
 
 
+def test_child_receives_persistent_name_at_birth():
+    world, parent_a, parent_b = make_birth_world()
+
+    child = create_child(world, parent_a, parent_b)
+
+    assert child.first_name
+    assert child.surname
+    assert child.name == f"{child.first_name} {child.surname}"
+    assert not is_placeholder_name(child.name)
+    assert "Child " not in child.name
+
+
 def test_birth_records_parent_links_generation_and_inherited_trait():
     world, parent_a, parent_b = make_birth_world()
     parent_a.trait = "Calm"
@@ -86,6 +99,7 @@ def test_birth_records_parent_links_generation_and_inherited_trait():
 
 def test_birth_adds_memories_and_chronicle_entry():
     world, parent_a, parent_b = make_birth_world()
+    world.history.configure_chronicle("Test Village")
 
     child = create_child(world, parent_a, parent_b)
 
@@ -95,6 +109,11 @@ def test_birth_adds_memories_and_chronicle_entry():
     entries = world.history.by_category(BIRTH)
     assert entries
     assert child.name in entries[-1].description
+    assert "Child " not in entries[-1].description
+    assert world.history.chronicle_path is not None
+    markdown = world.history.chronicle_path.read_text(encoding="utf-8")
+    assert child.name in markdown
+    assert "Child " not in markdown
 
 
 def test_birth_spacing_prevents_immediate_repeat_births():

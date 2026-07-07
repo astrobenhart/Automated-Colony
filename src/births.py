@@ -34,6 +34,7 @@ from src.families import (
 )
 from src.generations import BIRTH, MEMORY_CHILD, FamilyMemoryRecord
 from src.lifecycle import ADULT, CHILD, OLDER_ADULT, YOUNG_ADULT
+from src.names import assign_persistent_name, inherited_child_surname
 from src.roles import GENERALIST
 from src.social_memory import villager_key
 from src.wanderers import is_active_wanderer
@@ -45,12 +46,6 @@ if TYPE_CHECKING:
 
 
 BIRTH_PARENT_STAGES = {YOUNG_ADULT, ADULT, OLDER_ADULT}
-CHILD_NAMES = (
-    "Mara", "Elric", "Rowan", "Tessa", "Nia",
-    "Oren", "Lio", "Sera", "Kael", "Mina",
-)
-
-
 @dataclass(frozen=True)
 class BirthCandidate:
     parent_a: Agent
@@ -281,17 +276,16 @@ def create_child(world: World, parent_a: Agent, parent_b: Agent, rng: random.Ran
 
     rng = rng or random.Random(f"{getattr(world, 'seed', None)}|birth|{world.day}|{len(world.agents)}")
     child_id = next_child_id(world)
-    child_name = child_name_for(world, rng)
     household = world.household_for_agent(parent_a)
     home_x = getattr(parent_a, "home_x", None)
     home_y = getattr(parent_a, "home_y", None)
     x = home_x if home_x is not None else parent_a.x
     y = home_y if home_y is not None else parent_a.y
-    appearance_seed = appearance_seed_for(getattr(world, "seed", None), len(world.agents), child_name)
+    appearance_seed = appearance_seed_for(getattr(world, "seed", None), len(world.agents), child_id)
     trait = inherited_trait(parent_a, parent_b, rng)
 
     child = Agent(
-        child_name,
+        child_id,
         x,
         y,
         role=GENERALIST,
@@ -321,6 +315,12 @@ def create_child(world: World, parent_a: Agent, parent_b: Agent, rng: random.Ran
         daily_role=None,
         home_wander_radius=rng.randint(HOME_WANDER_MIN_RADIUS, HOME_WANDER_MAX_RADIUS),
     )
+    assign_persistent_name(
+        child,
+        seed=getattr(world, "seed", None),
+        key=child_id,
+        surname=inherited_child_surname(parent_a, parent_b),
+    )
     child.inheritance_profile = inherited_profile(parent_a, parent_b, trait, rng)
     from src.renewal import ensure_expected_lifespan
 
@@ -348,15 +348,6 @@ def next_child_id(world: World) -> str:
     while f"child-{index}" in existing:
         index += 1
     return f"child-{index}"
-
-
-def child_name_for(world: World, rng: random.Random) -> str:
-    existing_names = {agent.name for agent in world.agents}
-    for _ in range(len(CHILD_NAMES) * 2):
-        name = rng.choice(CHILD_NAMES)
-        if name not in existing_names:
-            return name
-    return f"Child {len(world.agents) + 1}"
 
 
 def inherited_trait(parent_a: Agent, parent_b: Agent, rng: random.Random) -> str:

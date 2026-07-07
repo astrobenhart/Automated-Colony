@@ -34,6 +34,7 @@ from src.seasons import (
 from src.resource_ecology import apply_resource_ecology
 from src.renewal import ensure_expected_lifespan, update_renewal
 from src.lifecycle import demographic_profiles, profile_for_stage, ADULT, OLDER_ADULT
+from src.names import assign_persistent_name, migrate_world_names
 from src.roles import role_for_index
 from src.scenarios import scenario_for_key, starting_population_for_scenario
 from src.simulation_lod import (
@@ -206,11 +207,6 @@ class World:
 
         from src.config import HOME_WANDER_MAX_RADIUS, HOME_WANDER_MIN_RADIUS
 
-        names = [
-            "Ari", "Bryn", "Cato", "Dara", "Eli",
-            "Fenn", "Gala", "Hale", "Ira", "Juno",
-        ]
-
         positions = self.initial_spawn_positions(amount)
         home_assignments = self.initial_home_assignments(amount)
         scenario_key = getattr(self.settlement, "scenario_key", None)
@@ -218,14 +214,15 @@ class World:
         home_settlement_id = self.settlement.settlement_id if self.settlement is not None else None
         home_settlement_name = self.settlement.name if self.settlement is not None else None
         for i, (x, y) in enumerate(positions):
-            appearance_seed = appearance_seed_for(self.seed, i, names[i % len(names)])
+            agent_id = f"villager-{i}"
+            appearance_seed = appearance_seed_for(self.seed, i, agent_id)
             home = home_assignments[i] if i < len(home_assignments) else None
             home_x, home_y = (home.x, home.y) if home is not None else (None, None)
             household = self.household_for_home(home.home_id if home is not None else None)
             rng = random.Random(f"{self.seed}|villager-idle|{i}")
             profile = profiles[i]
             agent = Agent(
-                names[i % len(names)],
+                agent_id,
                 x,
                 y,
                 role=role_for_index(i),
@@ -233,7 +230,7 @@ class World:
                 age=profile.age,
                 experience_level=profile.experience_level,
                 trait=trait_for_index(i),
-                agent_id=f"villager-{i}",
+                agent_id=agent_id,
                 appearance_seed=appearance_seed,
                 appearance_type=appearance_type_for_seed(appearance_seed),
                 home_settlement_id=home_settlement_id,
@@ -249,6 +246,7 @@ class World:
                 idle_until_tick=rng.randint(0, 3),
                 home_wander_radius=rng.randint(HOME_WANDER_MIN_RADIUS, HOME_WANDER_MAX_RADIUS),
             )
+            assign_persistent_name(agent, seed=self.seed, key=agent_id)
             ensure_expected_lifespan(self, agent)
             self.add_agent_to_household(agent, household)
             assign_daily_role(agent, self)
@@ -634,6 +632,7 @@ class World:
         self.last_settlement_ms = seconds * 1000
 
     def run_startup_settlement_updates(self):
+        migrate_world_names(self)
         self.run_daily_settlement_updates()
         plan_start = time.perf_counter()
         self.plan_settlement_work()
@@ -642,6 +641,7 @@ class World:
     def run_daily_updates(self):
         from src.config import TICKS_PER_HOUR
 
+        migrate_world_names(self)
         needs_start = time.perf_counter()
         self.update_needs_for_lod(TICKS_PER_HOUR)
         update_wildlife(self, random)

@@ -127,12 +127,12 @@ Notes:
 
 ---
 
-### TASK-90
+### TASK-94
 Title: Persistent Villager Names
 
 Owner: Gameplay Agent / Narrative Agent / Docs Agent
 
-Status: Backlog
+Status: Complete
 
 Priority: Highest
 
@@ -149,7 +149,9 @@ Acceptance Criteria:
 - Chronicle entries use proper names consistently.
 
 Notes:
-- This task should improve readability without changing demographic balance.
+- Implemented with persistent `first_name` and `surname` fields plus shared naming migration in `src/names.py`.
+- Births and startup villagers receive proper names before Chronicle-facing events are written.
+- This task improves readability without changing demographic balance.
 
 ---
 
