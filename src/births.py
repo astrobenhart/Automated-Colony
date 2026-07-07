@@ -36,6 +36,7 @@ from src.generations import BIRTH, MEMORY_CHILD, FamilyMemoryRecord
 from src.lifecycle import ADULT, CHILD, OLDER_ADULT, YOUNG_ADULT
 from src.roles import GENERALIST
 from src.social_memory import villager_key
+from src.wanderers import is_active_wanderer
 from src.traits import TRAITS
 
 if TYPE_CHECKING:
@@ -125,6 +126,8 @@ def birth_eligible(world: World, parent_a: Agent, parent_b: Agent) -> bool:
     if getattr(world, "settlement", None) is None:
         return False
     if parent_a is parent_b:
+        return False
+    if is_active_wanderer(parent_a) or is_active_wanderer(parent_b):
         return False
     if not is_birth_parent(parent_a) or not is_birth_parent(parent_b):
         return False

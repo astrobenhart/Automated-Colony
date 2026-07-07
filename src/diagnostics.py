@@ -9,6 +9,9 @@ from src.affection import (
     average_partnered_gathering_participation,
     has_nearby_partner,
     partners_spending_free_time_together,
+    relationship_grief_penalty,
+    relationship_mood_label,
+    relationship_positive_mood_bonus,
 )
 from src.births import (
     birth_candidates,
@@ -34,6 +37,7 @@ from src.roles import BUILDER, FORAGER, GENERALIST
 from src.settlement_planner import WORK_CONSTRUCTION, WORK_FARMING, WORK_FOOD, WORK_SUPPORT, WORK_WATER, WORK_WOOD
 from src.shared_moments import current_shared_moment, shared_moment_diagnostics
 from src.social_memory import villager_key
+from src.wanderers import active_wanderers
 
 
 @dataclass(frozen=True)
@@ -57,6 +61,7 @@ def diagnostics_sections(world, renderer_metrics: dict[str, object] | None = Non
         DiagnosticSection("Shared Moments", shared_moment_rows(world)),
         DiagnosticSection("Celebrations", celebration_rows(world)),
         DiagnosticSection("Living Community", community_rows(world)),
+        DiagnosticSection("Wanderers", wanderer_rows(world)),
         DiagnosticSection("Births", birth_rows(world)),
         DiagnosticSection("Resources", resource_rows(world)),
         DiagnosticSection("Workforce", workforce_rows(world)),
@@ -252,6 +257,21 @@ def community_rows(world) -> list[tuple[str, object]]:
     return community_diagnostics(world)
 
 
+def wanderer_rows(world) -> list[tuple[str, object]]:
+    visitors = active_wanderers(world)
+    statuses = Counter(getattr(agent, "visitor_status", "Unknown") for agent in visitors)
+    profiles = Counter(getattr(agent, "visitor_profile", "Unknown") for agent in visitors)
+    roads = getattr(world, "main_roads", [])
+    return [
+        ("Active Wanderers", len(visitors)),
+        ("Main Roads", len(roads)),
+        ("Road Edges", ", ".join(road.edge for road in roads) if roads else "None"),
+        ("Status", format_counter(statuses)),
+        ("Profiles", format_counter(profiles)),
+        ("Visitor Memories", len(getattr(world, "visitor_memories", {}))),
+    ]
+
+
 def birth_blockers(world) -> Counter:
     blockers: Counter[str] = Counter()
     living_by_id = {villager_key(agent): agent for agent in world.living_agents()}
@@ -339,16 +359,27 @@ def mood_rows(world) -> list[tuple[str, object]]:
     neutral = max(0, len(scores) - happy - unhappy)
     positives = Counter()
     negatives = Counter()
+    relationship_positive = 0
+    active_grieving = 0
+    relationship_scores = []
     for agent in world.living_agents():
         pos, neg = mood_modifiers(agent, world)
         positives[pos] += 1
         negatives[neg] += 1
+        if relationship_positive_mood_bonus(agent, world) > 0:
+            relationship_positive += 1
+        if relationship_mood_label(agent, world) == "Grieving":
+            active_grieving += 1
+        relationship_scores.append(relationship_satisfaction_score(agent, world))
 
     return [
         ("Average Mood", f"{(sum(scores) / len(scores)):.1f}" if scores else "0.0"),
         ("Happy", happy),
         ("Neutral", neutral),
         ("Unhappy", unhappy),
+        ("Positive Relationship Mood Effects", relationship_positive),
+        ("Active Grieving Villagers", active_grieving),
+        ("Average Relationship Satisfaction", f"{(sum(relationship_scores) / len(relationship_scores)):.1f}" if relationship_scores else "0.0"),
         ("Top Positive Modifier", positives.most_common(1)[0][0] if positives else "None"),
         ("Top Negative Modifier", negatives.most_common(1)[0][0] if negatives else "None"),
     ]
@@ -370,6 +401,7 @@ def derived_mood_score(agent, world) -> int:
     score += affection_mood_bonus(agent, world)
     if current_shared_moment(agent, world):
         score += 2
+    score -= relationship_grief_penalty(agent, world)
     if getattr(agent, "remembering", None):
         score -= 4
     return max(0, min(100, score))
@@ -381,6 +413,8 @@ def mood_modifiers(agent, world) -> tuple[str, str]:
         positive = "Partnered"
     if has_nearby_partner(agent, world) and affection_label(agent) in {"Established", "Strong", "Lifelong"}:
         positive = "Near partner"
+    if relationship_positive_mood_bonus(agent, world) >= 3:
+        positive = "Relationship mood"
     if has_nearby_close_friend(agent, world):
         positive = "Near close friend"
     if current_shared_moment(agent, world):
@@ -392,6 +426,8 @@ def mood_modifiers(agent, world) -> tuple[str, str]:
         negative = "Hunger"
     elif getattr(agent, "fatigue", 0) >= 70:
         negative = "Fatigue"
+    elif relationship_grief_penalty(agent, world) > 0:
+        negative = "Relationship grief"
     elif getattr(agent, "remembering", None):
         negative = "Mourning"
     else:
@@ -401,6 +437,16 @@ def mood_modifiers(agent, world) -> tuple[str, str]:
             if status is not None and status.overcrowded_by > 0:
                 negative = "Overcrowding"
     return positive, negative
+
+
+def relationship_satisfaction_score(agent, world) -> int:
+    score = 50
+    score += relationship_positive_mood_bonus(agent, world) * 8
+    score -= relationship_grief_penalty(agent, world) * 4
+    if getattr(agent, "partner_id", None):
+        label = affection_label(agent)
+        score += {"Growing": 0, "Established": 8, "Strong": 14, "Lifelong": 20}.get(label, 0)
+    return max(0, min(100, score))
 
 
 def performance_rows(world, renderer_metrics: dict[str, object]) -> list[tuple[str, object]]:

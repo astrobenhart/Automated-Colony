@@ -8,6 +8,7 @@ from src.generations import FAMILY, RELATIONSHIP_PARTNER
 from src.lifecycle import ADULT, OLDER_ADULT, YOUNG_ADULT
 from src.social_memory import SocialMemoryEntry, villager_key
 from src.affection import clear_affection, reset_affection
+from src.wanderers import is_active_wanderer
 
 if TYPE_CHECKING:
     from src.agent import Agent
@@ -98,6 +99,7 @@ def partnership_eligible(first: Agent, second: Agent, world: World) -> bool:
 def is_unpartnered_adult(agent: Agent) -> bool:
     return (
         getattr(agent, "alive", False)
+        and not is_active_wanderer(agent)
         and getattr(agent, "partner_id", None) is None
         and not getattr(agent, "partner_ids", [])
         and getattr(agent, "lifecycle_stage", None) in PARTNERSHIP_LIFE_STAGES

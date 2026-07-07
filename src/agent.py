@@ -102,6 +102,17 @@ class Agent:
     partnership_duration: int = 0
     partner_affection: int = 0
     partner_affection_recorded_levels: list[str] = field(default_factory=list)
+    relationship_grief_until_day: int = 0
+    relationship_recovery_until_day: int = 0
+    relationship_grief_penalty: int = 0
+    visitor_profile: str | None = None
+    visitor_status: str | None = None
+    visitor_origin: str | None = None
+    visitor_arrival_day: int = 0
+    visitor_departure_day: int = 0
+    visitor_road_index: int = 0
+    visitor_path: list[tuple[int, int]] = field(default_factory=list)
+    visitor_path_index: int = 0
     generation: int = 0
     family_id: str | None = None
     lifecycle_record: LifecycleRecord = field(default_factory=LifecycleRecord)

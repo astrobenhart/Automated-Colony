@@ -646,10 +646,7 @@ Possible features:
 
 - [x] Affection growing over time
 - [x] Spending free time together
-- [ ] Small gifts
-- [ ] Companionship
-- [ ] Happiness from successful relationships
-- [ ] Sadness after losing a long-term partner
+- [x] Relationship Mood
 
 Do not implement:
 
@@ -671,21 +668,24 @@ The outside world should occasionally visit the village.
 
 Possible features:
 
-- [ ] Travelling merchants
-- [ ] Storytellers
-- [ ] Hunters
-- [ ] Pilgrims
-- [ ] Scholars
-- [ ] Refugees
-- [ ] Craftsmen
-- [ ] Arrival, departure, and stay decisions
-- [ ] Visitor memories and Chronicle entries
+- [x] Shared Wanderer framework
+- [x] Main roads to the wider world
+- [x] Travelling merchants
+- [x] Storytellers
+- [x] Hunters
+- [x] Pilgrims
+- [x] Scholars
+- [x] Refugees
+- [x] Craftsmen
+- [x] Arrival, departure, and stay decisions
+- [x] Visitor memories and Chronicle entries
 
 Notes:
 
 - Some visitors leave.
 - Some visitors stay.
 - Some become memorable members of the village.
+- Visitor types should plug into shared behaviour profiles rather than becoming separate systems.
 - Visitors should be autonomous and should not become player-assigned colony roles.
 
 ### Phase 4 - Mysteries

@@ -660,7 +660,7 @@ State = what the villager is doing or experiencing now.
 
 Mood = how the villager feels.
 
-Only State exists currently. Mood, morale, emotional memory, mood meters, relationship-driven feelings, and emotional systems remain future work.
+State labels remain the main player-facing activity display. Mood is currently derived as lightweight diagnostic and inspection context from existing needs, relationships, shared moments, remembrance, and household pressure. There is no mood meter, morale system, emotional scheduling, or mood-driven behavior.
 
 State Labels v1 are computed from existing villager data such as hunger, thirst, fatigue, current action, current goal, recovery, rest, work, and exploration. State is shown in selected-villager details alongside Role, Life, and Trait.
 
@@ -1132,6 +1132,118 @@ Design boundaries:
 - no couple AI
 - no productivity bonus
 - no new birth or partnership rules
+
+## Relationship Mood
+
+Relationship Mood lets meaningful relationships subtly influence how villagers feel.
+
+It is not a new romance system, gift system, companion system, event system, or AI layer. It contributes temporary modifiers to the existing derived mood framework by reading current partnerships, affection, friendships, Shared Moments, celebrations, children, and remembrance.
+
+Positive relationship effects:
+- healthy established partnerships can create small positive mood context
+- spending free time together, sharing Shared Moments, attending ceremonies together, raising children, and living together can all contribute
+- bonuses are intentionally small and capped
+- the purpose is storytelling, not optimisation
+
+Grief after partner loss:
+- when a long-term partner dies, the survivor may enter a temporary grief phase
+- grief strength and duration are based on relationship depth
+- grief then softens into a brief recovery phase before fading naturally
+- this reuses existing remembrance, affection, death memory, and Chronicle surfaces
+- mourning is not a standalone system
+
+Relationship to Affection:
+- affection remains the long-term relationship depth
+- Relationship Mood reads affection labels rather than creating another relationship score
+- strong or lifelong partnerships may produce rare Chronicle entries when the relationship or loss is exceptional
+
+Relationship to the mood framework:
+- Relationship Mood is folded into the existing derived mood score
+- villager inspection displays labels such as Content, Happy, Grieving, and Recovering
+- diagnostics expose positive relationship mood effects, active grieving villagers, and average relationship satisfaction
+- internal mood numbers are developer-facing only
+
+Design boundaries:
+- no gift mechanics
+- no romance interactions
+- no relationship events
+- no relationship scheduling
+- no additional AI
+- no productivity, survival, planning, construction, farming, pathfinding, birth, or partnership-rule changes
+
+## Wanderer Framework
+
+Wanderers connect the village to the wider world.
+
+The framework is shared infrastructure, not a collection of separate visitor systems. Travelling merchants, storytellers, hunters, pilgrims, scholars, refugees, craftsmen, and future stranger visitors should all use the same lifecycle and provide only profile-specific tuning.
+
+Purpose:
+- make the village feel connected to places beyond the map
+- let visitors visibly arrive, stay, leave, or occasionally settle
+- allow recurring visitors and notable arrivals to become memories
+- provide future hooks for traders, caravans, mysteries, armies, monsters, and sprite presentation
+
+Road generation:
+- founding a settlement seeds two to three main roads from the village to different map edges
+- roads reuse the existing path terrain language rather than adding a new terrain type
+- each road starts at the village anchor and ends on a walkable edge tile
+- roads are deterministic from the world seed and settlement identity
+- visitors use these roads for arrival and departure instead of appearing inside the settlement
+
+Lifecycle:
+- Arrival: a wanderer starts at a road edge and walks toward the village
+- Purpose: the visitor profile describes why they are present
+- Village stay: the visitor remains for a bounded number of days
+- Decision: the visitor decides whether to depart or settle
+- Departure: the visitor walks back out along a main road
+- Settlement: the visitor becomes a resident through existing household, family, and residential systems
+
+Behaviour profiles:
+- profiles define display name, role flavour, preferred activities, preferred gathering locations, typical stay duration, and settlement likelihood
+- profiles are data definitions rather than independent AI implementations
+- current framework profiles include travelling merchant, storyteller, hunter, pilgrim, scholar, refugee, and craftsman
+- profile behaviour affects where a visitor spends time and how likely they are to settle
+- full mechanics such as trade, hunting, research, refugee-specific gameplay, or dialogue remain future content
+
+Initial profiles:
+- Travelling Merchant: visits storage areas, the village centre, and gatherings; usually leaves after several days; no trading mechanics exist yet
+- Storyteller: strongly prefers gatherings and Shared Moment settings; can leave sparse Chronicle traces; no dialogue or conversation mechanics exist
+- Hunter: spends time near forests and sometimes rests in the village; future hunting systems should reuse this profile rather than adding a separate visitor lifecycle
+- Pilgrim: moves through roads, ceremonies, and gathering places; usually continues travelling
+- Scholar: lingers near workshops or skilled villagers, joins conversations and gatherings, and may stay longer than most visitors; no research mechanics exist
+- Refugee: seeks safety around homes, gatherings, and the village centre; has the highest settlement tendency and reuses normal household and residential systems
+- Craftsman: spends time near construction or workshops, joins gatherings after work, and often settles if welcomed; construction remains the existing village work system
+
+Adding future visitor types:
+- add a new `WandererProfile`
+- provide preferred activities, destination preferences, stay duration, and settlement likelihood
+- add profile-specific Chronicle text only when it creates meaningful story texture
+- do not create a new arrival system, departure system, settlement system, social system, or task scheduler
+
+Social integration:
+- while visiting, wanderers are ordinary visible agents for social purposes
+- they can participate in Friendships, Village Gatherings, Shared Moments, Celebrations, and Living Community recognition
+- no visitor-specific friendship, gathering, shared-moment, or celebration system exists
+- visitors are not automatically assigned to households while temporary
+
+Settlement:
+- profiles with settlement likelihood may choose to remain
+- settled wanderers receive a normal household membership and family registration
+- settlement does not create a separate immigration system
+- after settlement, the person is part of the normal village simulation
+
+Chronicle and memories:
+- significant arrivals, departures, and settlements can create concise Chronicle entries
+- visitor memories track lightweight visit history for future returning-visitor support
+- ordinary presence should not spam the Chronicle
+
+Design boundaries:
+- no player-assigned visitor jobs
+- no quest board
+- no duplicate visitor AI per type
+- no teleporting visitors into the village
+- no separate immigration mechanics
+- no new social systems for visitors
 
 ## Pre-Existing Social History
 

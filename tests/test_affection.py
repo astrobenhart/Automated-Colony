@@ -4,6 +4,9 @@ from src.affection import (
     AFFECTION_ESTABLISHED_THRESHOLD,
     AFFECTION_LIFELONG_THRESHOLD,
     affection_label,
+    relationship_grief_penalty,
+    relationship_mood_label,
+    relationship_positive_mood_bonus,
     update_affection,
 )
 from src.agent import Agent
@@ -149,6 +152,21 @@ def test_affection_never_overrides_survival_behaviour():
     assert negative == "Hunger"
 
 
+def test_healthy_long_term_partnership_generates_positive_relationship_mood():
+    world, ari, bryn = make_affection_world()
+    ari.partner_affection = AFFECTION_ESTABLISHED_THRESHOLD
+    bryn.partner_affection = AFFECTION_ESTABLISHED_THRESHOLD
+    baseline = derived_mood_score(ari, world)
+    update_shared_moments(world)
+
+    assert relationship_positive_mood_bonus(ari, world) > 0
+    assert relationship_mood_label(ari, world) == "Happy"
+    assert derived_mood_score(ari, world) > baseline
+    positive, negative = mood_modifiers(ari, world)
+    assert positive in {"Relationship mood", "Shared moment"}
+    assert negative == "None"
+
+
 def test_lifelong_partners_generate_chronicle_and_inspection_label():
     world, ari, bryn = make_affection_world()
     ari.partner_affection = AFFECTION_LIFELONG_THRESHOLD - 1
@@ -160,6 +178,7 @@ def test_lifelong_partners_generate_chronicle_and_inspection_label():
     assert affection_label(ari) == "Lifelong"
     assert ("Relationship", "Lifelong") in sections["Partnership"]
     assert ("Partner Nearby", "Yes") in sections["Partnership"]
+    assert ("Relationship Mood", "Happy") in sections["Status"]
     assert any(entry.category == LOCAL_STORY and entry.title == "Lifelong Partnership" for entry in world.history.entries)
     assert any("rarely seen apart" in entry.description for entry in world.history.entries)
 
@@ -173,10 +192,11 @@ def test_partnership_diagnostics_report_shared_free_time():
     assert sections["Partnerships"]["Partnered Gathering Participation"] == "100.0%"
 
 
-def test_long_term_partner_loss_extends_mourning_and_clears_partnership():
+def test_long_term_partner_loss_creates_grief_and_recovery_without_behavior_override():
     world, ari, bryn = make_affection_world()
     ari.partner_affection = AFFECTION_LIFELONG_THRESHOLD
     bryn.partner_affection = AFFECTION_LIFELONG_THRESHOLD
+    bryn.current_action = "Building"
 
     record_death(world, ari, "old age")
 
@@ -184,5 +204,34 @@ def test_long_term_partner_loss_extends_mourning_and_clears_partnership():
     assert bryn.partner_affection == 0
     assert bryn.remembering == "Ari"
     assert bryn.remembrance_expires_day >= world.day + 10
+    assert bryn.relationship_grief_until_day > world.day
+    assert bryn.relationship_recovery_until_day > bryn.relationship_grief_until_day
+    assert relationship_grief_penalty(bryn, world) > 0
+    assert relationship_mood_label(bryn, world) == "Grieving"
+    assert mood_modifiers(bryn, world)[1] == "Relationship grief"
+    assert bryn.current_action == "Building"
     assert any("Mourned lifelong partner Ari" in memory for memory in bryn.personal_memories)
     assert any(entry.category == LOCAL_STORY and entry.title == "Partner Mourned" for entry in world.history.entries)
+
+    world.day = bryn.relationship_grief_until_day
+    assert relationship_mood_label(bryn, world) == "Recovering"
+    assert relationship_grief_penalty(bryn, world) > 0
+
+    world.day = bryn.relationship_recovery_until_day
+    assert relationship_mood_label(bryn, world) == "Content"
+    assert relationship_grief_penalty(bryn, world) == 0
+
+
+def test_relationship_mood_diagnostics_report_positive_and_grief_effects():
+    world, ari, bryn = make_affection_world()
+    ari.partner_affection = AFFECTION_ESTABLISHED_THRESHOLD
+    bryn.partner_affection = AFFECTION_ESTABLISHED_THRESHOLD
+    update_shared_moments(world)
+    sections = {section.title: dict(section.rows) for section in diagnostics_sections(world)}
+    assert sections["Mood"]["Positive Relationship Mood Effects"] == 2
+    assert sections["Mood"]["Active Grieving Villagers"] == 0
+    assert float(sections["Mood"]["Average Relationship Satisfaction"]) > 50
+
+    record_death(world, ari, "old age")
+    sections = {section.title: dict(section.rows) for section in diagnostics_sections(world)}
+    assert sections["Mood"]["Active Grieving Villagers"] == 1

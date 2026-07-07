@@ -53,6 +53,8 @@ from src.traits import trait_for_index
 from src.task_behavior import assign_daily_role, run_villager_task
 from src.settlement_planner import plan_settlement_work
 from src.village_paths import decay_foot_traffic
+from src.wanderers import is_active_wanderer, update_wanderers
+from src.world_roads import MainRoad, seed_main_roads
 from src.settlement import (
     Settlement,
     choose_resource_target,
@@ -90,6 +92,7 @@ class World:
     moisture_map: list[list[float]] = field(default_factory=list, repr=False)
     temperature_map: list[list[float]] = field(default_factory=list, repr=False)
     river_paths: list[list[tuple[int, int]]] = field(default_factory=list, repr=False)
+    main_roads: list[MainRoad] = field(default_factory=list, repr=False)
     active_environment_events: list = field(default_factory=list)
     animals: list = field(default_factory=list)
     history: WorldHistory = field(default_factory=WorldHistory)
@@ -105,6 +108,7 @@ class World:
     recognized_traditions: list[RecognizedTradition] = field(default_factory=list)
     community_chronicle_keys: set[str] = field(default_factory=set)
     affection_chronicle_keys: set[str] = field(default_factory=set)
+    visitor_memories: dict[str, dict] = field(default_factory=dict)
     identity: WorldIdentity | None = None
     settlement: Settlement | None = None
     families: dict = field(default_factory=dict)
@@ -128,6 +132,9 @@ class World:
     household_succession_events_by_year: dict[int, int] = field(default_factory=dict)
     household_split_events_by_year: dict[int, int] = field(default_factory=dict)
     friendship_formations_by_year: dict[int, int] = field(default_factory=dict)
+    wanderer_arrivals_by_year: dict[int, int] = field(default_factory=dict)
+    wanderer_settlements_by_year: dict[int, int] = field(default_factory=dict)
+    wanderer_sequence: int = 0
     friendship_losses_by_year: dict[int, int] = field(default_factory=dict)
     recorded_friendship_pairs: set[tuple[str, str]] = field(default_factory=set)
     lod_stats: dict[str, LODProfileStat] = field(
@@ -271,6 +278,7 @@ class World:
 
     def establish_settlement(self):
         self.settlement = found_settlement(self)
+        seed_main_roads(self, self.settlement)
 
     def initial_spawn_positions(self, amount):
         from src.config import INITIAL_SPAWN_MAX_RADIUS, INITIAL_SPAWN_RADIUS
@@ -366,6 +374,8 @@ class World:
 
         default_household = self.settlement.households[0]
         for agent in self.living_agents():
+            if is_active_wanderer(agent):
+                continue
             household = self.household_for_agent(agent)
             if household is None:
                 home_household = self.household_for_home(getattr(agent, "home_id", None))
@@ -486,7 +496,10 @@ class World:
 
     def update_settlement_population(self):
         if self.settlement is not None:
-            self.settlement.population = len(self.living_agents())
+            self.settlement.population = len([
+                agent for agent in self.living_agents()
+                if not is_active_wanderer(agent)
+            ])
 
     def update_settlement_needs(self, force: bool = False):
         update_settlement_needs(self, force)
@@ -558,6 +571,9 @@ class World:
         return updates
 
     def update_villager(self, agent: Agent):
+        if is_active_wanderer(agent):
+            return
+
         if run_villager_task(agent, self):
             agent.die_if_needed(self)
             return
@@ -649,6 +665,7 @@ class World:
         update_lifecycle_progression(self)
         update_renewal(self)
         update_social_memory(self)
+        update_wanderers(self)
         self.ensure_household_membership()
         update_household_familiarity(self)
         update_friendships(self)

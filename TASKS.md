@@ -29,6 +29,12 @@ Completed systems:
 - Strong and lifelong partnerships can create rare Chronicle recognition and deeper mourning when a partner dies.
 - Existing gathering destination scoring gives free partners a mild preference for places where their partner is already present.
 - Partnered free-time diagnostics report partners gathering together without adding couple AI.
+- Relationship Mood connects affection, partnerships, friendships, remembrance, and the existing mood diagnostics without adding new romance mechanics.
+- Healthy long-term partnerships can provide small positive mood context, while long-term partner loss creates temporary grief and recovery.
+- Wanderers now use a shared framework with profile-based behaviour, edge-road arrival, bounded stays, departure or settlement decisions, visitor memories, and Chronicle entries.
+- Main roads connect the village to map edges and provide reusable entry routes for future visitors, caravans, traders, armies, monsters, and mysteries.
+- Initial Wanderer profiles define merchants, storytellers, hunters, pilgrims, scholars, refugees, and craftsmen through shared profile data rather than separate visitor systems.
+- Wanderer profiles influence where visitors spend time, why they stay, why they leave, and how likely they are to settle.
 
 Known limitations:
 - v0.9 friendship effects are intentionally subtle.
@@ -38,6 +44,8 @@ Known limitations:
 - Living Community observes existing behaviour only; it does not create factions, clubs, organisations, social classes, schedules, or new AI.
 - Affection does not affect partnership formation, productivity, survival priorities, planning, birth gates, or task selection.
 - Partner free-time preference does not create follow-partner behaviour, partner pathfinding, couple scheduling, or new destinations.
+- Relationship Mood is derived from existing state and does not create gifts, companion systems, relationship events, additional AI, productivity bonuses, or behaviour overrides.
+- Wanderer profiles do not implement trading, hunting, research, dialogue, refugee-specific mechanics, or unique visitor AI.
 - There is no conversation system, social scheduling, relationship graph, jealousy, rivalry, courtship, dating mechanics, couple AI, or romance drama.
 - Future v0.9 phases should build on friendships without turning them into player-managed mechanics.
 
@@ -518,26 +526,26 @@ Title: Rare Visitor Framework
 
 Owner: Planner Agent / Architect Agent
 
-Status: Backlog
+Status: Complete
 
 Description:
-Plan a generic framework for rare autonomous visitors such as wizards, hermits, lost knights, merchants, pilgrims, and golden stags.
+Implement a generic framework for autonomous visitors such as merchants, storytellers, hunters, pilgrims, scholars, refugees, and craftsmen.
 
 Expected Output:
-A future architecture plan for visitors that arrive, behave, affect the world in bounded ways, integrate with history, and leave without becoming normal villagers.
+A reusable framework for visitors that arrive on world roads, stay for bounded periods, integrate with social/history systems, decide whether to leave or settle, and avoid becoming player-controlled colony roles.
 
 Acceptance Criteria:
 - Visitors are autonomous and rare.
 - Visitors are not colony roles, migrants, or player-controlled units.
-- The framework supports arrivals, departures, bounded duration, renderer markers, history records, and villager reaction hooks.
-- The framework is generic; the wizard is one possible visitor, not the whole system.
-- No gameplay code is changed by this planning task.
+- The framework supports arrivals, departures, bounded duration, social participation, history records, memories, and future villager reaction hooks.
+- The framework is generic; individual visitor types are profile definitions, not separate systems.
+- Settlement reuses existing household, family, and residential systems.
 
 Dependencies:
 - TASK-49
 
 Notes:
-- Possible future modules include `visitors.py`, `mysteries.py`, and `magical_events.py`.
+- Future rare visitors such as wizards, hermits, lost knights, and golden stags should plug into the same Wanderer framework.
 
 ---
 

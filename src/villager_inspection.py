@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.affection import affection_label, partner_nearby_label
+from src.affection import affection_label, partner_nearby_label, relationship_mood_label
 from src.death_memory import active_remembrance_name
 from src.celebrations import ceremony_status
 from src.community import community_associations
@@ -194,15 +194,28 @@ def status_rows(agent, world=None) -> list[tuple[str, object]]:
         ("State", safe_state_label(agent, world) or "Unknown"),
         ("Social", social_state(agent, world)),
         ("Shared Moment", current_shared_moment(agent, world) or "None"),
+        ("Relationship Mood", relationship_mood_label(agent, world)),
         ("Current Ceremony", ceremony),
         ("Influence", influence_label(agent, world)),
     ]
     if ceremony != "None":
         rows.append(("Ceremony Status", ceremony_attendance))
+    if getattr(agent, "visitor_status", None):
+        rows.append(("Visitor Status", visitor_status_label(agent)))
     remembering = active_remembrance_name(agent, world)
     if remembering:
         rows.append(("Remembering", remembering))
     return rows
+
+
+def visitor_status_label(agent) -> str:
+    status = getattr(agent, "visitor_status", None)
+    profile = getattr(agent, "visitor_profile", None)
+    if not status:
+        return "None"
+    if profile:
+        return f"{status} ({profile.replace('_', ' ').title()})"
+    return status
 
 
 def community_rows(agent, world=None) -> list[tuple[str, object]]:

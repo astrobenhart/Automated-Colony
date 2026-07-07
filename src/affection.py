@@ -16,6 +16,12 @@ AFFECTION_LIFELONG_THRESHOLD = 130
 AFFECTION_MAX_SCORE = 240
 AFFECTION_CHRONICLE_LIMIT_PER_YEAR = 2
 PARTNER_PROXIMITY_RADIUS = 2
+RELATIONSHIP_GRIEF_BY_LABEL = {
+    "Established": (6, 5),
+    "Strong": (8, 7),
+    "Lifelong": (12, 10),
+}
+RELATIONSHIP_RECOVERY_DAYS = 8
 
 
 def update_affection(world: World):
@@ -100,15 +106,54 @@ def affection_label(agent: Agent) -> str:
 
 
 def affection_mood_bonus(agent: Agent, world: World) -> int:
+    return relationship_positive_mood_bonus(agent, world)
+
+
+def relationship_positive_mood_bonus(agent: Agent, world: World) -> int:
     partner = active_partner(agent, world)
-    if partner is None or not near_each_other(agent, partner):
+    if partner is None:
         return 0
     label = affection_label(agent)
+    if label == "Growing":
+        return 0
+    bonus = 0
+    if same_household(agent, partner):
+        bonus += 1
+    if spending_free_time_together(agent, partner):
+        bonus += 1
+    if shared_moment_together(agent, partner, world):
+        bonus += 2
+    if attending_same_celebration(agent, partner, world):
+        bonus += 1
+    if raising_children_together(world, agent, partner):
+        bonus += 1
     if label == "Lifelong":
-        return 2
-    if label in {"Established", "Strong"}:
-        return 1
+        bonus += 1
+    return min(4, bonus)
+
+
+def relationship_grief_penalty(agent: Agent, world: World) -> int:
+    grief_until = getattr(agent, "relationship_grief_until_day", 0)
+    recovery_until = getattr(agent, "relationship_recovery_until_day", 0)
+    penalty = getattr(agent, "relationship_grief_penalty", 0)
+    if grief_until and world.day < grief_until:
+        return max(0, penalty)
+    if recovery_until and world.day < recovery_until:
+        return max(1, penalty // 3)
     return 0
+
+
+def relationship_mood_label(agent: Agent, world: World | None = None) -> str:
+    if world is not None:
+        grief_until = getattr(agent, "relationship_grief_until_day", 0)
+        recovery_until = getattr(agent, "relationship_recovery_until_day", 0)
+        if grief_until and world.day < grief_until:
+            return "Grieving"
+        if recovery_until and world.day < recovery_until:
+            return "Recovering"
+        if relationship_positive_mood_bonus(agent, world) >= 3:
+            return "Happy"
+    return "Content"
 
 
 def has_nearby_partner(agent: Agent, world: World) -> bool:
@@ -275,9 +320,15 @@ def handle_partner_death(world: World, deceased: Agent):
     label = affection_label(survivor)
     if label == "Growing":
         return
-    duration = 6 if label in {"Established", "Strong"} else 10
+    duration, penalty = RELATIONSHIP_GRIEF_BY_LABEL.get(label, RELATIONSHIP_GRIEF_BY_LABEL["Established"])
     survivor.remembering = deceased.name
     survivor.remembrance_expires_day = max(getattr(survivor, "remembrance_expires_day", 0), world.day + duration)
+    survivor.relationship_grief_until_day = max(getattr(survivor, "relationship_grief_until_day", 0), world.day + duration)
+    survivor.relationship_recovery_until_day = max(
+        getattr(survivor, "relationship_recovery_until_day", 0),
+        world.day + duration + RELATIONSHIP_RECOVERY_DAYS,
+    )
+    survivor.relationship_grief_penalty = max(getattr(survivor, "relationship_grief_penalty", 0), penalty)
     memory = f"Mourned {label.lower()} partner {deceased.name} in Year {world.year}."
     if memory not in survivor.personal_memories:
         survivor.personal_memories.insert(0, memory)
