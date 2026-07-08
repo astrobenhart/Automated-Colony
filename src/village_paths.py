@@ -64,6 +64,7 @@ def mark_path_tile(
     y: int,
     *,
     road_origin: str | None = ROAD_ORIGIN_VILLAGE,
+    allow_bridge: bool = False,
 ) -> bool:
     if not (0 <= x < world.width and 0 <= y < world.height):
         return False
@@ -71,12 +72,20 @@ def mark_path_tile(
         return False
 
     tile = world.tile_at(x, y)
-    if not tile.walkable or tile.kind in ("water", "mountain", "shelter", "home"):
+    is_bridge_crossing = allow_bridge and road_origin == ROAD_ORIGIN_WORLD and tile.kind == "water"
+    if tile.kind in ("mountain", "shelter", "home"):
+        return False
+    if not is_bridge_crossing and (not tile.walkable or tile.kind == "water"):
         return False
 
     tile.foot_traffic = max(tile.foot_traffic, PATH_TRAFFIC_PRESEEDED)
     if road_origin is not None:
         tile.road_origin = road_origin
+    if is_bridge_crossing:
+        tile.bridge = True
+        tile.kind = PATH
+    elif not getattr(tile, "bridge", False):
+        tile.bridge = False
     apply_path_wear(tile)
     tile.food = 0
     tile.wood = 0

@@ -30,6 +30,7 @@ from src.gatherings import gathering_diagnostics
 from src.generations import BIRTH
 from src.lifecycle import CHILD
 from src.lifecycle_progression import days_until_adulthood
+from src.mysteries import mystery_diagnostics
 from src.partnerships import partnership_candidates
 from src.renewal import age_distribution, expected_deaths_this_year, generation_distribution
 from src.residential import all_household_statuses, residential_demand
@@ -62,6 +63,7 @@ def diagnostics_sections(world, renderer_metrics: dict[str, object] | None = Non
         DiagnosticSection("Celebrations", celebration_rows(world)),
         DiagnosticSection("Living Community", community_rows(world)),
         DiagnosticSection("Wanderers", wanderer_rows(world)),
+        DiagnosticSection("Mysteries", mystery_rows(world)),
         DiagnosticSection("Births", birth_rows(world)),
         DiagnosticSection("Resources", resource_rows(world)),
         DiagnosticSection("Workforce", workforce_rows(world)),
@@ -221,6 +223,10 @@ def partnership_rows(world) -> list[tuple[str, object]]:
         ("Single Adults", len(adults) - len(partnered_adults)),
         ("Partnered Adults", len(partnered_adults)),
     ]
+
+
+def mystery_rows(world) -> list[tuple[str, object]]:
+    return mystery_diagnostics(world)
 
 
 def birth_rows(world) -> list[tuple[str, object]]:

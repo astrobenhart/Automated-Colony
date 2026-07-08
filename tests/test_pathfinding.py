@@ -74,6 +74,16 @@ def test_path_avoids_water():
     assert path == []
 
 
+def test_path_can_cross_bridge_metadata_without_special_rules():
+    world = make_world(5, 1)
+    world.tiles[0][2] = Tile("path", bridge=True)
+
+    path = find_path(world, (0, 0), (4, 0))
+
+    assert path == [(1, 0), (2, 0), (3, 0), (4, 0)]
+    assert world.tile_at(2, 0).walkable
+
+
 def test_path_unreachable_returns_empty():
     """Completely enclosed destination."""
     world = make_world(5, 5)

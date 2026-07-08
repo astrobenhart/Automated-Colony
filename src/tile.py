@@ -8,7 +8,10 @@ class Tile:
     foot_traffic: int = 0
     food_depleted_days: int = 0
     road_origin: str | None = None
+    bridge: bool = False
 
     @property
     def walkable(self):
+        if self.bridge:
+            return True
         return self.kind not in ("water", "mountain")

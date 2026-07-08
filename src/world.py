@@ -24,6 +24,7 @@ from src.history_seed import seed_starting_chronicle
 from src.influence import update_influence_peaks
 from src.death_memory import DeathRecord, expire_remembrances
 from src.lifecycle_progression import update_lifecycle_progression
+from src.mysteries import ActiveMystery, update_mysteries
 from src.seasons import (
     daily_transition_progress,
     day_of_season,
@@ -111,6 +112,7 @@ class World:
     community_chronicle_keys: set[str] = field(default_factory=set)
     affection_chronicle_keys: set[str] = field(default_factory=set)
     visitor_memories: dict[str, dict] = field(default_factory=dict)
+    active_mysteries: list[ActiveMystery] = field(default_factory=list)
     identity: WorldIdentity | None = None
     settlement: Settlement | None = None
     families: dict = field(default_factory=dict)
@@ -655,6 +657,7 @@ class World:
 
         planning_start = time.perf_counter()
         update_environment_events(self, random)
+        update_mysteries(self, random)
         decay_foot_traffic(self)
         self.age_stored_food()
         self.regrow_resources()

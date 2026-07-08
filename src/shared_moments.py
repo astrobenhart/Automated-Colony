@@ -73,6 +73,15 @@ def choose_shared_moment(world: World, center: tuple[int, int], size: int) -> st
 
 def shared_moment_weights(world: World, center: tuple[int, int]) -> list[tuple[str, int]]:
     from src.celebrations import OPEN_CREMATION, active_celebration
+    from src.mysteries import active_mystery_at
+
+    if active_mystery_at(world, center, radius=GATHERING_RADIUS) is not None:
+        return [
+            (WATCHING, 54),
+            (CONVERSATION, 26),
+            (RESTING, 12),
+            (WARMING, 8),
+        ]
 
     celebration = active_celebration(world)
     if celebration is not None and chebyshev_distance(center[0], center[1], celebration.anchor[0], celebration.anchor[1]) <= GATHERING_RADIUS:

@@ -38,7 +38,8 @@ World generation should:
 - use centralized settings for reproducible and tunable worlds
 - create deterministic worlds when given a seed
 - generate elevation, moisture, and temperature maps
-- trace simple downhill rivers from high elevation toward lower elevation
+- generate feature-based lakes and continuous river paths rather than scattered puddle water
+- place permanent walkable bridges where generated world roads cross water
 - assign water, mountain, hill, forest, wetland, dry, plain, and grass terrain from simple natural rules
 - place food and wood based on terrain conditions
 - apply terrain and season based resource growth, caps, and gradual die-off
@@ -1232,8 +1233,9 @@ Purpose:
 Road generation:
 - founding a settlement seeds two to three main roads from the village to different map edges
 - roads reuse the existing path terrain language rather than adding a new terrain type
-- each road starts at the village anchor and ends on a walkable edge tile
+- each road starts at the village anchor and ends at a map edge entry point
 - roads are deterministic from the world seed and settlement identity
+- generated roads may bridge rivers or lakes they cross, but those bridges remain ordinary walkable road tiles
 - visitors use these roads for arrival and departure instead of appearing inside the settlement
 
 ## Permanent World Roads
@@ -1258,6 +1260,34 @@ Future extensibility:
 - wanderers, caravans, pilgrims, refugees, rare visitors, and world events can identify permanent roads through road metadata
 - future renderer work may draw world roads differently without changing gameplay or terrain kinds
 - future road classes can extend metadata instead of adding new terrain types
+
+## Feature-Based Water Generation
+
+Water generation creates geographic features rather than isolated low-elevation puddles.
+
+The generator still begins with deterministic elevation, moisture, and temperature maps. Water placement then happens through an explicit feature pass:
+- lakes are generated as a small number of larger irregular basins
+- rivers are generated as continuous paths with clear origins and destinations
+- rivers may flow from a map edge into a lake, from a lake out to an edge, between lakes, or across the map as standalone waterways
+- lake and river tiles boost nearby moisture before terrain and resources are assigned
+
+`WorldGenSettings.water_level` remains a broad water-abundance control, but it influences feature count and size instead of converting every low elevation tile into water. Wet worlds therefore gain larger or more numerous water features, while dry worlds keep fewer and smaller waterways without losing reliable water entirely.
+
+Bridge placement:
+- permanent world roads are routed after rivers and lakes exist
+- road routing may cross water at a higher routing cost
+- when a world road crosses water, the tile becomes an ordinary path tile with `Tile.bridge = True` and `Tile.road_origin = "world"`
+- bridges are walkable through normal pathfinding because they use ordinary walkable road terrain
+- there is no bridge construction, maintenance, special pathfinding rule, or new bridge terrain type
+
+Renderer relationship:
+- bridges currently render as ordinary roads
+- rivers and lakes remain ordinary water tiles
+- future renderer work can use bridge metadata for wooden bridge artwork, shadows, or decorative details without changing gameplay
+
+Future extensibility:
+- fishing, caravans, wanderers, floods, shoreline details, riverbank gathering places, and environmental stories can build on coherent water features
+- future bridge classes can extend metadata while preserving the terrain/pathfinding split
 
 Lifecycle:
 - Arrival: a wanderer starts at a road edge and walks toward the village
@@ -2315,6 +2345,50 @@ Possible examples:
 These are examples only. The final list should remain intentionally open so the observer cannot memorize every possible surprise.
 
 Events should be bounded. They should not happen constantly. They should not dominate survival systems. Some mystery should remain unexplained.
+
+### Mystery Framework
+
+Mysteries are rare ambiguous observations.
+
+They are not fantasy gameplay, quests, or explanations. A mystery may affect how villagers remember and talk about a day, but it should not tell the player whether anything supernatural truly happened.
+
+Implemented framework:
+- `src/mysteries.py` owns reusable Mystery profiles and active Mystery state
+- Mystery profiles define the event type, display title, gathering label, Chronicle title, and witness memory text
+- active Mysteries have an anchor location, duration, remaining days, witness ids, and Chronicle state
+- the daily simulation may start a Mystery rarely, update witnesses, and expire old Mysteries
+- Mystery locations are selected from existing world features such as lakes, rivers, forest edges, and open meadows
+
+Design boundaries:
+- no player-triggered mysteries
+- no supernatural explanation
+- no fantasy resource effects
+- no quest logic
+- no dedicated mystery AI
+- no new social scheduling
+- no terrain mutation
+- no productivity, survival, birth, death, construction, or planning changes
+
+Villager reactions reuse existing systems. Mysteries add temporary gathering attraction, so free villagers may drift toward the location through ordinary Village Gatherings. Shared Moments near a Mystery naturally bias toward Watching and Conversation. Survival and work still take priority because gathering eligibility remains unchanged.
+
+Chronicle integration is observational. Entries should use language such as "reported", "saw", or "remembered" rather than stating what the phenomenon was. Witnesses may receive lightweight personal memories that future social and Chronicle systems can reference.
+
+Renderer integration uses the Dynamic Environmental Overlay system. Mystery visuals draw as transient atmosphere above cached terrain and never invalidate terrain chunks. Future mystery profiles should add visual presentation through overlay layers before considering durable world changes.
+
+### Strange Lights
+
+Strange Lights are the first Mystery profile.
+
+They may rarely appear near lakes, rivers, forest edges, or open meadows. Their presentation is quiet: small glowing particles drift and fade through the Environmental overlay. They are meant to feel peaceful and uncertain rather than spectacular or overtly magical.
+
+When Strange Lights appear:
+- the event receives a short active duration
+- a sparse Chronicle entry records that villagers reported lights near the location
+- nearby witnesses gain a personal memory
+- free villagers may gather near the location through existing gathering scoring
+- villagers already gathered there may share a Watching moment
+
+The simulation never explains whether the lights are supernatural, weather, memory, mistake, or village folklore. The ambiguity is the feature.
 
 ### Mysteries and Landmarks
 

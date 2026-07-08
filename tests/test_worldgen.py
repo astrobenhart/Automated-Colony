@@ -170,6 +170,31 @@ def test_generated_worlds_contain_river_paths():
     assert any(len(path) >= 8 for path in world.river_paths)
 
 
+def test_feature_based_water_reduces_scattered_puddles():
+    world = make_generated_world(seed=31, width=WIDTH, height=HEIGHT)
+    components = water_components(world)
+    tiny_components = [component for component in components if len(component) <= 4]
+
+    assert components
+    assert len(components) <= 5
+    assert len(tiny_components) <= 1
+
+
+def test_generated_world_contains_lake_sized_water_feature():
+    world = make_generated_world(seed=32, width=WIDTH, height=HEIGHT)
+    components = water_components(world)
+
+    assert max(len(component) for component in components) >= 24
+
+
+def test_river_paths_are_continuous_waterways():
+    world = make_generated_world(seed=33, width=WIDTH, height=HEIGHT)
+
+    for path in world.river_paths:
+        for first, second in zip(path, path[1:]):
+            assert abs(first[0] - second[0]) + abs(first[1] - second[1]) == 1
+
+
 def test_river_path_tiles_are_unwalkable_water():
     world = make_generated_world(seed=13, width=WIDTH, height=HEIGHT)
 
@@ -194,3 +219,30 @@ def test_at_least_one_river_generally_moves_downhill():
         downhill_paths.append(end_elevation < start_elevation)
 
     assert any(downhill_paths)
+
+
+def water_components(world: World) -> list[set[tuple[int, int]]]:
+    water = {
+        (x, y)
+        for y, row in enumerate(world.tiles)
+        for x, tile in enumerate(row)
+        if tile.kind == "water"
+    }
+    components: list[set[tuple[int, int]]] = []
+
+    while water:
+        start = water.pop()
+        component = {start}
+        stack = [start]
+        while stack:
+            x, y = stack.pop()
+            for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                pos = (nx, ny)
+                if pos not in water:
+                    continue
+                water.remove(pos)
+                component.add(pos)
+                stack.append(pos)
+        components.append(component)
+
+    return components

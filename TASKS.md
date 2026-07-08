@@ -35,6 +35,7 @@ Completed systems:
 - Main roads connect the village to map edges and provide reusable entry routes for future visitors, caravans, traders, armies, monsters, and mysteries.
 - Initial Wanderer profiles define merchants, storytellers, hunters, pilgrims, scholars, refugees, and craftsmen through shared profile data rather than separate visitor systems.
 - Wanderer profiles influence where visitors spend time, why they stay, why they leave, and how likely they are to settle.
+- Strange Lights introduce the reusable Mystery framework with rare ambiguous events, witness memories, Chronicle entries, gathering attraction, Shared Moment reactions, and environmental overlay rendering.
 
 Known limitations:
 - v0.9 friendship effects are intentionally subtle.
@@ -46,6 +47,7 @@ Known limitations:
 - Partner free-time preference does not create follow-partner behaviour, partner pathfinding, couple scheduling, or new destinations.
 - Relationship Mood is derived from existing state and does not create gifts, companion systems, relationship events, additional AI, productivity bonuses, or behaviour overrides.
 - Wanderer profiles do not implement trading, hunting, research, dialogue, refugee-specific mechanics, or unique visitor AI.
+- Strange Lights do not explain the phenomenon, add fantasy mechanics, change resources, or introduce dedicated mystery AI.
 - There is no conversation system, social scheduling, relationship graph, jealousy, rivalry, courtship, dating mechanics, couple AI, or romance drama.
 - Future v0.9 phases should build on friendships without turning them into player-managed mechanics.
 
@@ -216,12 +218,12 @@ Notes:
 
 ---
 
-### TASK-87
+### TASK-97
 Title: Natural Rivers and Lakes
 
 Owner: Worldgen Agent / Renderer Agent / Gameplay Agent
 
-Status: Backlog
+Status: Complete
 
 Priority: High
 
@@ -241,6 +243,38 @@ Acceptance Criteria:
 
 Notes:
 - This is world-generation polish for existing maps, not a new construction feature.
+- Implemented as a feature-based water pass that creates larger irregular lakes and continuous river paths instead of low-elevation puddle scatter.
+- Permanent world roads can create walkable bridge metadata when they cross water.
+- Bridges remain ordinary path terrain with `Tile.bridge = True`; no bridge terrain type, construction system, maintenance, or special pathfinding rule was added.
+
+---
+
+### TASK-98
+Title: Strange Lights
+
+Owner: Gameplay Agent / Renderer Agent / Narrative Agent
+
+Status: Complete
+
+Priority: High
+
+Description:
+Implement the first reusable Mystery framework profile as rare ambiguous strange lights that villagers can witness without explaining the phenomenon.
+
+Expected Output:
+Strange Lights can appear at believable landscape locations, render through the environmental overlay, attract free villagers through existing gathering behaviour, create witness memories, and record sparse Chronicle entries.
+
+Acceptance Criteria:
+- Strange Lights occasionally appear as rare Mystery events.
+- Lights render through the dynamic environmental overlay rather than terrain caches.
+- Nearby villagers can react through existing gatherings and Shared Moments.
+- Witnesses receive lightweight personal memories.
+- Chronicle entries describe observations without explaining the phenomenon.
+- The Mystery framework can support future mystery profiles.
+
+Notes:
+- No fantasy resource effects, supernatural explanation, dedicated mystery AI, player controls, or new social systems were added.
+- Strange Lights are intentionally rare and story-facing.
 
 ---
 

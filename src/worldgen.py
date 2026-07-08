@@ -1,13 +1,19 @@
 from __future__ import annotations
 import random
+from dataclasses import dataclass
 
 from src.config import (
     RIVER_MIN_LENGTH,
-    RIVER_SOURCE_ELEVATION,
     RIVER_WIDEN_CHANCE,
 )
 from src.tile import Tile
 from src.worldgen_settings import WorldGenSettings, default_worldgen_settings
+
+
+@dataclass(frozen=True)
+class LakeFeature:
+    center: tuple[int, int]
+    tiles: frozenset[tuple[int, int]]
 
 
 def generate_world(
@@ -25,9 +31,12 @@ def generate_world(
     elevation = _normalize_map(_smooth_map(_random_map(width, height, rng), passes=3))
     moisture = _normalize_map(_smooth_map(_random_map(width, height, rng), passes=3))
     temperature = _temperature_map(width, height, rng)
-    river_paths = _generate_river_paths(elevation, rng, settings.river_count)
+    lakes = _generate_lakes(width, height, elevation, rng, settings)
+    river_paths = _generate_river_paths(width, height, elevation, rng, settings, lakes)
     river_tiles = _river_tile_set(river_paths, elevation, rng)
-    _add_river_moisture(moisture, river_tiles)
+    lake_tiles = {pos for lake in lakes for pos in lake.tiles}
+    water_tiles = river_tiles | lake_tiles
+    _add_river_moisture(moisture, water_tiles)
 
     tiles: list[list[Tile]] = []
 
@@ -38,7 +47,7 @@ def generate_world(
             elev = elevation[y][x]
             moist = moisture[y][x]
             temp = temperature[y][x]
-            kind = "water" if (x, y) in river_tiles else _terrain_for(elev, moist, temp, settings)
+            kind = "water" if (x, y) in water_tiles else _terrain_for(elev, moist, temp, settings)
             tile = Tile(kind)
             _place_resources(tile, moist, temp, rng, settings)
             row.append(tile)
@@ -128,9 +137,6 @@ def _terrain_for(
 ) -> str:
     effective_moisture = _clamp(moisture - settings.climate_harshness * 0.12)
 
-    if elevation < settings.water_level:
-        return "water"
-
     if elevation > settings.mountain_level:
         return "mountain"
 
@@ -156,80 +162,250 @@ def _terrain_for(
 
 
 def _generate_river_paths(
+    width: int,
+    height: int,
     elevation: list[list[float]],
     rng: random.Random,
-    river_count: int,
+    settings: WorldGenSettings,
+    lakes: list[LakeFeature],
 ) -> list[list[tuple[int, int]]]:
-    height = len(elevation)
-    width = len(elevation[0])
-    candidates = [
-        (x, y)
-        for y in range(1, height - 1)
-        for x in range(1, width - 1)
-        if elevation[y][x] >= RIVER_SOURCE_ELEVATION
-    ]
-    rng.shuffle(candidates)
-    candidates.sort(key=lambda pos: elevation[pos[1]][pos[0]], reverse=True)
+    if width <= 2 or height <= 2 or settings.river_count <= 0:
+        return []
 
     paths: list[list[tuple[int, int]]] = []
-    used_sources: list[tuple[int, int]] = []
+    high_edge = _edge_point_by_elevation(width, height, elevation, highest=True, rng=rng)
+    low_edge = _edge_point_by_elevation(
+        width,
+        height,
+        elevation,
+        highest=False,
+        rng=rng,
+        exclude_edge=_edge_name(high_edge, width, height),
+    )
 
-    for source in candidates:
-        if len(paths) >= river_count:
-            break
-        if any(_distance(source, existing) < max(6, RIVER_MIN_LENGTH) for existing in used_sources):
-            continue
-
-        path = _trace_river(elevation, source, rng)
-        if len(path) >= RIVER_MIN_LENGTH and _drops_downhill(elevation, path):
+    if lakes:
+        primary = lakes[0]
+        inlet = _nearest_lake_edge(primary, high_edge)
+        path = _trace_feature_river(width, height, high_edge, inlet, rng)
+        if len(path) >= RIVER_MIN_LENGTH:
             paths.append(path)
-            used_sources.append(source)
+
+        if len(paths) < settings.river_count:
+            outlet = _nearest_lake_edge(primary, low_edge)
+            path = _trace_feature_river(width, height, outlet, low_edge, rng)
+            if len(path) >= RIVER_MIN_LENGTH:
+                paths.append(path)
+
+        if len(lakes) > 1 and len(paths) < settings.river_count:
+            first = lakes[0]
+            second = lakes[1]
+            path = _trace_feature_river(
+                width,
+                height,
+                _nearest_lake_edge(first, second.center),
+                _nearest_lake_edge(second, first.center),
+                rng,
+            )
+            if len(path) >= RIVER_MIN_LENGTH:
+                paths.append(path)
+    else:
+        path = _trace_feature_river(width, height, high_edge, low_edge, rng)
+        if len(path) >= RIVER_MIN_LENGTH:
+            paths.append(path)
+
+    candidate_edges = ["north", "south", "west", "east"]
+    rng.shuffle(candidate_edges)
+    while len(paths) < settings.river_count and candidate_edges:
+        start_edge = candidate_edges.pop()
+        end_edge = _opposite_edge(start_edge)
+        path = _trace_feature_river(
+            width,
+            height,
+            _random_edge_point(width, height, start_edge, rng),
+            _random_edge_point(width, height, end_edge, rng),
+            rng,
+        )
+        if len(path) >= RIVER_MIN_LENGTH:
+            paths.append(path)
 
     return paths
 
 
-def _trace_river(
+def _generate_lakes(
+    width: int,
+    height: int,
     elevation: list[list[float]],
-    source: tuple[int, int],
+    rng: random.Random,
+    settings: WorldGenSettings,
+) -> list[LakeFeature]:
+    if min(width, height) < 14:
+        return []
+
+    count = _target_lake_count(width, height, settings, rng)
+    if count <= 0:
+        return []
+
+    margin = max(4, min(width, height) // 8)
+    candidates = [
+        (x, y)
+        for y in range(margin, height - margin)
+        for x in range(margin, width - margin)
+    ]
+    rng.shuffle(candidates)
+    candidates.sort(key=lambda pos: (elevation[pos[1]][pos[0]], rng.random()))
+
+    lakes: list[LakeFeature] = []
+    minimum_spacing = max(8, min(width, height) // 3)
+    for center in candidates:
+        if len(lakes) >= count:
+            break
+        if any(_distance(center, existing.center) < minimum_spacing for existing in lakes):
+            continue
+        lake = _make_lake_feature(width, height, center, elevation, rng, settings)
+        if len(lake.tiles) >= _minimum_lake_size(width, height):
+            lakes.append(lake)
+
+    return lakes
+
+
+def _target_lake_count(width: int, height: int, settings: WorldGenSettings, rng: random.Random) -> int:
+    area = width * height
+    if area < 420:
+        return 0 if settings.water_level < 0.30 and rng.random() < 0.35 else 1
+    if settings.water_level >= 0.32:
+        return 2
+    if settings.water_level <= 0.23:
+        return 0 if rng.random() < 0.55 else 1
+    return 1 if rng.random() < 0.72 else 2
+
+
+def _make_lake_feature(
+    width: int,
+    height: int,
+    center: tuple[int, int],
+    elevation: list[list[float]],
+    rng: random.Random,
+    settings: WorldGenSettings,
+) -> LakeFeature:
+    cx, cy = center
+    size_factor = 0.85 + settings.water_level * 1.6
+    rx = max(3, int(rng.randint(3, 6) * size_factor * width / 50))
+    ry = max(2, int(rng.randint(2, 5) * size_factor * height / 28))
+    tiles: set[tuple[int, int]] = set()
+
+    for y in range(max(1, cy - ry - 2), min(height - 1, cy + ry + 3)):
+        for x in range(max(1, cx - rx - 2), min(width - 1, cx + rx + 3)):
+            nx = (x - cx) / max(1, rx)
+            ny = (y - cy) / max(1, ry)
+            shoreline_noise = rng.uniform(-0.22, 0.20)
+            elevation_bias = max(0.0, elevation[y][x] - elevation[cy][cx]) * 0.45
+            if nx * nx + ny * ny + elevation_bias <= 1.0 + shoreline_noise:
+                tiles.add((x, y))
+
+    if len(tiles) < _minimum_lake_size(width, height):
+        fallback_radius = max(2, min(rx, ry))
+        for y in range(max(1, cy - fallback_radius), min(height - 1, cy + fallback_radius + 1)):
+            for x in range(max(1, cx - fallback_radius), min(width - 1, cx + fallback_radius + 1)):
+                if _distance((x, y), center) <= fallback_radius:
+                    tiles.add((x, y))
+
+    return LakeFeature(center=center, tiles=frozenset(tiles))
+
+
+def _minimum_lake_size(width: int, height: int) -> int:
+    return max(8, min(24, (width * height) // 90))
+
+
+def _trace_feature_river(
+    width: int,
+    height: int,
+    start: tuple[int, int],
+    target: tuple[int, int],
     rng: random.Random,
 ) -> list[tuple[int, int]]:
-    height = len(elevation)
-    width = len(elevation[0])
-    max_length = width + height
-    current = source
+    current = start
     path = [current]
-    visited = {current}
 
-    for _ in range(max_length):
+    for _ in range(width * height):
+        if current == target:
+            break
         x, y = current
-        if len(path) >= RIVER_MIN_LENGTH:
-            if _is_edge(x, y, width, height) or elevation[y][x] < 0.30:
-                break
-
-        candidates = [
-            (nx, ny)
-            for nx, ny in _neighbor_positions(x, y, width, height)
-            if (nx, ny) not in visited
-        ]
-        if not candidates:
-            break
-
-        current_elevation = elevation[y][x]
-        downhill = [
-            pos
-            for pos in candidates
-            if elevation[pos[1]][pos[0]] <= current_elevation + 0.01
-        ]
-        if not downhill:
-            break
-
-        lowest = min(elevation[pos[1]][pos[0]] for pos in downhill)
-        best = [pos for pos in downhill if elevation[pos[1]][pos[0]] <= lowest + 0.02]
-        current = rng.choice(best)
+        candidates = _neighbor_positions(x, y, width, height)
+        candidates.sort(key=lambda pos: (_distance(pos, target), rng.random()))
+        current = candidates[0]
         path.append(current)
-        visited.add(current)
 
-    return path
+    return _dedupe_consecutive(path)
+
+
+def _edge_point_by_elevation(
+    width: int,
+    height: int,
+    elevation: list[list[float]],
+    *,
+    highest: bool,
+    rng: random.Random,
+    exclude_edge: str | None = None,
+) -> tuple[int, int]:
+    candidates = []
+    for edge in ("north", "south", "west", "east"):
+        if edge == exclude_edge:
+            continue
+        for pos in _edge_positions(width, height, edge):
+            x, y = pos
+            candidates.append((elevation[y][x], rng.random(), pos))
+
+    if not candidates:
+        return (0, 0)
+    candidates.sort(reverse=highest)
+    return candidates[0][2]
+
+
+def _edge_positions(width: int, height: int, edge: str) -> list[tuple[int, int]]:
+    if edge == "north":
+        return [(x, 0) for x in range(width)]
+    if edge == "south":
+        return [(x, height - 1) for x in range(width)]
+    if edge == "west":
+        return [(0, y) for y in range(height)]
+    return [(width - 1, y) for y in range(height)]
+
+
+def _edge_name(pos: tuple[int, int], width: int, height: int) -> str:
+    x, y = pos
+    if y == 0:
+        return "north"
+    if y == height - 1:
+        return "south"
+    if x == 0:
+        return "west"
+    return "east"
+
+
+def _opposite_edge(edge: str) -> str:
+    return {
+        "north": "south",
+        "south": "north",
+        "west": "east",
+        "east": "west",
+    }[edge]
+
+
+def _random_edge_point(width: int, height: int, edge: str, rng: random.Random) -> tuple[int, int]:
+    return rng.choice(_edge_positions(width, height, edge))
+
+
+def _nearest_lake_edge(lake: LakeFeature, target: tuple[int, int]) -> tuple[int, int]:
+    return min(lake.tiles, key=lambda pos: (_distance(pos, target), pos[1], pos[0]))
+
+
+def _dedupe_consecutive(path: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    result: list[tuple[int, int]] = []
+    for pos in path:
+        if result and result[-1] == pos:
+            continue
+        result.append(pos)
+    return result
 
 
 def _river_tile_set(
@@ -277,16 +453,6 @@ def _neighbor_positions(x: int, y: int, width: int, height: int) -> list[tuple[i
             candidates.append((nx, ny))
 
     return candidates
-
-
-def _drops_downhill(elevation: list[list[float]], path: list[tuple[int, int]]) -> bool:
-    start_x, start_y = path[0]
-    end_x, end_y = path[-1]
-    return elevation[end_y][end_x] < elevation[start_y][start_x]
-
-
-def _is_edge(x: int, y: int, width: int, height: int) -> bool:
-    return x == 0 or y == 0 or x == width - 1 or y == height - 1
 
 
 def _distance(first: tuple[int, int], second: tuple[int, int]) -> int:

@@ -73,3 +73,29 @@ def test_wanderers_continue_using_permanent_world_roads():
 
     assert (wanderer.x, wanderer.y) in set(road.path)
     assert world.tile_at(wanderer.x, wanderer.y).road_origin == ROAD_ORIGIN_WORLD
+
+
+def test_world_roads_create_walkable_bridges_over_water_crossings():
+    world = World(15, 15, seed=7171)
+    world.tiles = [[Tile("grass") for _ in range(world.width)] for _ in range(world.height)]
+    world.settlement = Settlement("Bridgeford", 7, 7, 1, "Spring", settlement_id="bridgeford")
+
+    for x in range(4, 11):
+        world.tiles[4][x] = Tile("water")
+        world.tiles[10][x] = Tile("water")
+    for y in range(4, 11):
+        world.tiles[y][4] = Tile("water")
+        world.tiles[y][10] = Tile("water")
+
+    seed_main_roads(world, world.settlement)
+    bridge_tiles = [
+        world.tile_at(x, y)
+        for road in world.main_roads
+        for x, y in road.path
+        if world.tile_at(x, y).bridge
+    ]
+
+    assert bridge_tiles
+    assert all(tile.kind == PATH for tile in bridge_tiles)
+    assert all(tile.walkable for tile in bridge_tiles)
+    assert all(tile.road_origin == ROAD_ORIGIN_WORLD for tile in bridge_tiles)

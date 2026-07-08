@@ -485,6 +485,7 @@ class PygameRenderer:
 
     def draw_environmental_overlay_layer(self) -> None:
         self.draw_cloud_shadow_overlay()
+        self.draw_mystery_lights_overlay()
 
     def draw_agent_layer(self) -> None:
         start_x, start_y, end_x, end_y = self.visible_tile_bounds()
@@ -575,9 +576,19 @@ class PygameRenderer:
         effects = tuple(
             sorted(getattr(event, "effect_type", None) for event in self.world.active_environment_events)
         )
+        mysteries = tuple(
+            sorted(
+                (
+                    getattr(mystery, "mystery_type", None),
+                    getattr(mystery, "anchor", None),
+                    getattr(mystery, "remaining_days", None),
+                )
+                for mystery in getattr(self.world, "active_mysteries", [])
+            )
+        )
         cloud_offset = (getattr(self.world, "tick", 0) // 6) % max(1, TILE_SIZE * 8)
         particle_offset = getattr(self.world, "tick", 0) % max(1, TILE_SIZE * 3)
-        return (effects, cloud_offset, particle_offset)
+        return (effects, mysteries, cloud_offset, particle_offset)
 
     def draw_cloud_shadow_overlay(self) -> None:
         effects = {getattr(event, "effect_type", None) for event in self.world.active_environment_events}
@@ -592,6 +603,34 @@ class PygameRenderer:
             x = index * TILE_SIZE - offset
             y = ((index * 5 + getattr(self.world, "tick", 0) // 18) % (VIEWPORT_HEIGHT + 6) - 3) * TILE_SIZE
             pygame.draw.ellipse(overlay, shadow_color, pygame.Rect(x, y, TILE_SIZE * 7, TILE_SIZE * 3))
+        self.screen.blit(overlay, (0, 0))
+
+    def draw_mystery_lights_overlay(self) -> None:
+        mysteries = [
+            mystery
+            for mystery in getattr(self.world, "active_mysteries", [])
+            if getattr(mystery, "mystery_type", None) == "strange_lights"
+        ]
+        if not mysteries:
+            return
+
+        start_x, start_y, end_x, end_y = self.visible_tile_bounds()
+        overlay = pygame.Surface((VIEWPORT_WIDTH * TILE_SIZE, VIEWPORT_HEIGHT * TILE_SIZE), pygame.SRCALPHA)
+        tick = getattr(self.world, "tick", 0)
+        for mystery in mysteries:
+            ax, ay = mystery.anchor
+            if not (start_x - 2 <= ax < end_x + 2 and start_y - 2 <= ay < end_y + 2):
+                continue
+            base_x = (ax - start_x) * TILE_SIZE + TILE_SIZE // 2
+            base_y = (ay - start_y) * TILE_SIZE + TILE_SIZE // 2
+            for index in range(7):
+                drift_x = ((tick // 3 + index * 11) % 17) - 8
+                drift_y = ((tick // 5 + index * 7) % 13) - 6
+                pulse = 38 + ((tick + index * 19) % 30)
+                x = base_x + drift_x + (index % 3 - 1) * 6
+                y = base_y + drift_y + (index // 3 - 1) * 5
+                pygame.draw.circle(overlay, (172, 216, 190, 24), (x, y), 8)
+                pygame.draw.circle(overlay, (210, 242, 214, pulse), (x, y), 2)
         self.screen.blit(overlay, (0, 0))
 
     def draw_weather_particles(self) -> None:

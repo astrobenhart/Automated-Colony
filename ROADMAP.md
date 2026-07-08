@@ -826,7 +826,7 @@ The world should feel larger, older, and stranger than the village.
 
 Possible features:
 
-- [ ] Strange lights
+- [x] Strange lights
 - [ ] Ancient ruins
 - [ ] Magical weather
 - [ ] Forgotten shrines
