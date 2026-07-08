@@ -50,6 +50,8 @@ Known limitations:
 - Strange Lights do not explain the phenomenon, add fantasy mechanics, change resources, or introduce dedicated mystery AI.
 - There is no conversation system, social scheduling, relationship graph, jealousy, rivalry, courtship, dating mechanics, couple AI, or romance drama.
 - Future v0.9 phases should build on friendships without turning them into player-managed mechanics.
+- Presentation is now treated as a first-class architecture alongside simulation. Future visual work should flow through a Presentation Layer rather than putting animation, particles, camera smoothing, or visual easing into gameplay systems.
+- v0.9.1 should prioritise presentation architecture before visual content. The simulation decides what happened; presentation decides how it feels; the renderer draws the result.
 
 ---
 
@@ -275,6 +277,71 @@ Acceptance Criteria:
 Notes:
 - No fantasy resource effects, supernatural explanation, dedicated mystery AI, player controls, or new social systems were added.
 - Strange Lights are intentionally rare and story-facing.
+
+---
+
+### TASK-99
+Title: Presentation Engine Architecture
+
+Owner: Architect Agent / Renderer Agent / Gameplay Agent / Docs Agent
+
+Status: Complete
+
+Priority: Highest
+
+Description:
+Build the Presentation Layer between simulation and renderer so visual motion, animation, easing, particles, shadows, lighting hooks, sprite selection, camera polish, and environmental effects can become fluid without changing gameplay.
+
+Expected Output:
+A Presentation Engine that derives render-facing snapshots from simulation state, interpolates between discrete simulation updates, and gives the renderer stable presentation data to draw.
+
+Acceptance Criteria:
+- Simulation remains authoritative for decisions, jobs, movement goals, world state, weather state, season state, memories, and history.
+- Presentation owns continuous villager movement interpolation, easing, facing, and render-facing agent snapshots.
+- Renderer draws Presentation State for agents without inventing gameplay facts.
+- Headless simulation remains valid without presentation systems.
+- Future sprite, weather, wind, lighting, mystery, and cinematic systems can plug into the Presentation Layer.
+
+Notes:
+- This is architecture before content.
+- Do not move gameplay decisions into the renderer.
+- Do not make simulation ticks depend on animation frames.
+- Do not copy the artwork of reference games. Use Hyper Light Drifter and Stardew Valley only as references for fluid movement, readability, colour confidence, atmosphere, and ambient life.
+- Implemented in `src/presentation.py` with `PresentationEngine`, `PresentationAgent`, immutable `PresentationSnapshot`, and `PresentationAgentSnapshot`.
+- The first concrete example is villager movement interpolation. Simulation agents keep discrete tile positions; presentation agents own continuous render positions.
+- The old agent-owned render-motion fields were removed so gameplay objects no longer store animation state.
+- Renderer agent drawing now consumes Presentation State.
+
+---
+
+### TASK-100
+Title: Presentation-First Visual Overhaul
+
+Owner: Renderer Agent / UX Agent / Art Direction Agent / Tester Agent
+
+Status: Backlog
+
+Priority: High
+
+Description:
+Replace debug-style visuals with a beautiful retro-inspired presentation built on the Presentation Layer.
+
+Expected Output:
+A watchable living world with readable sprites, smooth villager movement, animated water, animated foliage, clouds, weather particles, shadows, ambient environmental effects, and lighting-ready render layers.
+
+Acceptance Criteria:
+- Visual systems enhance existing simulation state rather than creating gameplay facts.
+- Movement, weather, foliage, water, lighting, particles, and camera motion interpolate smoothly whenever possible.
+- Sprite and animation systems consume presentation state rather than simulation internals directly.
+- Terrain caching remains protected from atmospheric and animation effects.
+- The world remains readable at normal gameplay zoom and speed.
+
+Notes:
+- The goal is atmosphere, not realism.
+- The world should feel alive even when nothing important is happening.
+- Prefer reusable visual systems over feature-specific renderer branches.
+- Prioritise readability, mood, and memorable moments over visual density.
+- This task depends on TASK-99.
 
 ---
 

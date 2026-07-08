@@ -24,6 +24,213 @@ Need
 → World Change
 → Event
 
+## Project-Wide Architectural Principles
+
+Automated Colony is now built around two equally important ambitions:
+- a durable autonomous simulation
+- a watchable living world that creates memorable stories
+
+The project should protect these principles across future work:
+- Simulation decides.
+- Presentation presents.
+- Renderer draws.
+- Systems create behaviours.
+- Behaviours create stories.
+- Prefer one reusable system over many feature-specific systems.
+- Build architecture before content.
+- Optimise for memorable moments rather than simulation complexity.
+- Presentation should enhance simulation, never replace it.
+- The world should feel alive even when nothing important is happening.
+
+These are design constraints, not slogans. When a future feature could be implemented either as more simulation detail or as better presentation of existing simulation state, prefer the option that creates clearer, more memorable stories without hiding gameplay logic inside visual code.
+
+## Simulation, Presentation, and Renderer
+
+The long-term architecture is:
+
+```text
+Simulation
+  -> Presentation Layer
+  -> Renderer
+  -> Display
+```
+
+The simulation determines what happened. It owns decisions, world state, movement goals, AI, jobs, needs, households, relationships, weather state, season state, births, deaths, memories, and history.
+
+The Presentation Layer determines how that state feels. It owns interpolation, animation state, easing, sprite selection, facing, shadows, particles, foliage motion, cloud movement, water animation, lighting overlays, camera polish, and other visual effects that make discrete simulation state feel continuous.
+
+The renderer draws the presentation state. It should compose layers, draw sprites, draw cached terrain, draw overlays, and present the frame. It should not invent gameplay facts.
+
+Boundary rule:
+- Simulation answers: what, where, when, why.
+- Presentation answers: how it moves, how it eases, how it glows, how it breathes.
+- Renderer answers: which pixels are drawn this frame.
+
+The renderer should never drive gameplay. The simulation should never care about animation frames, particles, shadows, camera smoothing, sprite variants, or visual easing.
+
+Current implementation:
+
+```text
+World / Agent simulation state
+  -> PresentationEngine
+  -> PresentationSnapshot
+  -> PygameRenderer agent layer
+```
+
+`src.presentation.PresentationEngine` is the first concrete Presentation Engine. It observes living simulation agents, maintains persistent `PresentationAgent` objects, advances visual-only state with continuous frame time, and exposes immutable `PresentationSnapshot` data to the renderer. The renderer draws agent snapshots rather than asking gameplay agents for render positions.
+
+This first implementation intentionally proves the boundary with one meaningful example: villager movement. Simulation agents still move discretely between tiles. Presentation agents interpolate smoothly from the previous rendered position to the latest simulation tile. Headless simulation does not create or require a Presentation Engine.
+
+The old design placed render-motion fields on `Agent`. That coupling has been removed. Agent state now represents gameplay identity, needs, tasks, relationships, memories, lifecycle, and tile position. Continuous motion belongs to presentation.
+
+### Presentation Layer Responsibilities
+
+The Presentation Layer is a future architectural layer between gameplay state and drawing. It should be deterministic where it needs to be reproducible, but it may interpolate continuously between discrete simulation states.
+
+Responsibilities:
+- maintain render-facing snapshots of simulation state
+- interpolate villager positions between simulation ticks
+- choose animation states from simulation intent
+- choose facing direction from movement or activity
+- apply easing to movement, camera motion, opacity, and lighting
+- own visual-only particles such as rain, snow, dust, embers, leaves, and strange lights
+- own visual-only overlays such as cloud shadows, fog, mist, glow, and lighting
+- own foliage and water animation
+- select sprites, sprite variants, and future seasonal artwork
+- prepare replay and cinematic views without changing gameplay
+
+Non-responsibilities:
+- choosing jobs
+- changing needs
+- creating resources
+- changing pathfinding
+- deciding whether a villager witnessed an event
+- deciding who attends a celebration
+- deciding whether a birth, death, partnership, or memory occurs
+- changing terrain, roads, bridges, homes, farms, or structures
+
+Future implementation should treat presentation data as derived state. If the presentation layer is removed, the simulation should still produce the same village history.
+
+### Presentation Snapshots
+
+Presentation snapshots are immutable renderer-facing descriptions of what should be drawn now. They deliberately avoid exposing full gameplay objects.
+
+Current agent snapshot fields include:
+- stable agent id
+- display name
+- simulation tile position
+- interpolated render position
+- role for visual colour selection
+- current action and goal for future animation selection
+- facing direction
+
+Future snapshots should follow the same pattern. A tree snapshot may expose render position, trunk state, foliage colour, sway phase, and shadow. A weather snapshot may expose opacity, wind offset, and particle emitters. A structure snapshot may expose construction stage, sprite id, smoke state, and lighting hooks. None of these snapshots should decide gameplay.
+
+Snapshot rules:
+- snapshots are derived from simulation and presentation state
+- snapshots are safe for renderers to consume directly
+- snapshots should contain exactly the visual facts needed by render layers
+- snapshots should avoid passing mutable simulation objects into drawing code
+- snapshots may be recreated per frame when small, but larger systems should cache and reuse presentation objects to avoid avoidable allocations
+
+### Presentation Objects
+
+Persistent presentation objects hold visual-only continuity across frames. They are the only place continuous visual time should accumulate.
+
+Current object:
+- `PresentationAgent`: interpolated position, target position, facing, action labels, role, and movement progress
+
+Future objects:
+- `PresentationTree`: foliage colour, sway offset, seasonal leaf state, shadow
+- `PresentationWater`: ripple phase, current direction, shoreline shimmer
+- `PresentationWeather`: particle emitters, opacity, wind offset, cloud state
+- `PresentationStructure`: sprite state, construction animation, smoke, window glow
+- `PresentationMystery`: glow, drift, fade, particle state
+- `PresentationCamera`: smoothed camera position, shake, cinematic framing
+
+Presentation objects may remember previous visual state. They must not write back to simulation objects.
+
+### Examples
+
+Villager movement:
+- Simulation: villager has a path and moves from tile A to tile B on a simulation tick.
+- Presentation: interpolates between tile centers, chooses walking animation, facing, footstep timing, shadow position, and idle transition.
+- Renderer: draws the selected sprite, shadow, and overlays.
+
+Trees:
+- Simulation: a tile is forest, and the season is Autumn.
+- Presentation: chooses foliage palette, leaf drift, wind sway, and branch motion.
+- Renderer: draws trunk, foliage, falling leaves, and shadow layers.
+
+Weather:
+- Simulation: the world is in heavy rain.
+- Presentation: fades rain intensity, spawns rain particles, moves clouds, and darkens with a cloud shadow overlay.
+- Renderer: draws particles and overlays without rebuilding terrain.
+
+Rivers and lakes:
+- Simulation: water tiles and bridge tiles are fixed map features.
+- Presentation: animates ripples, shoreline shimmer, and reflections.
+- Renderer: draws water and bridge visuals while pathfinding remains unchanged.
+
+Crops:
+- Simulation: a farm plot has a crop stage and fertility.
+- Presentation: selects crop sprites, subtle sway, colour variation, and future harvest shimmer.
+- Renderer: draws the crop layer over the world.
+
+Buildings:
+- Simulation: a home, workshop, or construction site exists at a tile with progress state.
+- Presentation: chooses construction animation, smoke, window glow, sign movement, or subtle idle details.
+- Renderer: draws the structure and overlays.
+
+Mysteries:
+- Simulation: a Strange Lights event is active at a location and certain villagers witnessed it.
+- Presentation: animates glow, drift, fade, and particle movement.
+- Renderer: draws the lights through environmental overlay layers.
+
+### Rejected Alternatives
+
+Do not put animation logic in simulation systems. That makes gameplay timing depend on presentation and makes headless validation less trustworthy.
+
+Do not let renderer code infer gameplay facts. If a villager is attending a ceremony, the simulation or social systems should expose that state. The renderer should not decide attendance by proximity alone.
+
+Do not implement each visual feature as a one-off renderer branch. Strange lights, smoke, snow, fire embers, falling leaves, and future magic should share presentation and overlay concepts wherever practical.
+
+Do not use more simulation complexity as a substitute for presentation. A technically richer system can still feel lifeless if movement, colour, light, and timing are abrupt.
+
+Do not copy the artwork of inspiration games. Hyper Light Drifter and Stardew Valley are useful references for fluid movement, colour confidence, readability, atmosphere, and ambient life, not for direct asset imitation.
+
+### Long-Term Visual Architecture
+
+The future visual stack should move toward:
+
+```text
+Simulation State
+  -> Presentation Snapshot
+  -> Presentation Systems
+      -> Movement interpolation
+      -> Animation state
+      -> Particle state
+      -> Lighting and shadow state
+      -> Camera state
+      -> Sprite selection
+  -> Render Layers
+      -> Sky
+      -> Clouds
+      -> Cloud shadows
+      -> Cached terrain
+      -> Roads and bridges
+      -> Water
+      -> Vegetation
+      -> Structures
+      -> Villagers and visitors
+      -> Environmental effects
+      -> Lighting
+      -> UI
+  -> Display
+```
+
+The simulation should become increasingly deterministic and presentation-independent. Presentation should become increasingly fluid and expressive. This separation allows the game to remain valid as a headless simulation while also becoming beautiful enough to watch for its own sake.
+
 ## Current Architecture
 
 v0.6 Villager Life and Social Foundations is complete.
@@ -2610,8 +2817,15 @@ Design boundaries:
 
 ## Design Priorities
 
-1. Emergence over scripting
-2. Simulation over graphics
-3. Readability over realism
-4. Small systems that interact
-5. Observable behavior
+1. Simulation decides.
+2. Presentation presents.
+3. Renderer draws.
+4. Systems create behaviours.
+5. Behaviours create stories.
+6. Emergence over scripting.
+7. Readability over realism.
+8. Small systems that interact.
+9. Observable behaviour.
+10. Memorable moments over raw simulation complexity.
+
+The older phrase "simulation over graphics" should now be read more carefully. Gameplay truth still belongs to the simulation, but presentation is no longer secondary polish. Presentation is a first-class architecture whose job is to make the simulation readable, emotional, beautiful, and watchable without changing what happened.

@@ -1,6 +1,7 @@
 from src.actions import _step_along_path
 from src.agent import Agent
 from src.config import STUCK_TICK_LIMIT
+from src.presentation import PresentationEngine
 from src.tile import Tile
 from src.world import World
 
@@ -71,15 +72,21 @@ def test_successful_movement_resets_stuck_ticks():
     assert world.tile_at(1, 0).foot_traffic == 1
 
 
-def test_path_step_seeds_full_render_path_for_continuous_visual_travel():
+def test_path_step_updates_simulation_position_for_presentation_to_observe():
     world = make_world(4, 1)
     agent = Agent("Walker", 0, 0)
     world.agents.append(agent)
+    presentation = PresentationEngine()
+    presentation.sync_world(world)
 
     moved = _step_along_path(agent, world, (3, 0))
+    snapshot = presentation.update(world, 0.05, tiles_per_second=4.0)
+    presented_agent = snapshot.agents[0]
 
     assert moved
     assert (agent.x, agent.y) == (1, 0)
     assert agent.current_path == [(2, 0), (3, 0)]
-    assert agent.render_path == [(0.0, 0.0), (1.0, 0.0), (2.0, 0.0), (3.0, 0.0)]
-    assert agent.render_path_index == 0
+    assert presented_agent.tile_x == 1
+    assert presented_agent.tile_y == 0
+    assert 0 < presented_agent.render_x < 1
+    assert presented_agent.render_y == 0

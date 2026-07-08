@@ -63,6 +63,7 @@ from src.terrain_rendering import (
     crop_visual_stage,
 )
 from src.agent import Agent
+from src.presentation import PresentationAgentSnapshot, PresentationEngine
 from src.profiler import profiler
 from src.simulation_lod import LOD_0_VISUAL
 from src.ui_overlays import OverlayManager
@@ -210,6 +211,8 @@ class PygameRenderer:
         self.terrain_renderer = TerrainRenderer()
         self.grass_transition_state = GrassMoistureTransitionState()
         self.water_transition_state = WaterTransitionState()
+        self.presentation_engine = PresentationEngine()
+        self.presentation_engine.sync_world(world)
         self.frame_count = 0
         self.last_render_ms = 0.0
         self.last_sim_ms = 0.0
@@ -260,6 +263,8 @@ class PygameRenderer:
         self.world = world
         self.grass_transition_state = GrassMoistureTransitionState()
         self.water_transition_state = WaterTransitionState()
+        self.presentation_engine = PresentationEngine()
+        self.presentation_engine.sync_world(world)
         self.clear_selection()
         self.overlay_manager.close_all()
         self.clamp_camera()
@@ -283,14 +288,15 @@ class PygameRenderer:
         return overlay_consumed or gui_consumed
 
     def update_ui(self, time_delta: float):
-        self.update_agent_render_motion(time_delta)
+        self.update_presentation(time_delta)
         self.overlay_manager.update(time_delta)
         self.ui_manager.update(time_delta)
 
+    def update_presentation(self, time_delta: float):
+        self.presentation_engine.update(self.world, time_delta, VILLAGER_RENDER_TILES_PER_SECOND)
+
     def update_agent_render_motion(self, time_delta: float):
-        for agent in self.world.agents:
-            if agent.alive:
-                agent.advance_render_motion(time_delta, VILLAGER_RENDER_TILES_PER_SECOND)
+        self.update_presentation(time_delta)
 
     def toggle_villagers_overlay(self):
         self.overlay_manager.toggle_overlay(VILLAGERS_OVERLAY)
@@ -313,6 +319,7 @@ class PygameRenderer:
             "last_chunk_rebuilds": self.last_chunk_rebuild_count,
             "last_chunk_redraws": self.last_chunk_redraw_count,
             "last_partial_redraws": self.last_partial_redraw_count,
+            "presentation_agents": len(self.presentation_engine.agents),
         }
 
     def selected_villager(self):
@@ -1002,21 +1009,18 @@ class PygameRenderer:
         return self.hovered_world_tile()
 
     def draw_agents(self, start_x: int, start_y: int, end_x: int, end_y: int):
+        snapshot = self.presentation_engine.snapshot_world(self.world)
         self._agent_tile_counts.clear()
         self._agent_tile_drawn.clear()
-        for agent in self.world.agents:
-            if not agent.alive:
-                continue
-            key = (agent.x, agent.y)
+        for agent in snapshot.agents:
+            key = (agent.tile_x, agent.tile_y)
             self._agent_tile_counts[key] = self._agent_tile_counts.get(key, 0) + 1
 
-        for agent in self.world.agents:
-            if not agent.alive:
-                continue
-            render_x, render_y = agent.render_position()
+        for agent in snapshot.agents:
+            render_x, render_y = agent.render_x, agent.render_y
             if not (start_x - 1 <= render_x < end_x + 1 and start_y - 1 <= render_y < end_y + 1):
                 continue
-            key = (agent.x, agent.y)
+            key = (agent.tile_x, agent.tile_y)
             index = self._agent_tile_drawn.get(key, 0)
             self._agent_tile_drawn[key] = index + 1
             offset = VILLAGER_TILE_OFFSETS[index % len(VILLAGER_TILE_OFFSETS)]
@@ -1029,7 +1033,7 @@ class PygameRenderer:
 
     def draw_agent_symbol(
         self,
-        agent: Agent,
+        agent: PresentationAgentSnapshot,
         screen_tile_x: float,
         screen_tile_y: float,
         pixel_offset: tuple[int, int] = (0, 0),

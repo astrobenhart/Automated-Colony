@@ -1763,7 +1763,10 @@ def test_renderer_draws_agent_using_role_color(monkeypatch):
 
     renderer.draw_world()
 
-    assert (agent, 1, 1, VILLAGER_TILE_OFFSETS[0]) in calls
+    drawn_agent, x, y, offset = calls[0]
+    assert drawn_agent.agent_id == agent.agent_id or drawn_agent.name == agent.name
+    assert drawn_agent.role == BUILDER
+    assert (x, y, offset) == (1, 1, VILLAGER_TILE_OFFSETS[0])
     assert color_for_role(BUILDER)
 
 
@@ -1795,13 +1798,14 @@ def test_renderer_offsets_agents_that_share_a_tile(monkeypatch):
 def test_renderer_advances_agent_interpolation_without_world_update():
     world = make_world(width=3, height=3)
     agent = Agent("Ari", 0, 0)
-    agent.begin_render_move(0, 0, 1, 0)
     world.agents.append(agent)
     renderer = make_renderer(world)
+    agent.x = 1
 
     renderer.update_agent_render_motion(0.05)
 
-    render_x, render_y = agent.render_position()
+    snapshot = renderer.presentation_engine.last_snapshot.agents[0]
+    render_x, render_y = snapshot.render_x, snapshot.render_y
     assert 0 < render_x < 1
     assert render_y == 0
 
@@ -1809,14 +1813,15 @@ def test_renderer_advances_agent_interpolation_without_world_update():
 def test_renderer_advances_agent_across_multiple_path_nodes_without_logic_update():
     world = make_world(width=4, height=3)
     agent = Agent("Ari", 0, 1)
-    agent.begin_render_path([(0, 1), (1, 1), (2, 1), (3, 1)])
     world.agents.append(agent)
     renderer = make_renderer(world)
+    agent.x = 3
 
     renderer.update_agent_render_motion(0.15)
 
-    render_x, render_y = agent.render_position()
-    assert 1 < render_x < 2
+    snapshot = renderer.presentation_engine.last_snapshot.agents[0]
+    render_x, render_y = snapshot.render_x, snapshot.render_y
+    assert 1 < render_x < 3
     assert render_y == 1
 
 

@@ -527,6 +527,8 @@ Design priorities:
 - Avoid micromanagement, player work orders, social spreadsheets, and complex management UI.
 - Use existing households, families, memories, and Chronicle systems as the foundation.
 - Let rare events remain rare so they feel meaningful.
+- Treat presentation as a first-class partner to simulation. The simulation decides what happened; presentation decides how it feels to watch.
+- After the current social and polish work, visual architecture becomes the primary development focus.
 
 ### Phase 1 - Village Society
 
@@ -841,6 +843,8 @@ Notes:
 - Keep explanations intentionally ambiguous.
 - Mysteries should create curiosity rather than provide answers.
 - Rare mysteries are stronger than constant mysteries.
+- Many mysteries should be presentation-led rather than mechanics-led. The simulation may only need to decide that something was witnessed; the Presentation Layer should make it memorable.
+- Avoid explaining mysteries through resource effects, quests, or combat unless a future milestone explicitly chooses that direction.
 
 ### Phase 5 - Living Chronicle
 
@@ -894,35 +898,57 @@ Purpose:
 
 Transform Automated Colony into a beautiful retro simulation that players enjoy simply watching.
 
-This release focuses almost entirely on presentation. The simulation should remain largely unchanged. The renderer becomes presentation-first rather than debug-first.
+This release focuses almost entirely on presentation architecture and visual experience. The simulation should remain largely unchanged. The renderer becomes presentation-first rather than debug-first.
+
+Architectural intent:
+
+Simulation
+    -> Presentation Layer
+    -> Renderer
+    -> Display
+
+The simulation remains responsible for decisions, world state, AI, jobs, relationships, weather state, season state, and history. The Presentation Layer becomes responsible for interpolation, animation, easing, sprites, shadows, particles, lighting, wind, foliage, water motion, camera polish, and visual effects. The renderer draws the presentation state.
+
+Visual inspiration should come from games such as Hyper Light Drifter and Stardew Valley in terms of fluid motion, readable silhouettes, satisfying colour palettes, ambient life, and environmental storytelling. Do not copy their artwork. Learn from how their worlds feel alive even when nothing important is happening.
 
 ### Phase 1 - Presentation Architecture
 
 Purpose:
 
-Separate simulation timing from rendering so the world can look fluid without changing gameplay.
+Build the Presentation Layer between simulation and renderer so the world can look fluid without changing gameplay.
 
 Features:
 
-- [ ] Snapshot-based renderer
-- [ ] Renderer interpolation between simulation updates
-- [ ] Independent render timeline
+- [x] Presentation snapshots derived from simulation state
+- [x] Snapshot-based renderer integration
+- [x] Renderer interpolation between simulation updates
+- [x] Independent render timeline
+- [x] Movement easing and facing model
 - [ ] Animation framework
 - [ ] Sprite pipeline
 - [ ] Camera smoothing
+- [ ] Presentation-owned particle state
+- [ ] Presentation-owned shadow and lighting hooks
 - [ ] Future replay and cinematic support
+- [x] Boundary tests ensuring presentation never drives gameplay
 
 Notes:
 
 - The simulation remains deterministic.
 - Presentation becomes independent from simulation timing.
 - Movement should appear continuous while gameplay continues to use discrete simulation updates.
+- Presentation owns "feel"; simulation owns truth.
+- Headless simulation must remain valid without the Presentation Layer.
+- Future visual systems should plug into the Presentation Layer before adding renderer-specific branches.
+- Avoid putting animation timers, particle behaviour, sprite decisions, camera motion, or visual easing into gameplay systems.
+- This phase is architecture before content. It should make later sprite, lighting, particle, weather, wind, and mystery work easier rather than trying to finish every visual feature at once.
+- TASK-99 established the first Presentation Engine with villager movement interpolation. Remaining work in this phase should extend the same architecture rather than reintroducing renderer-driven gameplay queries.
 
 ### Phase 2 - Visual Overhaul
 
 Purpose:
 
-Replace debug-style visuals with a beautiful retro-inspired world.
+Replace debug-style visuals with a beautiful retro-inspired world built on the Presentation Layer.
 
 Features:
 
@@ -947,6 +973,11 @@ Notes:
 - The goal is atmosphere, not realism.
 - The world should feel alive even when nothing important is happening.
 - Players should want to leave the simulation running because it is beautiful to watch.
+- Smoothness matters. Movement, weather, foliage, water, lighting, particles, and camera motion should interpolate whenever possible.
+- Visual features should enhance existing simulation state rather than invent gameplay facts.
+- Presentation should support stories already produced by friendships, families, wanderers, mysteries, celebrations, memories, and the Chronicle.
+- Prioritise readability and mood over visual density.
+- Build reusable visual systems before creating large amounts of content.
 
 ## Technical Debt
 

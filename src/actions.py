@@ -659,12 +659,8 @@ def _step_along_path(agent: Agent, world: World, target: tuple[int, int]) -> boo
         agent.current_target = target
         agent.failed_path_target = None
         agent.current_path = find_path(world, start, target, avoid_occupied=False)
-        if agent.current_path:
-            agent.begin_render_path([start] + agent.current_path)
     elif not agent.current_path and agent.failed_path_target != target:
         agent.current_path = find_path(world, start, target, avoid_occupied=False)
-        if agent.current_path:
-            agent.begin_render_path([start] + agent.current_path)
 
     if not agent.current_path:
         agent.failed_path_target = target

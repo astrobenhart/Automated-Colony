@@ -182,7 +182,6 @@ def spawn_wanderer(world: World, profile_id: str | None = None, road_index: int 
         visitor_path_index=0,
     )
     ensure_expected_lifespan(world, agent)
-    agent.sync_render_position()
     world.agents.append(agent)
     world.wanderer_arrivals_by_year[world.year] = world.wanderer_arrivals_by_year.get(world.year, 0) + 1
     record_wanderer_history(world, "Wanderer Arrived", f"A {profile.display_name.lower()} arrived on the {road.edge} road.")
@@ -462,10 +461,8 @@ def _walk_route_segment(agent: Agent, route: list[tuple[int, int]], steps: int):
     if not route:
         return
     steps = min(max(1, steps), len(route))
-    old_x, old_y = agent.x, agent.y
     segment = route[:steps]
     agent.x, agent.y = segment[-1]
-    agent.begin_render_path([(old_x, old_y)] + segment)
 
 
 def _walk_visitor_path(agent: Agent):
@@ -476,10 +473,8 @@ def _walk_visitor_path(agent: Agent):
     end_index = min(start_index + WANDERER_TRAVEL_STEPS_PER_DAY, len(path) - 1)
     if end_index == start_index:
         return
-    old_x, old_y = agent.x, agent.y
     agent.visitor_path_index = end_index
     agent.x, agent.y = path[end_index]
-    agent.begin_render_move(old_x, old_y, agent.x, agent.y)
 
 
 def _visitor_reached_path_end(agent: Agent) -> bool:

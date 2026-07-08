@@ -120,14 +120,6 @@ class Agent:
     lifecycle_record: LifecycleRecord = field(default_factory=LifecycleRecord)
     family_links: FamilyLinks = field(default_factory=FamilyLinks)
     inheritance_profile: InheritanceProfile = field(default_factory=InheritanceProfile)
-    render_from_x: float | None = field(default=None, repr=False)
-    render_from_y: float | None = field(default=None, repr=False)
-    render_target_x: float | None = field(default=None, repr=False)
-    render_target_y: float | None = field(default=None, repr=False)
-    render_progress: float = field(default=1.0, repr=False)
-    render_path: list[tuple[float, float]] = field(default_factory=list, repr=False)
-    render_path_index: int = field(default=0, repr=False)
-
     # Memory of coordinate locations
     remembered_food: set[tuple[int, int]] = field(default_factory=set, repr=False)
     remembered_water: set[tuple[int, int]] = field(default_factory=set, repr=False)
@@ -163,7 +155,6 @@ class Agent:
             if len(parts) >= 2 and not self.surname:
                 self.surname = parts[-1]
         self.sync_generation_architecture()
-        self.sync_render_position()
 
     @property
     def deceased(self) -> bool:
@@ -218,66 +209,6 @@ class Agent:
         self.hunger += HUNGER_RATE * scale
         self.thirst += THIRST_RATE * scale
         self.fatigue += FATIGUE_RATE * scale
-
-    def sync_render_position(self):
-        self.render_from_x = float(self.x)
-        self.render_from_y = float(self.y)
-        self.render_target_x = float(self.x)
-        self.render_target_y = float(self.y)
-        self.render_progress = 1.0
-        self.render_path = [(float(self.x), float(self.y))]
-        self.render_path_index = 0
-
-    def begin_render_move(self, from_x: int, from_y: int, to_x: int, to_y: int):
-        self.begin_render_path([(from_x, from_y), (to_x, to_y)])
-
-    def begin_render_path(self, path: list[tuple[int, int]]):
-        if not path:
-            self.sync_render_position()
-            return
-
-        self.render_path = [(float(x), float(y)) for x, y in path]
-        self.render_path_index = 0
-        self.render_from_x, self.render_from_y = self.render_path[0]
-        if len(self.render_path) > 1:
-            self.render_target_x, self.render_target_y = self.render_path[1]
-        else:
-            self.render_target_x, self.render_target_y = self.render_path[0]
-        self.render_progress = 0.0
-
-    def advance_render_motion(self, time_delta: float, tiles_per_second: float):
-        if not self.render_path or self.render_path_index >= len(self.render_path) - 1:
-            self.render_progress = 1.0
-            return
-
-        self.render_progress += max(0.0, time_delta) * tiles_per_second
-        while self.render_progress >= 1.0 and self.render_path_index < len(self.render_path) - 1:
-            self.render_progress -= 1.0
-            self.render_path_index += 1
-            self.render_from_x, self.render_from_y = self.render_path[self.render_path_index]
-            if self.render_path_index < len(self.render_path) - 1:
-                self.render_target_x, self.render_target_y = self.render_path[self.render_path_index + 1]
-            else:
-                self.render_target_x, self.render_target_y = self.render_path[self.render_path_index]
-                self.render_progress = 1.0
-                break
-
-    def render_position(self) -> tuple[float, float]:
-        if (
-            self.render_from_x is None
-            or self.render_from_y is None
-            or self.render_target_x is None
-            or self.render_target_y is None
-        ):
-            self.sync_render_position()
-
-        if self.render_path and self.render_path_index >= len(self.render_path) - 1:
-            return self.render_path[-1]
-
-        progress = max(0.0, min(1.0, self.render_progress))
-        x = self.render_from_x + (self.render_target_x - self.render_from_x) * progress
-        y = self.render_from_y + (self.render_target_y - self.render_from_y) * progress
-        return x, y
 
     def scan_surroundings(self, world: World):
         food_radius = self.discovery_radius(FOOD)
