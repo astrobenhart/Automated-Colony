@@ -184,12 +184,12 @@ Notes:
 
 ---
 
-### TASK-88
+### TASK-96
 Title: Season Transition Optimisation
 
 Owner: Renderer Agent / Performance Agent / Architect Agent
 
-Status: Backlog
+Status: Complete
 
 Priority: High
 
@@ -206,6 +206,8 @@ Acceptance Criteria:
 - Performance remains smooth during season transitions.
 
 Notes:
+- Implemented with daily `visual_transition_progress` used by renderer seasonal palettes and cache keys.
+- Weather and moisture transition cache behaviour remains independent and dynamic.
 - Optimise invalidation behaviour; do not remove seasonal rendering.
 
 ---

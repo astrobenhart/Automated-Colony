@@ -955,7 +955,7 @@ class TerrainRenderer:
             terrain,
             season,
             getattr(world, "next_season", None),
-            getattr(world, "transition_progress", 0.0),
+            getattr(world, "visual_transition_progress", getattr(world, "transition_progress", 0.0)),
         )
         events = getattr(world, "active_environment_events", ())
 

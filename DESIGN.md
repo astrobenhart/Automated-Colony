@@ -1824,6 +1824,16 @@ Transitions remain deterministic and distributed. Seasonal grassland and forest 
 
 Path rendering intentionally uses existing wear stages rather than raw foot traffic counts. This keeps the map cache stable during ordinary movement while still making frequently travelled routes clearer as they cross trampled, worn, dirt, and established path thresholds.
 
+### Daily Seasonal Visual State
+
+Seasonal colour progression is renderer-facing daily state, not frame state.
+
+At the start of each simulation day the world exposes a stable `visual_transition_progress` derived from the current day of season. The renderer uses that value for seasonal palette blending, terrain visual state, tile colours, and terrain cache keys. The value does not change during sub-day ticks, so cached terrain chunks are not invalidated merely because time advanced within the same day.
+
+Seasonal blending remains gradual across the end of each season, but it advances in daily steps. This matches how players perceive the landscape: the world changes across days and seasons rather than minute by minute.
+
+Weather and moisture transitions remain independent. Rain, heavy rain, drought, water appearance, grass moisture, clouds, fog, and future environmental effects may still update dynamically through their own transition state and renderer cache keys. The daily seasonal state only prevents seasonal colour interpolation from causing sub-day terrain cache churn.
+
 ### Gameplay-Driven Rendering
 
 The terrain renderer answers what a tile currently looks like. Gameplay systems expose state; they do not own renderer branching.

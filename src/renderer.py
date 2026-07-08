@@ -469,7 +469,7 @@ class PygameRenderer:
             water_transition_cache_key(self.water_transition_state, self.world.tick),
             self.world.season,
             self.world.next_season,
-            round(self.world.transition_progress, 3),
+            round(getattr(self.world, "visual_transition_progress", self.world.transition_progress), 3),
             self.environment_event_cache_state(),
         )
 
@@ -1569,7 +1569,7 @@ class PygameRenderer:
             kind,
             self.world.season,
             self.world.next_season,
-            self.world.transition_progress,
+            getattr(self.world, "visual_transition_progress", self.world.transition_progress),
         )
         return environmental_tile_color(season_color, kind, self.world.active_environment_events)
 

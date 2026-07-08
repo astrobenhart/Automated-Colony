@@ -9,6 +9,7 @@ from src.carrying_capacity import CarryingCapacityReport
 from src.config import (
     COLORS,
     DEBUG_DRAW_GRID,
+    DAYS_PER_SEASON,
     FOREST_SEASON_TRANSITION_DAYS,
     GRASS_MOISTURE_TRANSITION_HOURS,
     RENDER_DETAIL_HIGH,
@@ -1882,6 +1883,33 @@ def test_agent_and_ui_layers_do_not_dirty_terrain_chunks():
     assert renderer.last_chunk_rebuild_count == 0
     assert renderer.last_chunk_redraw_count == 0
     assert len(renderer.dirty_chunks) == 0
+
+
+def test_season_visual_cache_state_is_stable_within_day():
+    world = make_world(width=3, height=3)
+    world.day = DAYS_PER_SEASON - 2
+    world.tick = 0
+    renderer = make_renderer(world)
+
+    start_key = renderer.visual_transition_cache_state()
+    world.tick = TICKS_PER_DAY // 2
+
+    assert renderer.visual_transition_cache_state() == start_key
+
+
+def test_weather_visual_cache_state_can_change_within_day():
+    from src.environment_events import create_environment_event
+
+    world = make_world(width=3, height=3)
+    world.day = DAYS_PER_SEASON - 2
+    world.tick = 10
+    renderer = make_renderer(world)
+
+    start_key = renderer.visual_transition_cache_state()
+    world.active_environment_events.append(create_environment_event("heavy_rain", duration_days=2))
+    weather_key = renderer.visual_transition_cache_state()
+
+    assert weather_key != start_key
 
 
 def test_camera_movement_reuses_cached_chunks(monkeypatch):

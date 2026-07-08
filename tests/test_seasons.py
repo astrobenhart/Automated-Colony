@@ -1,5 +1,6 @@
 from src.config import DAYS_PER_SEASON, SEASONS, TERRAIN_LABELS, TICKS_PER_DAY
 from src.seasons import (
+    daily_transition_progress,
     food_growth_chance,
     lerp_color,
     seasonal_tile_color,
@@ -100,6 +101,12 @@ def test_transition_progress_reaches_one_at_season_boundary():
     assert transition_progress(DAYS_PER_SEASON, TICKS_PER_DAY - 1, TICKS_PER_DAY) == 1.0
 
 
+def test_daily_transition_progress_changes_once_per_day():
+    assert daily_transition_progress(DAYS_PER_SEASON - 5) == 0.0
+    assert round(daily_transition_progress(DAYS_PER_SEASON - 4), 3) == 0.167
+    assert round(daily_transition_progress(DAYS_PER_SEASON), 3) == 0.833
+
+
 def test_lerp_color_returns_expected_midpoint():
     assert lerp_color((10, 20, 30), (30, 40, 50), 0.5) == (20, 30, 40)
 
@@ -147,7 +154,20 @@ def test_world_exposes_visual_transition_state():
     assert world.season == "Spring"
     assert world.next_season == "Summer"
     assert world.transition_progress > 0.0
+    assert round(world.visual_transition_progress, 3) == 0.833
     assert world.season_label == "Spring -> Summer"
+
+
+def test_world_visual_transition_state_is_stable_within_day():
+    world = make_world_with_tiles([["grass"]])
+    world.day = DAYS_PER_SEASON - 2
+    world.tick = 0
+    start_progress = world.visual_transition_progress
+
+    world.tick = TICKS_PER_DAY // 2
+
+    assert world.transition_progress == 0.0
+    assert world.visual_transition_progress == start_progress
 
 
 def test_rivers_and_permanent_water_remain_valid_water_sources_after_seasons():

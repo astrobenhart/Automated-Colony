@@ -25,6 +25,7 @@ from src.influence import update_influence_peaks
 from src.death_memory import DeathRecord, expire_remembrances
 from src.lifecycle_progression import update_lifecycle_progression
 from src.seasons import (
+    daily_transition_progress,
     day_of_season,
     next_season_index,
     season_for_index,
@@ -165,8 +166,12 @@ class World:
         return transition_progress(self.day_of_season, self.ticks_into_day, TICKS_PER_DAY)
 
     @property
+    def visual_transition_progress(self) -> float:
+        return daily_transition_progress(self.day_of_season)
+
+    @property
     def season_label(self) -> str:
-        if self.transition_progress > 0.0:
+        if self.visual_transition_progress > 0.0:
             return f"{self.season} -> {self.next_season}"
         return self.season
 

@@ -37,6 +37,14 @@ def transition_progress(
     return _clamp(ticks_into_day / (ticks_per_day - 1))
 
 
+def daily_transition_progress(season_day: int, transition_days: int = 5) -> float:
+    """Renderer-facing seasonal blend that changes once per simulation day."""
+    if transition_days <= 0 or season_day <= DAYS_PER_SEASON - transition_days:
+        return 0.0
+    start_day = DAYS_PER_SEASON - transition_days
+    return _clamp((season_day - start_day) / (transition_days + 1))
+
+
 def lerp_color(
     color_a: tuple[int, int, int],
     color_b: tuple[int, int, int],
