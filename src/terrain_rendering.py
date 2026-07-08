@@ -12,22 +12,21 @@ from src.config import (
     RENDER_DETAIL_ULTRA,
     TERRAIN_RENDER_DETAIL,
 )
-from src.environment_events import environmental_tile_color
 from src.farming import FIELD_DORMANT, FIELD_GROWING, FIELD_PLANTED, FIELD_READY, FIELD_UNPREPARED
 from src.forest_rendering import FOREST_SEASON_PALETTES, FOREST_SEASON_WEIGHTS, forest_visual_season
 from src.grass_rendering import (
+    CLEAR,
     DRY,
     GRASS_MOISTURE_PALETTES,
     GRASS_MOISTURE_WEIGHTS,
     NORMAL,
     WET,
     grass_moisture_state,
-    grass_visual_moisture_mode,
 )
 from src.seasons import seasonal_tile_color
 from src.renderer_config import RendererArtConfig, load_renderer_art_config
 from src.village_paths import DIRT_PATH, PATH, TRAMPLED_GRASS, WORN_GRASS
-from src.water_rendering import WATER_WEATHER_PALETTES, WATER_WEATHER_WEIGHTS, water_visual_weather
+from src.water_rendering import CLEAR as WATER_CLEAR, WATER_WEATHER_PALETTES, WATER_WEATHER_WEIGHTS
 
 
 Color = tuple[int, int, int]
@@ -957,16 +956,7 @@ class TerrainRenderer:
             getattr(world, "next_season", None),
             getattr(world, "visual_transition_progress", getattr(world, "transition_progress", 0.0)),
         )
-        events = getattr(world, "active_environment_events", ())
-
         if terrain in MOISTURE_REACTIVE_TERRAINS:
-            visual_mode = grass_visual_moisture_mode(
-                getattr(world, "seed", None),
-                context.tile_x,
-                context.tile_y,
-                context.grass_state,
-                getattr(world, "tick", 0),
-            )
             visual_season = season
             if terrain in GRASSLAND_TERRAINS and getattr(world, "day", 1) > 1:
                 visual_season = forest_visual_season(
@@ -981,7 +971,7 @@ class TerrainRenderer:
                 season=season,
                 base_color=base_color,
                 visual_season=visual_season,
-                moisture_state=grass_moisture_state(context.base_moisture, visual_mode),
+                moisture_state=grass_moisture_state(context.base_moisture, CLEAR),
                 wear_state=terrain if terrain in PATH_TERRAINS else None,
                 foot_traffic=getattr(tile, "foot_traffic", 0),
                 gameplay=context.gameplay_state,
@@ -999,26 +989,19 @@ class TerrainRenderer:
                     getattr(world, "day_of_season", 1),
                 ),
                 gameplay=context.gameplay_state,
-                environment_tinted=bool(events),
             )
         if terrain == "water":
             return TerrainVisualState(
                 terrain=terrain,
                 season=season,
                 base_color=base_color,
-                weather_state=water_visual_weather(
-                    getattr(world, "seed", None),
-                    context.tile_x,
-                    context.tile_y,
-                    context.water_state,
-                    getattr(world, "tick", 0),
-                ),
+                weather_state=WATER_CLEAR,
                 gameplay=context.gameplay_state,
             )
         return TerrainVisualState(
             terrain=terrain,
             season=season,
-            base_color=environmental_tile_color(base_color, terrain, events),
+            base_color=base_color,
             gameplay=context.gameplay_state,
         )
 
@@ -1044,12 +1027,6 @@ class TerrainRenderer:
         pattern = self.ambient_occlusion.apply(pattern, state, context)
         pattern = self.edge_shaper.apply(pattern, state, context)
         pattern = self.path_encroachment.apply(pattern, state, context)
-        if state.environment_tinted:
-            events = getattr(context.world, "active_environment_events", ())
-            pattern = MicrotilePattern(
-                resolution=pattern.resolution,
-                colors=tuple(environmental_tile_color(color, state.terrain, events) for color in pattern.colors),
-            )
         self._microtile_pattern_cache[cache_key] = pattern
         return pattern
 

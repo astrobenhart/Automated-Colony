@@ -185,7 +185,7 @@ Notes:
 ---
 
 ### TASK-96
-Title: Season Transition Optimisation
+Title: Smooth Environmental Rendering
 
 Owner: Renderer Agent / Performance Agent / Architect Agent
 
@@ -194,20 +194,24 @@ Status: Complete
 Priority: High
 
 Description:
-Keep season transitions visually attractive while preventing repeated terrain rebuilds during sub-day transition changes.
+Separate static terrain rendering from dynamic atmospheric effects so weather, cloud shadows, smooth foliage colour, and future particles do not invalidate cached terrain chunks.
 
 Expected Output:
-Seasonal visual updates that occur once per day, preserve the renderer architecture, and avoid sub-day terrain cache churn.
+A lightweight dynamic environmental layer system that renders transient atmosphere and smooth foliage independently while seasonal terrain updates remain daily and cached.
 
 Acceptance Criteria:
 - Seasonal visual changes occur once per day.
 - Sub-day terrain regeneration is avoided.
+- Weather updates do not invalidate terrain chunks.
+- Cloud shadow movement does not invalidate terrain chunks.
+- Tree foliage colour transitions do not invalidate terrain chunks.
 - Existing renderer architecture and visual quality are preserved.
 - Performance remains smooth during season transitions.
 
 Notes:
 - Implemented with daily `visual_transition_progress` used by renderer seasonal palettes and cache keys.
-- Weather and moisture transition cache behaviour remains independent and dynamic.
+- Weather and cloud movement now render through dynamic overlay state rather than terrain visual signatures.
+- Forest foliage renders through a smooth uncached Vegetation layer.
 - Optimise invalidation behaviour; do not remove seasonal rendering.
 
 ---

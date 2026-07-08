@@ -1527,7 +1527,7 @@ Seasonal forest palettes:
 
 Forest appearance is stable within a season. When a new season begins, each forest tile receives a deterministic transition day within the first few days of that season based on world seed, tile coordinates, and season. Until its assigned day, the tile keeps the previous season's canopy. On its assigned day, it switches once to the new season palette.
 
-The cached map surface is rebuilt only when the visible camera region, season transition state, environmental state, discovery counts, or structure counts change. Villager rendering remains dynamic and independent of the terrain cache.
+The cached map surface is rebuilt only when the visible camera region, daily seasonal visual state, discovery counts, or structure counts change. Villager rendering and transient environmental overlays remain dynamic and independent of the terrain cache.
 
 Future biome presentation can reuse the same pattern for young forest, mature forest, ancient forest, harvested forest, burned forest, or magical forest states without adding new simulation behaviour.
 
@@ -1535,18 +1535,11 @@ Future biome presentation can reuse the same pattern for young forest, mature fo
 
 Water rendering is visual only. A water tile remains one simulation tile, one unwalkable pathfinding tile, and one stable water source for villager behaviour.
 
-Each visible water tile is rendered as a deterministic microtile surface. Microtile colours are derived from world seed, tile coordinates, render detail, and the tile's current visual weather state. No frame-randomness is used, so lakes, rivers, and ponds do not flicker.
+Each visible water tile is rendered as a deterministic microtile surface. Microtile colours are derived from world seed, tile coordinates, render detail, and the daily seasonal visual state. No frame-randomness is used, so lakes, rivers, and ponds do not flicker.
 
-Initial water weather palettes:
-- Clear: deep blue, blue, and light blue with subtle variation
-- Rain: lighter blues, muted reflection tones, and occasional grey-blue subcells
-- Heavy Rain: brighter highlights, darker pockets, and cooler disturbed-water tones
+Weather does not recolour cached water terrain. Rain, heavy rain, mist, fog, snow, and future atmospheric effects render through the Dynamic Environmental Overlay layer so rivers and lakes remain physically stable while the atmosphere changes above them.
 
-Weather state is renderer-facing and derived from active environmental events. Heavy rain events render water as Heavy Rain. Future rain-like event types can render as Rain without changing tile semantics.
-
-When water weather changes, each water tile receives a deterministic transition tick over a short in-game-hours window based on world seed, tile coordinates, weather state, and transition id. Until its assigned tick, it keeps the previous weather palette. On its assigned tick, it switches once to the new weather palette.
-
-The cached map surface is rebuilt only when the visible camera region, seasonal transition state, water weather transition state, environmental state, discovery counts, or structure counts change. This keeps water responsive to weather without continuous animation or per-frame work.
+The cached map surface is rebuilt only when the visible camera region, daily seasonal visual state, discovery counts, or structure counts change. Water remains responsive to weather through overlays without continuous terrain animation or per-frame terrain work.
 
 Future environmental presentation can reuse the same pattern for storms, drought shoreline tinting, frozen water, flooding, or magical corruption without changing pathfinding or water availability.
 
@@ -1554,7 +1547,7 @@ Future environmental presentation can reuse the same pattern for storms, drought
 
 Grass rendering is visual only. A grass tile remains one simulation tile, one ordinary walkable terrain tile, and keeps the same pathfinding, building, resource, and save behaviour.
 
-Each visible grass tile is rendered as a deterministic microtile surface. Microtile colours are derived from world seed, tile coordinates, render detail, season, base moisture from the generated moisture map, and the current visual moisture mode. No frame-randomness is used, so grass does not flicker.
+Each visible grass tile is rendered as a deterministic microtile surface. Microtile colours are derived from world seed, tile coordinates, render detail, season, base moisture from the generated moisture map, and the daily seasonal visual state. No frame-randomness is used, so grass does not flicker.
 
 Grass visual moisture states:
 - Dry: yellow-green, brown-green, and dry patch tones
@@ -1567,9 +1560,7 @@ Seasonal grass palettes:
 - Autumn: muted greens, yellow-green, and brown-green
 - Winter: brown, muted green, and dormant vegetation
 
-Environmental events modify visual moisture without changing gameplay. Heavy rain and future rain-like events push grass toward Wet. Drought pushes grass toward Dry. Clear weather returns grass to its base moisture state from the world moisture map.
-
-When visual moisture mode changes, each grass tile receives a deterministic transition tick over a short in-game-hours window based on world seed, tile coordinates, moisture mode, and transition id. Until its assigned tick, it keeps the previous moisture palette. On its assigned tick, it switches once to the new palette.
+Environmental events do not recolour cached grass terrain. Rain, heavy rain, mist, fog, snow, falling leaves, cloud cover, and similar temporary effects should be drawn as dynamic atmosphere above terrain. Grass remains the physical ground layer; atmosphere supplies the temporary visual mood.
 
 Future terrain presentation can reuse this pattern for irrigation, snow cover, burnt terrain, overgrazed grass, marsh expansion, magical corruption, or farmland visual progression without changing movement or resource rules.
 
@@ -1578,20 +1569,20 @@ Future terrain presentation can reuse this pattern for irrigation, snow cover, b
 Terrain rendering is presentation-only. Terrain tile kinds, pathfinding, resource rules, saves, and simulation behaviour remain owned by world and tile systems.
 
 All visible terrain tiles now render through the shared `TerrainRenderer` pipeline:
-- Build a renderer-facing visual state from world state, tile kind, season, weather, moisture, and environmental events.
+- Build a renderer-facing visual state from world state, tile kind, daily season state, base moisture, and durable gameplay state.
 - Build a renderer-only neighbourhood snapshot from the eight adjacent terrain tiles.
 - Select colours through the centralized `TerrainPaletteManager`.
 - Generate a deterministic microtile pattern through `TerrainPatternGenerator`.
 - Apply deterministic edge masks so neighbouring terrain can soften tile boundaries.
 - Draw the tile while preserving gameplay overlays such as farms, resources, homes, workplaces, villagers, and wildlife.
 
-The visual state layer separates simulation state from appearance. A forest tile remains `forest`, a water tile remains `water`, and a path tile remains path-like even when their rendered palettes change. Renderer-facing fields such as visual season, visual weather, and visual moisture are presentation inputs only.
+The visual state layer separates simulation state from appearance. A forest tile remains `forest`, a water tile remains `water`, and a path tile remains path-like even when their rendered palettes change. Renderer-facing fields such as visual season and base visual moisture are presentation inputs only; transient weather belongs to overlays.
 
-Every terrain tile uses the same adaptive microtile visual language. Specialized terrain palettes remain available for grass, forest, and water, while other terrain types derive subtle palette variation from their seasonal/environmental base colour. This keeps existing terrain recognizable while removing the old split between custom microtile terrain and single-colour terrain.
+Every terrain tile uses the same adaptive microtile visual language. Specialized terrain palettes remain available for grass, forest, and water, while other terrain types derive subtle palette variation from their seasonal base colour. This keeps existing terrain recognizable while removing the old split between custom microtile terrain and single-colour terrain.
 
-Pattern generation is deterministic. The renderer uses world seed, tile coordinates, terrain type, and visual state identity; it does not use frame-based randomness. Cached map rebuilding remains driven by existing cache keys for camera region, seasonal transition state, weather/moisture transition state, environmental state, discovery counts, and structure counts.
+Pattern generation is deterministic. The renderer uses world seed, tile coordinates, terrain type, and visual state identity; it does not use frame-based randomness. Cached map rebuilding remains driven by existing cache keys for camera region, daily seasonal visual state, discovery counts, and structure counts.
 
-Future environmental presentation should extend the palette and visual state layers rather than adding new one-off draw paths. Planned extensions include snow cover, drought stress, burnt terrain, magical corruption, frozen water, flooding, crop growth stages, ancient forests, biome-specific palettes, and terrain wear variations.
+Future durable terrain states should extend the palette and visual state layers. Temporary atmosphere should extend the Dynamic Environmental Overlay layer. Planned terrain extensions include burnt terrain, magical corruption, frozen water, flooding, crop growth stages, ancient forests, biome-specific palettes, and terrain wear variations.
 
 ### Renderer Configuration
 
@@ -1783,11 +1774,12 @@ UI Layer
 ```
 
 Layer responsibilities:
-- Terrain Layer owns cached terrain chunks, terrain palettes, motifs, adaptive microtiles, environmental state, path rendering, edge shaping, and ambient terrain occlusion.
-- Vegetation Layer is reserved for future vegetation sprites such as trees, shrubs, flowers, crop detail, and grass accents. Forest canopy detail remains baked into terrain chunks until sprite assets exist.
+- Terrain Layer owns cached terrain chunks, terrain palettes, motifs, adaptive microtiles, daily seasonal terrain state, path rendering, edge shaping, and ambient terrain occlusion.
+- Vegetation Layer owns smooth foliage overlays. Forest trunks and durable forest terrain remain cached, while foliage colour can interpolate every rendered frame without dirtying terrain chunks.
 - Structures Layer represents human-built and static map objects such as houses, farms, workshops, stockpiles, workplace markers, and resource symbols. In this phase these are still composed into the terrain chunk surface to preserve existing visuals and cache behaviour, but the chunk rebuild path now calls structure-layer methods separately from terrain drawing.
+- Environmental Overlay Layer owns cloud shadows and future screen-space atmosphere that should sit above the static world but below villagers.
 - Agent Layer renders dynamic villagers and future mobile entities independently from cached terrain.
-- Effects Layer is reserved for future transient visuals such as rain, snow, smoke, fire, particles, and magical effects.
+- Effects Layer owns visible particles such as rain streaks and future snow, smoke, fire, embers, and magical effects.
 - UI Layer owns selection highlights, right-panel information, diagnostics/history/villager overlays, cursor-level UI, and `pygame_gui` drawing.
 
 The main frame renderer calls `compose_scene()`, which renders layers in order. UI and agent drawing never invalidates terrain chunks. Static chunk contents are still cached together for now, but the architecture now has explicit ownership boundaries for splitting vegetation and structure surfaces into their own chunk caches later.
@@ -1803,24 +1795,23 @@ World state
   -> Display
 ```
 
-Future renderer events should target layers directly. Examples: tree harvested -> Vegetation/Terrain dirty, construction completed -> Structures dirty, villager moved -> Agent layer redraw, weather particle event -> Effects layer update. This keeps simulation behaviour independent from renderer implementation while allowing each layer to become independently cacheable.
+Future renderer events should target layers directly. Examples: tree harvested -> Terrain dirty, construction completed -> Structures dirty, villager moved -> Agent layer redraw, weather particle event -> Effects layer update, wind animation -> Vegetation layer redraw. This keeps simulation behaviour independent from renderer implementation while allowing each layer to become independently cacheable.
 
 ### Environmental Reactivity
 
-The shared terrain renderer consumes existing world state and does not create new simulation rules. Environmental rendering inputs are:
-- Season and distributed seasonal transition timing.
-- Weather events through renderer-facing moisture and water states.
+The shared terrain renderer consumes existing world state and does not create new simulation rules. Terrain rendering inputs are:
+- Daily seasonal terrain state.
 - Moisture map values generated by worldgen.
 - Existing path wear terrain kinds created by foot traffic thresholds.
 
 Terrain-to-environment mapping:
-- Forest: season only. Forests keep deterministic microtile canopy rendering and transition gradually during the first few days of a new season. There is no daily canopy drift.
-- Water: weather only. Clear, Rain, and Heavy Rain choose weather-specific water palettes and transition over short in-game-hour windows.
-- Grass, plains, and hills: season plus moisture. These terrain types share grassland moisture logic while retaining distinct palette adjustments for readability.
-- Trampled grass, worn grass, dirt path, and established path: wear stage plus moisture. Existing traffic thresholds choose the terrain kind; the renderer darkens paths under wet conditions and uses lighter dusty earth tones under dry conditions.
-- Other terrain: seasonal/environmental base colour with subtle microtile variation.
+- Forest: durable terrain uses daily season state. Smooth foliage colour is applied by the dynamic Vegetation layer.
+- Water: durable water terrain uses daily season state. Weather appears through overlays, not terrain recolouring.
+- Grass, plains, and hills: season plus base moisture. Temporary weather does not force cached terrain into wet or dry palettes.
+- Trampled grass, worn grass, dirt path, and established path: wear stage plus base moisture. Existing traffic thresholds choose the terrain kind.
+- Other terrain: seasonal base colour with subtle microtile variation.
 
-Transitions remain deterministic and distributed. Seasonal grassland and forest transitions use world seed, tile coordinates, season, and day of season. Weather and moisture transitions use world seed, tile coordinates, transition id, and current tick. No visual state relies on frame-randomness.
+Terrain transitions remain deterministic and distributed. Seasonal terrain changes use world seed, tile coordinates, season, and day of season. Weather, cloud movement, foliage tinting, future wind, and future lighting are renderer overlays and may interpolate continuously without becoming terrain cache keys. No visual state relies on frame-randomness.
 
 Path rendering intentionally uses existing wear stages rather than raw foot traffic counts. This keeps the map cache stable during ordinary movement while still making frequently travelled routes clearer as they cross trampled, worn, dirt, and established path thresholds.
 
@@ -1832,7 +1823,43 @@ At the start of each simulation day the world exposes a stable `visual_transitio
 
 Seasonal blending remains gradual across the end of each season, but it advances in daily steps. This matches how players perceive the landscape: the world changes across days and seasons rather than minute by minute.
 
-Weather and moisture transitions remain independent. Rain, heavy rain, drought, water appearance, grass moisture, clouds, fog, and future environmental effects may still update dynamically through their own transition state and renderer cache keys. The daily seasonal state only prevents seasonal colour interpolation from causing sub-day terrain cache churn.
+Weather and atmosphere remain independent. Rain, heavy rain, drought presentation, future snow, clouds, fog, and mist may update dynamically through overlay state, but they do not participate in terrain cache keys. The daily seasonal state prevents seasonal colour interpolation from causing sub-day terrain cache churn while the overlay system handles temporary atmosphere.
+
+### Smooth Renderer Interpolation
+
+The simulation changes discretely; the renderer changes continuously.
+
+Simulation systems expose stable environmental values such as season, day of season, active weather events, and current tick. Renderer layers decide how to present those values smoothly. Terrain palettes update once per simulation day. Foliage colour, cloud shadows, rain particles, future snow opacity, wind offsets, and lighting overlays can interpolate every frame because they do not invalidate cached terrain.
+
+Current smooth interpolation:
+- forest foliage samples a continuous seasonal gradient from Spring to Summer to Autumn to Winter using fractional day progress
+- cloud shadow offsets move continuously across the viewport
+- heavy rain particles move continuously in the Effects layer
+
+Future renderer work should prefer interpolated overlay presentation over simulation-side visual stepping whenever a change is atmospheric rather than physical.
+
+### Dynamic Environmental Overlay System
+
+Permanent world visuals and dynamic atmosphere are separate renderer concerns.
+
+Static World:
+- terrain
+- roads
+- rivers and lakes
+- tree trunks and durable vegetation state
+- structures and other durable map objects
+
+Dynamic Atmosphere:
+- rain and future snow particles
+- cloud shadows
+- fog, mist, wind, falling leaves, and other temporary effects
+- future lighting overlays
+
+The Terrain layer owns cached physical world chunks. The Environmental Overlay layer draws transient atmosphere over cached terrain without mutating tile visual signatures, chunk cache keys, or dirty chunk state. The Effects layer can draw visible particles such as heavy-rain streaks after agents are drawn. These layers may redraw every frame because they are lightweight screen-space overlays rather than terrain regeneration.
+
+The Vegetation layer draws smooth foliage colour above cached forest terrain. This prepares the renderer for animated trees, wind, and sprite foliage without making tree colour changes rebuild terrain chunks.
+
+Weather updates do not recolour terrain, water, paths, or grass. Rain and cloud cover should be visible through particles and transparent shadow overlays. Future snow, fog, wind, and lighting effects should plug into the overlay pipeline so animated presentation does not increase terrain rendering cost.
 
 ### Gameplay-Driven Rendering
 

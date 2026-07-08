@@ -917,7 +917,7 @@ def test_dense_forest_ambient_occlusion_can_reach_second_microtile_at_ultra_deta
     assert shaded.colors[12] == base.colors[12]
 
 
-def test_plains_and_hills_use_moisture_reactive_grassland_visual_state():
+def test_plains_and_hills_keep_base_moisture_when_weather_is_overlay():
     world = make_world(width=2, height=1)
     world.tiles[0][0] = Tile("plain")
     world.tiles[0][1] = Tile("hill")
@@ -943,12 +943,12 @@ def test_plains_and_hills_use_moisture_reactive_grassland_visual_state():
         base_moisture=0.2,
     )
 
-    assert renderer.visual_state_for(plain_context).moisture_state == WET
-    assert renderer.visual_state_for(hill_context).moisture_state == WET
+    assert renderer.visual_state_for(plain_context).moisture_state == DRY
+    assert renderer.visual_state_for(hill_context).moisture_state == DRY
     assert renderer.microtile_colors_for(plain_context) != renderer.microtile_colors_for(hill_context)
 
 
-def test_path_and_trampled_ground_use_moisture_reactive_path_palettes():
+def test_path_and_trampled_ground_keep_base_moisture_when_weather_is_overlay():
     world = make_world(width=4, height=1)
     world.tiles[0] = [Tile(TRAMPLED_GRASS), Tile(WORN_GRASS), Tile(DIRT_PATH), Tile(PATH)]
     renderer = TerrainRenderer()
@@ -965,9 +965,9 @@ def test_path_and_trampled_ground_use_moisture_reactive_path_palettes():
             base_moisture=0.2,
         )
 
-        assert renderer.visual_state_for(context).moisture_state == WET
+        assert renderer.visual_state_for(context).moisture_state == DRY
         assert renderer.microtile_colors_for(context) == renderer.microtile_colors_for(context)
-        assert palette_spread(renderer.microtile_colors_for(context)) <= palette_spread(PATH_PALETTES[tile.kind][WET])
+        assert palette_spread(renderer.microtile_colors_for(context)) <= palette_spread(PATH_PALETTES[tile.kind][DRY])
 
 
 def test_grassland_seasonal_transition_uses_distributed_visual_season_after_start():
@@ -1501,7 +1501,7 @@ def test_grass_visual_moisture_mode_waits_until_tile_transition_tick():
     assert grass_visual_moisture_mode(41, tile_x, tile_y, state, 100 + transition_tick) == GRASS_HEAVY_RAIN
 
 
-def test_grass_moisture_cache_changes_during_weather_transition():
+def test_grass_moisture_weather_overlay_does_not_dirty_terrain_cache():
     world = make_world(width=3, height=3)
     world.seed = 14
     world.tiles[1][1].kind = "grass"
@@ -1527,6 +1527,7 @@ def test_grass_moisture_cache_changes_during_weather_transition():
     renderer.draw_world()
     before_event_redraws = renderer.last_partial_redraw_count
     world.active_environment_events.append(create_environment_event("heavy_rain", duration_days=2))
+    overlay_state = renderer.environmental_overlay_state()
     renderer.draw_world()
     event_redraws = renderer.last_partial_redraw_count
     world.tick += 1
@@ -1535,10 +1536,12 @@ def test_grass_moisture_cache_changes_during_weather_transition():
 
     assert viewport_rebuilds == []
     assert chunk_rebuilds[0] == ("clear", 0, 0, 0)
+    assert len(chunk_rebuilds) == 1
     assert before_event_redraws == 0
-    assert event_redraws > 0
-    assert transition_redraws >= 0
-    assert renderer.renderer_revisions["moisture"] > 0
+    assert event_redraws == 0
+    assert transition_redraws == 0
+    assert renderer.renderer_revisions["moisture"] == 0
+    assert renderer.environmental_overlay_state() != overlay_state
 
 
 def water_tile_pixels(renderer, tile_x: int = 1, tile_y: int = 1):
@@ -1610,7 +1613,7 @@ def test_water_visual_weather_waits_until_tile_transition_tick():
     assert water_visual_weather(41, tile_x, tile_y, state, 100 + transition_tick) == HEAVY_RAIN
 
 
-def test_water_weather_cache_changes_during_weather_transition():
+def test_water_weather_overlay_does_not_dirty_terrain_cache():
     world = make_world(width=3, height=3)
     world.seed = 14
     world.tiles[1][1].kind = "water"
@@ -1636,6 +1639,7 @@ def test_water_weather_cache_changes_during_weather_transition():
     renderer.draw_world()
     before_event_redraws = renderer.last_partial_redraw_count
     world.active_environment_events.append(create_environment_event("heavy_rain", duration_days=2))
+    overlay_state = renderer.environmental_overlay_state()
     renderer.draw_world()
     event_redraws = renderer.last_partial_redraw_count
     transition_redraws = []
@@ -1646,9 +1650,12 @@ def test_water_weather_cache_changes_during_weather_transition():
 
     assert viewport_rebuilds == []
     assert chunk_rebuilds[0] == (CLEAR, 0, 0, 0)
+    assert len(chunk_rebuilds) == 1
     assert before_event_redraws == 0
-    assert event_redraws + sum(transition_redraws) > 0
-    assert renderer.renderer_revisions["weather"] > 0
+    assert event_redraws == 0
+    assert sum(transition_redraws) == 0
+    assert renderer.renderer_revisions["weather"] == 0
+    assert renderer.environmental_overlay_state() != overlay_state
 
 
 def test_resource_visibility_uses_colony_memory_not_agent_personal_memory(monkeypatch):
@@ -1858,11 +1865,13 @@ def test_renderer_uses_ordered_scene_layers():
         "Terrain",
         "Vegetation",
         "Structures",
+        "Environment",
         "Agents",
         "Effects",
         "UI",
     ]
     assert renderer.render_layers[0].cached is True
+    assert renderer.render_layers[1].cached is False
     assert renderer.render_layers[3].cached is False
     assert renderer.diagnostics_metrics()["render_layers"] == tuple(layer.name for layer in renderer.render_layers)
 
@@ -1897,7 +1906,7 @@ def test_season_visual_cache_state_is_stable_within_day():
     assert renderer.visual_transition_cache_state() == start_key
 
 
-def test_weather_visual_cache_state_can_change_within_day():
+def test_weather_overlay_state_can_change_within_day_without_terrain_key_change():
     from src.environment_events import create_environment_event
 
     world = make_world(width=3, height=3)
@@ -1906,10 +1915,61 @@ def test_weather_visual_cache_state_can_change_within_day():
     renderer = make_renderer(world)
 
     start_key = renderer.visual_transition_cache_state()
+    start_overlay = renderer.environmental_overlay_state()
     world.active_environment_events.append(create_environment_event("heavy_rain", duration_days=2))
     weather_key = renderer.visual_transition_cache_state()
 
-    assert weather_key != start_key
+    assert weather_key == start_key
+    assert renderer.environmental_overlay_state() != start_overlay
+
+
+def test_tree_foliage_color_interpolates_smoothly_without_terrain_key_change():
+    world = make_world(width=3, height=3)
+    world.tiles[1][1].kind = "forest"
+    world.day = DAYS_PER_SEASON // 2
+    world.tick = 0
+    renderer = make_renderer(world)
+
+    start_key = renderer.visual_transition_cache_state()
+    start_color = renderer.smooth_foliage_color()
+    world.tick = TICKS_PER_DAY - 1
+
+    assert renderer.visual_transition_cache_state() == start_key
+    assert renderer.smooth_foliage_color() != start_color
+
+
+def test_tree_foliage_motion_does_not_rebuild_terrain_chunks():
+    world = make_world(width=3, height=3)
+    world.tiles[1][1].kind = "forest"
+    renderer = make_renderer(world)
+
+    renderer.draw_world()
+    assert renderer.last_chunk_rebuild_count > 0
+
+    world.tick = TICKS_PER_DAY - 1
+    renderer.draw_world()
+
+    assert renderer.last_chunk_rebuild_count == 0
+    assert renderer.last_chunk_redraw_count == 0
+    assert len(renderer.dirty_chunks) == 0
+
+
+def test_cloud_shadow_motion_does_not_dirty_terrain_chunks():
+    world = make_world(width=3, height=3)
+    world.active_environment_events.append(create_environment_event("heavy_rain", duration_days=2))
+    renderer = make_renderer(world)
+
+    renderer.draw_world()
+    assert renderer.last_chunk_rebuild_count > 0
+    start_overlay = renderer.environmental_overlay_state()
+
+    world.tick += 18
+    renderer.draw_world()
+
+    assert renderer.environmental_overlay_state() != start_overlay
+    assert renderer.last_chunk_rebuild_count == 0
+    assert renderer.last_chunk_redraw_count == 0
+    assert len(renderer.dirty_chunks) == 0
 
 
 def test_camera_movement_reuses_cached_chunks(monkeypatch):

@@ -15,6 +15,7 @@ from src.config import (
     CAMERA_STEP,
     DEBUG_DRAW_GRID,
     COLORS,
+    DAYS_PER_SEASON,
     TERRAIN_LABELS,
     FPS,
     PERFORMANCE_LOGGING,
@@ -26,14 +27,15 @@ from src.config import (
     SETTLEMENT_FOOD_TARGET_DAYS,
     SETTLEMENT_WATER_TARGET_DAYS,
     SEASON_FOOD_GROWTH_MODIFIERS,
+    SEASONS,
+    TICKS_PER_DAY,
 )
-from src.environment_events import active_event_names, environmental_tile_color
+from src.environment_events import active_event_names
 from src.farming import FIELD_DORMANT, FIELD_GROWING, FIELD_PLANTED, FIELD_READY, FIELD_UNPREPARED, farm_border_edges
-from src.forest_rendering import forest_transition_cache_key
+from src.forest_rendering import FOREST_SEASON_PALETTES, forest_transition_cache_key
 from src.grass_rendering import (
     GrassMoistureTransitionState,
     grass_moisture_mode_for_events,
-    grass_transition_cache_key,
 )
 from src.overlays.diagnostics import DIAGNOSTICS_OVERLAY, DiagnosticsOverlay
 from src.overlays.history import HISTORY_OVERLAY, HistoryOverlay
@@ -68,7 +70,6 @@ from src.village_paths import path_border_edges
 from src.villager_inspection import compact_villager_rows
 from src.water_rendering import (
     WaterTransitionState,
-    water_transition_cache_key,
     weather_state_for_events,
 )
 from src.workplace import FARM, STORAGE, VILLAGE_CENTER, WORKSHOP
@@ -96,6 +97,23 @@ class RendererLayer:
     owner: str
     draw: Callable[[], None]
     cached: bool = False
+
+
+def average_color(colors: tuple[tuple[int, int, int], ...]) -> tuple[int, int, int]:
+    count = max(1, len(colors))
+    return (
+        round(sum(color[0] for color in colors) / count),
+        round(sum(color[1] for color in colors) / count),
+        round(sum(color[2] for color in colors) / count),
+    )
+
+
+def mix_color(color_a: tuple[int, int, int], color_b: tuple[int, int, int], progress: float) -> tuple[int, int, int]:
+    progress = max(0.0, min(1.0, progress))
+    return tuple(
+        round(start + (end - start) * progress)
+        for start, end in zip(color_a, color_b)
+    )
 
 
 def is_food_visible_to_player(world: World, x: int, y: int) -> bool:
@@ -222,8 +240,9 @@ class PygameRenderer:
     def configure_render_layers(self) -> None:
         self.render_layers = (
             RendererLayer("Terrain", "TerrainLayer", self.draw_terrain_layer, cached=True),
-            RendererLayer("Vegetation", "VegetationLayer", self.draw_vegetation_layer, cached=True),
+            RendererLayer("Vegetation", "VegetationLayer", self.draw_vegetation_layer),
             RendererLayer("Structures", "StructureLayer", self.draw_structure_layer, cached=True),
+            RendererLayer("Environment", "EnvironmentalOverlayLayer", self.draw_environmental_overlay_layer),
             RendererLayer("Agents", "AgentLayer", self.draw_agent_layer),
             RendererLayer("Effects", "EffectsLayer", self.draw_effects_layer),
             RendererLayer("UI", "UILayer", self.draw_ui_layer),
@@ -406,6 +425,7 @@ class PygameRenderer:
         self.draw_terrain_layer()
         self.draw_vegetation_layer()
         self.draw_structure_layer()
+        self.draw_environmental_overlay_layer()
         self.draw_agent_layer()
         self.draw_effects_layer()
         self.draw_selection_highlight()
@@ -420,19 +440,58 @@ class PygameRenderer:
         self.draw_cached_map(start_x, start_y, end_x, end_y)
 
     def draw_vegetation_layer(self) -> None:
-        # Reserved for future sprite vegetation; forest canopy detail is currently baked into terrain chunks.
-        return
+        self.draw_forest_foliage_overlay()
 
     def draw_structure_layer(self) -> None:
         # Static structures are currently cached during chunk rebuilds to preserve existing visuals.
         return
+
+    def draw_forest_foliage_overlay(self) -> None:
+        start_x, start_y, end_x, end_y = self.visible_tile_bounds()
+        foliage_tiles = [
+            (x, y)
+            for y in range(start_y, end_y)
+            for x in range(start_x, end_x)
+            if self.world.tile_at(x, y).kind == "forest"
+        ]
+        if not foliage_tiles:
+            return
+
+        color = self.smooth_foliage_color()
+        overlay = pygame.Surface((VIEWPORT_WIDTH * TILE_SIZE, VIEWPORT_HEIGHT * TILE_SIZE), pygame.SRCALPHA)
+        tint = (*color, 34)
+        highlight = (min(255, color[0] + 18), min(255, color[1] + 18), min(255, color[2] + 18), 24)
+        for x, y in foliage_tiles:
+            screen_x = (x - start_x) * TILE_SIZE
+            screen_y = (y - start_y) * TILE_SIZE
+            pygame.draw.ellipse(overlay, tint, pygame.Rect(screen_x + 1, screen_y + 1, TILE_SIZE - 2, TILE_SIZE - 2))
+            if (x * 17 + y * 31 + getattr(self.world, "tick", 0) // 12) % 5 == 0:
+                pygame.draw.circle(overlay, highlight, (screen_x + TILE_SIZE // 2, screen_y + TILE_SIZE // 3), max(1, TILE_SIZE // 5))
+        self.screen.blit(overlay, (0, 0))
+
+    def smooth_foliage_color(self) -> tuple[int, int, int]:
+        season_index = getattr(self.world, "season_index", 0)
+        day_fraction = (getattr(self.world, "day_of_season", 1) - 1) + (
+            getattr(self.world, "ticks_into_day", 0) / max(1, TICKS_PER_DAY)
+        )
+        progress = max(0.0, min(1.0, day_fraction / max(1, DAYS_PER_SEASON)))
+        current_season = SEASONS[season_index % len(SEASONS)]
+        next_season = SEASONS[(season_index + 1) % len(SEASONS)]
+        return mix_color(
+            average_color(FOREST_SEASON_PALETTES[current_season]),
+            average_color(FOREST_SEASON_PALETTES[next_season]),
+            progress,
+        )
+
+    def draw_environmental_overlay_layer(self) -> None:
+        self.draw_cloud_shadow_overlay()
 
     def draw_agent_layer(self) -> None:
         start_x, start_y, end_x, end_y = self.visible_tile_bounds()
         self.draw_agents(start_x, start_y, end_x, end_y)
 
     def draw_effects_layer(self) -> None:
-        return
+        self.draw_weather_particles()
 
     def draw_ui_layer(self) -> None:
         self.draw_selection_highlight()
@@ -461,16 +520,11 @@ class PygameRenderer:
         )
 
     def visual_transition_cache_state(self):
-        self.update_grass_transition_state()
-        self.update_water_transition_state()
         return (
             forest_transition_cache_key(self.world),
-            grass_transition_cache_key(self.grass_transition_state, self.world.tick),
-            water_transition_cache_key(self.water_transition_state, self.world.tick),
             self.world.season,
             self.world.next_season,
             round(getattr(self.world, "visual_transition_progress", self.world.transition_progress), 3),
-            self.environment_event_cache_state(),
         )
 
     def gameplay_visual_cache_state(self):
@@ -516,6 +570,43 @@ class PygameRenderer:
                 for event in self.world.active_environment_events
             )
         )
+
+    def environmental_overlay_state(self) -> tuple[object, ...]:
+        effects = tuple(
+            sorted(getattr(event, "effect_type", None) for event in self.world.active_environment_events)
+        )
+        cloud_offset = (getattr(self.world, "tick", 0) // 6) % max(1, TILE_SIZE * 8)
+        particle_offset = getattr(self.world, "tick", 0) % max(1, TILE_SIZE * 3)
+        return (effects, cloud_offset, particle_offset)
+
+    def draw_cloud_shadow_overlay(self) -> None:
+        effects = {getattr(event, "effect_type", None) for event in self.world.active_environment_events}
+        if not effects & {"heavy_rain", "rain", "fog"}:
+            return
+        width = VIEWPORT_WIDTH * TILE_SIZE
+        height = VIEWPORT_HEIGHT * TILE_SIZE
+        overlay = pygame.Surface((width, height), pygame.SRCALPHA)
+        offset = (getattr(self.world, "tick", 0) // 6) % max(1, TILE_SIZE * 8)
+        shadow_color = (12, 18, 24, 24 if "heavy_rain" in effects else 16)
+        for index in range(-2, VIEWPORT_WIDTH + 8, 7):
+            x = index * TILE_SIZE - offset
+            y = ((index * 5 + getattr(self.world, "tick", 0) // 18) % (VIEWPORT_HEIGHT + 6) - 3) * TILE_SIZE
+            pygame.draw.ellipse(overlay, shadow_color, pygame.Rect(x, y, TILE_SIZE * 7, TILE_SIZE * 3))
+        self.screen.blit(overlay, (0, 0))
+
+    def draw_weather_particles(self) -> None:
+        effects = {getattr(event, "effect_type", None) for event in self.world.active_environment_events}
+        if "heavy_rain" not in effects:
+            return
+        width = VIEWPORT_WIDTH * TILE_SIZE
+        height = VIEWPORT_HEIGHT * TILE_SIZE
+        overlay = pygame.Surface((width, height), pygame.SRCALPHA)
+        tick = getattr(self.world, "tick", 0)
+        for index in range(36):
+            x = (index * 37 + tick * 2) % max(1, width)
+            y = (index * 23 + tick * 5) % max(1, height)
+            pygame.draw.line(overlay, (132, 164, 204, 92), (x, y), (x - 2, y + 6), 1)
+        self.screen.blit(overlay, (0, 0))
 
     def draw_cached_map(self, start_x: int, start_y: int, end_x: int, end_y: int):
         cache_key = self.map_cache_state(start_x, start_y, end_x, end_y)
@@ -639,14 +730,8 @@ class PygameRenderer:
         if old_key is None:
             self.bump_renderer_revision("terrain")
             return
-        if old_key[0] != new_key[0] or old_key[3:6] != new_key[3:6]:
+        if old_key != new_key:
             self.bump_renderer_revision("season")
-        if old_key[1] != new_key[1]:
-            self.bump_renderer_revision("moisture")
-        if old_key[2] != new_key[2]:
-            self.bump_renderer_revision("weather")
-        if old_key[6] != new_key[6]:
-            self.bump_renderer_revision("overlays")
 
     def rebuild_map_surface(self, start_x: int, start_y: int, end_x: int, end_y: int):
         previous_target = self._draw_target
@@ -1571,7 +1656,7 @@ class PygameRenderer:
             self.world.next_season,
             getattr(self.world, "visual_transition_progress", self.world.transition_progress),
         )
-        return environmental_tile_color(season_color, kind, self.world.active_environment_events)
+        return season_color
 
     def is_settlement_center(self, x: int, y: int) -> bool:
         settlement = self.world.settlement
