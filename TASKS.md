@@ -341,14 +341,14 @@ Notes:
 - The world should feel alive even when nothing important is happening.
 - Prefer reusable visual systems over feature-specific renderer branches.
 - Prioritise readability, mood, and memorable moments over visual density.
-- This task depends on TASK-99 through TASK-109. Visual content should not arrive before the Presentation Scene, camera, motion, animation, environment and renderer snapshot boundaries can support it.
+- This task depends on TASK-99 through TASK-111. Visual content should not arrive before the Presentation Scene, presentation time, entity registry, camera, motion, animation, environment and renderer snapshot boundaries can support it.
 - Sprite and artwork systems should consume Presentation state, not gameplay objects directly.
 - Hyper Light Drifter and Stardew Valley are references for movement, readability, atmosphere and colour confidence only; do not copy their artwork.
 
 ---
 
 ### TASK-101
-Title: Presentation Scene and Snapshot Expansion
+Title: Presentation Scene Root
 
 Owner: Architect Agent / Renderer Agent / Gameplay Agent / Docs Agent
 
@@ -357,16 +357,16 @@ Status: Backlog
 Priority: Critical
 
 Description:
-Expand the Presentation Engine into a Presentation Scene that becomes the renderer-facing visual representation of the simulation.
+Expand the Presentation Engine into a Presentation Scene root that becomes the renderer-facing visual representation of the simulation.
 
 Expected Output:
-Layer-specific presentation snapshots and a scene-level presentation object registry that allow renderer layers to consume Presentation state instead of gameplay objects where practical.
+A scene-level root object that owns presentation domains and gives future camera, entity, motion, environment and renderer migration work one architectural home.
 
 Acceptance Criteria:
 - Presentation Scene exists as the root visual model between Simulation and Renderer.
 - Agent snapshots continue working.
-- Initial camera, environment, selection and UI snapshot shapes are documented or stubbed.
-- Presentation objects remain visual-only and never write back to simulation.
+- Initial camera, environment, selection and UI domains are documented or stubbed.
+- Presentation Scene update flow is separate from simulation update flow.
 - Headless simulation remains independent of Presentation.
 
 Notes:
@@ -374,6 +374,65 @@ Notes:
 - Presentation remembers; simulation decides; renderer draws.
 - Avoid a risky full renderer rewrite. Establish the scene and migrate domains incrementally.
 - This task should make later camera, motion, environment, animation and UI work share one architectural home.
+- Pair this with TASK-110 and TASK-111 before starting camera or environment work.
+
+---
+
+### TASK-110
+Title: Presentation Time and Clock
+
+Owner: Architect Agent / Renderer Agent / Performance Agent / Tester Agent
+
+Status: Backlog
+
+Priority: Critical
+
+Description:
+Introduce presentation-owned time so visual systems can advance continuously without using simulation ticks as animation clocks.
+
+Expected Output:
+A presentation clock that advances from frame delta time, remains independent from `World.update()`, and becomes the source of visual phase for camera, motion, particles, foliage, water, weather and mysteries.
+
+Acceptance Criteria:
+- Presentation time exists independently of simulation tick.
+- Pausing and simulation speed changes have documented effects on presentation time.
+- Headless simulation does not create or require presentation time.
+- Existing agent interpolation uses presentation time.
+- Future environmental systems no longer need `world.tick` as an animation clock.
+
+Notes:
+- This task directly addresses the audit finding that atmosphere still exposes simulation timing.
+- Presentation time should not become gameplay time.
+- Simulation remains responsible for day, season, weather state and event timing.
+
+---
+
+### TASK-111
+Title: Presentation Entity Registry and Snapshot Contracts
+
+Owner: Architect Agent / Renderer Agent / Gameplay Agent / Docs Agent
+
+Status: Backlog
+
+Priority: Critical
+
+Description:
+Define how long-lived Presentation Objects are registered, updated, removed and converted into immutable renderer-facing snapshots.
+
+Expected Output:
+Entity registry and snapshot contracts for agents, camera, environment, selection and UI, with clear extension points for trees, water, structures, particles and mysteries.
+
+Acceptance Criteria:
+- Presentation Objects are long-lived visual entities.
+- Snapshot contracts avoid passing mutable gameplay objects into renderer layers.
+- Presentation Objects never write back to simulation.
+- At least the existing agent presentation flow is expressed through the registry/contracts.
+- Future renderer migration tasks can target specific snapshot contracts.
+
+Notes:
+- This task splits entity ownership and snapshot design out of the broader Presentation Scene task.
+- It should reduce concept drift before sprites, animation and environmental effects arrive.
+- This task depends on TASK-101 and TASK-110.
 
 ---
 
@@ -402,7 +461,7 @@ Acceptance Criteria:
 Notes:
 - The audit identified tile-snapped camera motion as one of the largest contributors to the mechanical feel.
 - Terrain culling may remain tile based; final draw transforms should become presentation-space.
-- This task depends on TASK-101.
+- This task depends on TASK-101, TASK-110 and TASK-111.
 
 ---
 
@@ -431,7 +490,7 @@ Acceptance Criteria:
 Notes:
 - This is not a pathfinding change.
 - Presentation may smooth short timing gaps but must never invent durable movement outcomes.
-- This task depends on TASK-101 and benefits from TASK-102.
+- This task depends on TASK-101, TASK-102, TASK-110 and TASK-111.
 
 ---
 
@@ -460,7 +519,7 @@ Acceptance Criteria:
 Notes:
 - This task prepares for sprites without adding final artwork.
 - Animation should make existing behaviour readable, not create new behaviour.
-- This task depends on TASK-101 and TASK-103.
+- This task depends on TASK-101, TASK-103, TASK-110 and TASK-111.
 
 ---
 
@@ -516,7 +575,7 @@ Acceptance Criteria:
 Notes:
 - This task extends the existing dynamic environmental overlay into the Presentation Scene.
 - Simulation exposes what is happening; Presentation decides how it fades, drifts, rains, glows and breathes.
-- This task depends on TASK-101.
+- This task depends on TASK-101, TASK-110 and TASK-111.
 
 ---
 
@@ -545,7 +604,7 @@ Acceptance Criteria:
 Notes:
 - Do not rewrite the renderer all at once.
 - The renderer should become simpler over time: draw prepared presentation state.
-- This task depends on TASK-101 and should proceed layer by layer.
+- This task depends on TASK-101, TASK-110 and TASK-111, and should proceed layer by layer.
 
 ---
 
@@ -573,6 +632,7 @@ Acceptance Criteria:
 
 Notes:
 - This task should build on Presentation Scene snapshots.
+- This task depends on TASK-101 and TASK-111.
 - It should also support the existing GUI scroll stability polish direction.
 
 ---
@@ -602,7 +662,7 @@ Acceptance Criteria:
 Notes:
 - This task should happen after camera and environment timing are stable.
 - It prepares for animated trees, animated water, wind, particles and lighting without adding gameplay systems.
-- This task depends on TASK-101, TASK-102 and TASK-106.
+- This task depends on TASK-101, TASK-102, TASK-106, TASK-110 and TASK-111.
 
 ---
 

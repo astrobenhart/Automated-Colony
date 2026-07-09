@@ -183,6 +183,42 @@ The Presentation Layer should evolve in this order:
 
 This order matters. Visual content added before the Presentation Scene is ready will tend to create renderer-specific branches and hidden gameplay dependencies. Architecture should make later art easier, not trap it inside gameplay objects.
 
+The roadmap expresses this same sequence as an implementation plan:
+
+```text
+Presentation Foundations
+  -> Presentation World
+  -> Presentation Motion
+  -> Presentation Environment
+  -> Renderer Migration
+  -> Visual Content
+```
+
+This is an engineering dependency order, not merely a feature list. Each milestone should produce a usable architectural capability that the next milestone can depend on:
+
+- Foundations prove the boundary.
+- World creates the scene model and presentation time.
+- Motion makes agents feel continuous.
+- Environment makes atmosphere continuous.
+- Renderer Migration removes gameplay interpretation from draw layers.
+- Visual Content uses the completed architecture for sprites, effects and polish.
+
+If this order is violated, later work will tend to leak presentation state back into simulation or gameplay state back into renderer code.
+
+### Presentation Implementation Milestones
+
+Presentation Foundations are complete when the first renderer-facing presentation snapshots exist, the renderer consumes them, and headless simulation remains independent. TASK-99 completed this for agents.
+
+Presentation World is complete when a Presentation Scene exists, owns presentation time, owns the camera boundary, registers long-lived presentation entities and generates scene snapshots. The renderer should begin consuming scene data for at least one domain beyond agents.
+
+Presentation Motion is complete when ordinary villager movement no longer visually exposes simulation ticks. Presentation may consume movement intent, path queues, easing and facing state, but it must converge to authoritative simulation positions.
+
+Presentation Environment is complete when weather, clouds, particles, water, foliage, wind, lighting hooks and mystery effects use presentation time instead of simulation tick timing. Temporary atmosphere should never invalidate terrain caches.
+
+Renderer Migration is complete when renderer layers increasingly consume Presentation Scene data. It should happen gradually: terrain, roads, water, vegetation, structures, agents, weather, particles, selection and UI can migrate one layer at a time.
+
+Visual Content is deliberately last. Sprites, animation artwork, lighting polish, water polish, trees, clouds and effects should consume Presentation state. Artwork should not require gameplay refactors.
+
 ### Why Presentation Remembers
 
 The simulation is discrete. It can say:

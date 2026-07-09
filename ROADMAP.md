@@ -911,187 +911,326 @@ The simulation remains responsible for decisions, world state, AI, jobs, relatio
 
 Visual inspiration should come from games such as Hyper Light Drifter and Stardew Valley in terms of fluid motion, readable silhouettes, satisfying colour palettes, ambient life, and environmental storytelling. Do not copy their artwork. Learn from how their worlds feel alive even when nothing important is happening.
 
-### Phase 1 - Presentation Scene
+### Presentation Layer Implementation Plan
+
+This section is the engineering roadmap for the renderer overhaul. It is organised in three levels:
+
+1. Vision - why the Presentation Layer exists.
+2. Milestones - the order in which architecture should be built.
+3. Implementation checklists - focused work items that can become daily development tasks.
+
+Progress:
+
+- [x] Engine
+- [ ] Scene
+- [ ] Time
+- [ ] Camera
+- [ ] Entities
+- [ ] Motion
+- [ ] Animation
+- [ ] Environment
+- [ ] Renderer Migration
+- [ ] Visual Content
+
+#### Level 1 - Vision
 
 Purpose:
 
-Introduce the Presentation Scene as the renderer-facing representation of the simulation.
+Make Automated Colony feel fluid, expressive and continuous while remaining driven by deterministic simulation.
 
-The Presentation Scene is not the simulation. It is the visual memory of the simulation: the place where presentation objects persist, interpolate, animate and prepare draw-ready state.
+Principles:
 
-Features:
-
-- [x] Presentation snapshots derived from simulation state
-- [x] Snapshot-based renderer integration
-- [x] Boundary tests ensuring presentation never drives gameplay
-- [ ] Presentation Scene root object
-- [ ] Layer-specific presentation snapshots
-- [ ] Long-lived presentation object registry
-- [ ] Explicit simulation-to-presentation data flow
-- [ ] Renderer consumes Presentation Scene data where practical
-
-Notes:
-
-- The simulation remains deterministic.
+- Simulation decides.
 - Presentation remembers.
 - Presentation interpolates.
-- Presentation owns "feel"; simulation owns truth.
-- Headless simulation must remain valid without the Presentation Layer.
-- Future visual systems should plug into the Presentation Layer before adding renderer-specific branches.
-- TASK-99 established the first Presentation Engine with villager movement interpolation. This phase widens that foundation into a scene-level architecture rather than a single agent interpolation feature.
-- Renderer layers should gradually consume Presentation Scene data rather than querying gameplay objects directly.
-- Avoid a risky rewrite. Migrate one renderer-facing domain at a time.
+- Renderer draws.
+- Simulation should remain deterministic.
+- Presentation should become the only place where time flows continuously.
+- Renderer should eventually consume Presentation Scene data exclusively.
+- The renderer should eventually be replaceable without modifying simulation systems.
 
-### Phase 2 - Presentation Camera
+The end goal is not prettier graphics by themselves. The end goal is a living world whose presentation makes simulation stories readable, emotional and watchable without moving gameplay decisions into visual code.
 
-Purpose:
+#### Level 2 - Milestone Order
 
-Introduce a continuous world-space camera so viewport movement no longer exposes tile-step mechanics.
+Implementation should proceed in this order:
 
-Features:
+1. Presentation Foundations
+2. Presentation World
+3. Presentation Motion
+4. Presentation Environment
+5. Renderer Migration
+6. Visual Content
 
-- [ ] Continuous camera position
-- [ ] Sub-tile viewport offsets
-- [ ] Camera smoothing and easing
-- [ ] World-space to screen-space transform helpers
-- [ ] Mouse picking through the camera transform
-- [ ] Future cinematic camera support
+Dependencies:
 
-Notes:
+- Presentation World depends on Presentation Foundations.
+- Presentation Motion depends on Presentation World.
+- Presentation Environment depends on Presentation World.
+- Renderer Migration depends on Presentation World and should absorb Motion and Environment snapshots as they mature.
+- Visual Content depends on Renderer Migration and the relevant Presentation systems.
 
-- The simulation remains tile based.
-- The presentation camera may move continuously through tile space.
-- Terrain culling may still use tile bounds, but final draw positions should support sub-tile offsets.
-- Camera smoothing should not change gameplay selection, pathfinding, or world coordinates.
+Do not start artwork-heavy tasks until the architecture can support them cleanly.
 
-### Phase 3 - Presentation Entities
+#### Milestone 1 - Presentation Foundations
 
-Purpose:
-
-Expand Presentation ownership beyond agents.
-
-Presentation Objects should become long-lived visual entities that remember how things are currently appearing.
-
-Examples:
-
-- [ ] PresentationAgent
-- [ ] PresentationTree
-- [ ] PresentationWater
-- [ ] PresentationWeather
-- [ ] PresentationStructure
-- [ ] PresentationMystery
-- [ ] PresentationParticles
-- [ ] PresentationSelection
-- [ ] PresentationUI
-
-Notes:
-
-- Presentation Objects store visual-only continuity such as phase, opacity, easing, facing, sway, shimmer, drift, shadow and sprite state.
-- Presentation Objects must never write back to simulation.
-- Simulation can create, remove or change factual state. Presentation decides how that state appears over time.
-- Renderer should eventually draw prepared presentation entities rather than interpreting gameplay objects directly.
-
-### Phase 4 - Presentation Motion
+Status:
+Complete.
 
 Purpose:
 
-Make visible movement continuous even though the simulation remains discrete.
+Establish the first Presentation Engine between simulation and renderer.
 
-Features:
+Responsibilities:
 
-- [x] Basic villager position interpolation
-- [ ] Movement intent snapshots
-- [ ] Presentation path queues
+- Prove the Simulation -> Presentation -> Renderer boundary.
+- Keep headless simulation independent.
+- Move continuous villager movement state out of gameplay objects.
+- Provide immutable presentation snapshots for agent rendering.
+
+Completed checklist:
+
+- [x] Presentation Engine
+- [x] PresentationAgent
+- [x] PresentationSnapshot
+- [x] Agent interpolation
+- [x] Easing for basic movement
+- [x] Renderer consumes agent presentation snapshots
+- [x] Headless compatibility
+- [x] Boundary tests
+- [x] Documentation
+
+Completion criteria:
+
+- Renderer no longer asks gameplay agents for render positions.
+- Agent render-motion state no longer lives on simulation agents.
+- Headless validation can run without Presentation.
+- Focused tests prove simulation remains authoritative.
+
+Long-term architectural role:
+
+This milestone is the foundation, not the finished layer. It proves the idea with agents only. Future work should widen the same pattern instead of adding direct renderer queries.
+
+#### Milestone 2 - Presentation World
+
+Purpose:
+
+Create the Presentation Scene as the visual representation of the simulation.
+
+Responsibilities:
+
+- Hold scene-level presentation state.
+- Own presentation time.
+- Own camera presentation.
+- Register long-lived presentation entities.
+- Generate renderer-facing snapshots.
+- Define presentation ownership boundaries.
+
+Dependencies:
+
+- Depends on Presentation Foundations.
+
+Implementation checklist:
+
+- [ ] Presentation Scene root object
+- [ ] Presentation Time
+- [ ] Presentation Camera
+- [ ] Presentation Entities registry
+- [ ] World-space coordinates
+- [ ] Presentation ownership boundaries
+- [ ] Snapshot generation
+- [ ] Renderer receives scene snapshot
+- [ ] Documentation
+- [ ] Tests
+
+Completion criteria:
+
+- Presentation Scene exists as the renderer-facing root.
+- Renderer begins consuming Presentation Scene data rather than gameplay state for at least one additional domain beyond agents.
+- Presentation time exists separately from simulation tick.
+- Camera and entity boundaries are documented and tested.
+- Headless simulation remains independent.
+
+Common mistakes to avoid:
+
+- Do not make Presentation the new simulation.
+- Do not move terrain mutation, pathfinding, resource state or event authorship into Presentation.
+- Do not attempt a full renderer rewrite in one task.
+
+Long-term architectural role:
+
+Presentation World is the bridge from one interpolated feature to a true scene model. It gives all later motion, animation, environment and UI work one shared place to live.
+
+#### Milestone 3 - Presentation Motion
+
+Purpose:
+
+Make visible movement continuous without changing discrete simulation movement.
+
+Responsibilities:
+
+- Consume movement intent.
+- Maintain presentation path queues.
+- Smooth target changes.
+- Own facing interpolation.
+- Prepare idle and animation hooks.
+
+Dependencies:
+
+- Depends on Presentation World.
+- Benefits from Presentation Camera.
+
+Implementation checklist:
+
+- [ ] Motion intent snapshots
+- [ ] Path queues
+- [ ] Continuous movement
 - [ ] Speed classes
 - [ ] Easing profiles
 - [ ] Motion blending when targets change
-- [ ] Selection highlights following presentation motion
+- [ ] Facing interpolation
+- [ ] Idle behaviour hooks
+- [ ] Animation state machine hook
+- [ ] Sprite hooks
+- [ ] Selection highlight follows presentation motion
+- [ ] Tests
 
-Notes:
+Completion criteria:
 
-- Movement should appear like walking through space rather than hopping between tiles.
-- The simulation still owns actual tile positions and path decisions.
-- Presentation may smooth short gaps between simulation updates but must converge back to simulation truth.
-- Speed should be presentation-readable, not a hidden gameplay modifier.
+- Villagers no longer visually expose simulation ticks during ordinary movement.
+- Movement still converges to authoritative simulation tile positions.
+- Facing and selection presentation no longer snap unnecessarily.
+- No pathfinding or movement gameplay rules change.
 
-### Phase 5 - Presentation Animation
+Common mistakes to avoid:
 
-Purpose:
+- Do not let presentation path queues create durable movement outcomes.
+- Do not use smoothing to hide gameplay bugs.
+- Do not turn speed classes into gameplay modifiers.
 
-Introduce time-driven animation state machines before detailed sprite content arrives.
+Long-term architectural role:
 
-Features:
+Presentation Motion turns tile movement into watchable motion. It is required before sprite animation can feel believable.
 
-- [ ] Animation state machine
-- [ ] Facing state
-- [ ] Idle behaviour
-- [ ] Walking state
-- [ ] Working state
-- [ ] Shared Moment animation hooks
-- [ ] Celebration and mystery reaction hooks
-- [ ] Sprite pipeline hooks
-
-Notes:
-
-- Animation is presentation state, not gameplay state.
-- Idle villagers should feel alive through subtle visual-only behaviour such as breathing, blinking, looking around, weight shifting or small social orientation changes.
-- Future sprites should consume animation state from Presentation, not inspect gameplay objects directly.
-- Do not add dialogue, productivity bonuses or AI behaviour as part of animation work.
-
-### Phase 6 - Presentation Environment
+#### Milestone 4 - Presentation Environment
 
 Purpose:
 
-Move atmosphere, water, foliage, weather, clouds and future lighting into Presentation time.
+Move atmosphere and natural motion into Presentation time.
 
-Features:
+Responsibilities:
 
-- [ ] Time-driven weather presentation
-- [ ] Cloud movement independent of simulation tick
-- [ ] Particle systems
-- [ ] Foliage presentation objects
-- [ ] Water presentation objects
-- [ ] Wind hooks
+- Own weather presentation.
+- Own cloud movement.
+- Own wind phase.
+- Own water animation.
+- Own foliage animation.
+- Own particle lifetime.
+- Own lighting hooks.
+- Own mystery visual presentation.
+
+Dependencies:
+
+- Depends on Presentation World.
+- Should coordinate with Renderer Migration to protect terrain caches.
+
+Implementation checklist:
+
+- [ ] Presentation clock
+- [ ] Weather presentation
+- [ ] Cloud movement
+- [ ] Wind
+- [ ] Water animation
+- [ ] Tree foliage
 - [ ] Lighting hooks
-- [ ] Mystery visual presentation
-- [ ] Seasonal visual interpolation owned by Presentation where appropriate
+- [ ] Particles
+- [ ] Mystery presentation
+- [ ] Seasonal visual interpolation where appropriate
+- [ ] Tests
 
-Notes:
+Completion criteria:
 
-- Simulation exposes weather, season and mystery state.
-- Presentation owns visual phase, opacity, drift, ripple, particle lifetime, sway and glow.
-- Weather, clouds, particles and mystery lights should not use simulation tick as their animation clock long term.
-- Atmospheric presentation should never invalidate terrain caches.
+- Environmental presentation becomes independent of simulation tick timing.
+- Weather, clouds, particles and mystery visuals no longer rely on `world.tick` as their long-term animation clock.
+- Atmospheric effects do not invalidate terrain caches.
+- Simulation exposes state and intensity; Presentation owns visual phase.
 
-### Phase 7 - Renderer Migration
+Common mistakes to avoid:
+
+- Do not recolour or rebuild terrain for temporary atmosphere.
+- Do not let weather particles imply gameplay effects the simulation did not create.
+- Do not create one-off mystery, weather or foliage animation systems outside Presentation.
+
+Long-term architectural role:
+
+Presentation Environment makes the world feel alive even when villagers are still. It prepares the renderer for weather, wind, water, foliage, lighting and mysteries without gameplay refactors.
+
+#### Milestone 5 - Renderer Migration
 
 Purpose:
 
-Gradually migrate renderer layers away from querying gameplay state directly.
+Gradually migrate renderer layers away from gameplay queries and toward Presentation Scene data.
 
-Features:
+Responsibilities:
 
-- [ ] Terrain presentation boundary audit
-- [ ] Vegetation presentation snapshots
-- [ ] Structure presentation snapshots
-- [ ] Environment presentation snapshots
-- [ ] Agent and visitor presentation snapshots
-- [ ] Selection and UI presentation snapshots
+- Define renderer layer contracts.
+- Replace direct gameplay reads one layer at a time.
+- Preserve cached terrain behaviour.
+- Keep renderer stateless where practical.
+- Keep simulation independent from rendering.
+
+Dependencies:
+
+- Depends on Presentation World.
+- Should absorb Motion and Environment snapshots as those systems mature.
+
+Implementation checklist:
+
+- [ ] Terrain
+- [ ] Roads
+- [ ] Rivers
+- [ ] Lakes
+- [ ] Vegetation
+- [ ] Structures
+- [ ] Agents
+- [ ] Weather
+- [ ] Particles
+- [ ] Selection
+- [ ] UI
 - [ ] Renderer layer contracts
-- [ ] Direct gameplay-query reduction in render layers
+- [ ] Direct gameplay-query reduction audit
+- [ ] Tests
 
-Notes:
+Completion criteria:
 
-- Do not rewrite the renderer all at once.
-- Migrate one layer at a time.
-- Renderer should increasingly consume Presentation Scene data.
-- The final renderer should draw prepared presentation state rather than deciding what exists.
+- Each migrated renderer layer consumes Presentation Scene data instead of gameplay objects.
+- Renderer layer responsibilities are documented.
+- Existing visuals are preserved during migration.
+- Terrain cache behaviour remains stable.
+- Renderer no longer decides what exists; it draws prepared presentation state.
 
-### Phase 8 - Visual Overhaul
+Common mistakes to avoid:
+
+- Do not rewrite all renderer layers at once.
+- Do not duplicate gameplay state in snapshots.
+- Do not allow renderer convenience to create new gameplay dependencies.
+
+Long-term architectural role:
+
+Renderer Migration is the final architectural conversion. It turns the renderer from a gameplay interpreter into a presentation compositor.
+
+#### Milestone 6 - Visual Content
 
 Purpose:
 
 Replace debug-style visuals with a beautiful retro-inspired world after the Presentation architecture can support it.
+
+Dependencies:
+
+- Depends on Presentation World.
+- Depends on Presentation Motion for characters.
+- Depends on Presentation Environment for atmosphere.
+- Depends on Renderer Migration for clean layer ownership.
 
 Features:
 
@@ -1109,6 +1248,8 @@ Features:
 - [ ] Ambient environmental effects
 - [ ] Lighting improvements
 - [ ] Terrain polish
+- [ ] Camera polish
+- [ ] Post-processing experiments
 
 Notes:
 
@@ -1122,6 +1263,13 @@ Notes:
 - Prioritise readability and mood over visual density.
 - Build reusable visual systems before creating large amounts of content.
 - Reference Hyper Light Drifter and Stardew Valley only for presentation quality, movement, readability, atmosphere and colour confidence. Do not copy their art style.
+
+Completion criteria:
+
+- Sprites and effects consume Presentation state rather than gameplay objects.
+- Visual content does not require gameplay refactors.
+- Motion, animation, environment and camera systems remain presentation-owned.
+- The world is more enjoyable to watch without making simulation less deterministic.
 
 ## Technical Debt
 
