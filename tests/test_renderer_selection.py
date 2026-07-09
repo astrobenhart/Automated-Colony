@@ -1804,10 +1804,11 @@ def test_renderer_advances_agent_interpolation_without_world_update():
 
     renderer.update_agent_render_motion(0.05)
 
-    snapshot = renderer.presentation_engine.last_snapshot.agents[0]
+    snapshot = renderer.presentation_scene.last_snapshot.agents[0]
     render_x, render_y = snapshot.render_x, snapshot.render_y
     assert 0 < render_x < 1
     assert render_y == 0
+    assert renderer.presentation_engine is renderer.presentation_scene
 
 
 def test_renderer_advances_agent_across_multiple_path_nodes_without_logic_update():
@@ -1819,10 +1820,32 @@ def test_renderer_advances_agent_across_multiple_path_nodes_without_logic_update
 
     renderer.update_agent_render_motion(0.15)
 
-    snapshot = renderer.presentation_engine.last_snapshot.agents[0]
+    snapshot = renderer.presentation_scene.last_snapshot.agents[0]
     render_x, render_y = snapshot.render_x, snapshot.render_y
     assert 1 < render_x < 3
     assert render_y == 1
+
+
+def test_renderer_consumes_presentation_scene_for_agents(monkeypatch):
+    world = make_world(width=3, height=3)
+    agent = Agent("Ari", 1, 1, agent_id="ari")
+    world.agents.append(agent)
+    renderer = make_renderer(world)
+    consumed = []
+
+    original_snapshot_world = renderer.presentation_scene.snapshot_world
+
+    def spy_snapshot_world(world_arg):
+        snapshot = original_snapshot_world(world_arg)
+        consumed.append(snapshot)
+        return snapshot
+
+    monkeypatch.setattr(renderer.presentation_scene, "snapshot_world", spy_snapshot_world)
+
+    renderer.draw_world()
+
+    assert consumed
+    assert consumed[0].agents[0].agent_id == "ari"
 
 
 def test_renderer_reuses_cached_map_surface_between_world_ticks(monkeypatch):

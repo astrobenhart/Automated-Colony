@@ -28,6 +28,14 @@ class PresentationAgentSnapshot:
 @dataclass(frozen=True)
 class PresentationSnapshot:
     agents: tuple[PresentationAgentSnapshot, ...]
+    render_order: tuple[str, ...] = ("agents",)
+    frame_index: int = 0
+
+
+@dataclass(frozen=True)
+class PresentationFrameState:
+    frame_index: int = 0
+    time_delta: float = 0.0
 
 
 @dataclass
@@ -121,9 +129,17 @@ class PresentationAgent:
 
 
 @dataclass
-class PresentationEngine:
+class PresentationScene:
+    """Root of presentation-owned visual state.
+
+    The scene observes simulation state and owns long-lived presentation objects.
+    Gameplay systems should not depend on this class.
+    """
+
     agents: dict[str, PresentationAgent] = field(default_factory=dict)
     last_snapshot: PresentationSnapshot = field(default_factory=lambda: PresentationSnapshot(agents=()))
+    render_order: tuple[str, ...] = ("agents",)
+    frame_state: PresentationFrameState = field(default_factory=PresentationFrameState)
 
     def sync_world(self, world) -> None:
         living_agents = [agent for agent in getattr(world, "agents", ()) if getattr(agent, "alive", False)]
@@ -142,6 +158,10 @@ class PresentationEngine:
         self.last_snapshot = self.snapshot()
 
     def update(self, world, time_delta: float, tiles_per_second: float) -> PresentationSnapshot:
+        self.frame_state = PresentationFrameState(
+            frame_index=self.frame_state.frame_index + 1,
+            time_delta=max(0.0, time_delta),
+        )
         self.sync_world(world)
         for agent in self.agents.values():
             agent.advance(time_delta, tiles_per_second)
@@ -150,12 +170,18 @@ class PresentationEngine:
 
     def snapshot(self) -> PresentationSnapshot:
         return PresentationSnapshot(
-            agents=tuple(agent.snapshot() for agent in self.agents.values())
+            agents=tuple(agent.snapshot() for agent in self.agents.values()),
+            render_order=self.render_order,
+            frame_index=self.frame_state.frame_index,
         )
 
     def snapshot_world(self, world) -> PresentationSnapshot:
         self.sync_world(world)
         return self.last_snapshot
+
+
+class PresentationEngine(PresentationScene):
+    """Compatibility name for the first presentation root."""
 
 
 def smoothstep(progress: float) -> float:

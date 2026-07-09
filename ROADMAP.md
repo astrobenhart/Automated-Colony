@@ -996,6 +996,8 @@ Completed checklist:
 - [x] Agent interpolation
 - [x] Easing for basic movement
 - [x] Renderer consumes agent presentation snapshots
+- [x] Presentation Scene root object
+- [x] Presentation object lifetime for agents
 - [x] Headless compatibility
 - [x] Boundary tests
 - [x] Documentation
@@ -1032,14 +1034,16 @@ Dependencies:
 
 Implementation checklist:
 
-- [ ] Presentation Scene root object
+- [x] Presentation Scene root object
 - [ ] Presentation Time
 - [ ] Presentation Camera
-- [ ] Presentation Entities registry
+- [x] Presentation object lifetime for agents
+- [ ] General Presentation Entities registry
 - [ ] World-space coordinates
 - [ ] Presentation ownership boundaries
-- [ ] Snapshot generation
-- [ ] Renderer receives scene snapshot
+- [x] Agent snapshot generation through Presentation Scene
+- [ ] Layer-wide snapshot generation
+- [x] Renderer receives Presentation Scene snapshot for agents
 - [ ] Documentation
 - [ ] Tests
 

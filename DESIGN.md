@@ -73,11 +73,14 @@ Current implementation:
 ```text
 World / Agent simulation state
   -> PresentationEngine
+  -> PresentationScene
   -> PresentationSnapshot
   -> PygameRenderer agent layer
 ```
 
-`src.presentation.PresentationEngine` is the first concrete Presentation Engine. It observes living simulation agents, maintains persistent `PresentationAgent` objects, advances visual-only state with continuous frame time, and exposes immutable `PresentationSnapshot` data to the renderer. The renderer draws agent snapshots rather than asking gameplay agents for render positions.
+`src.presentation.PresentationScene` is the root of presentation-owned visual state. It observes living simulation agents, owns persistent `PresentationAgent` objects, advances visual-only frame state, and exposes immutable `PresentationSnapshot` data to the renderer. The renderer draws agent snapshots from the scene rather than asking gameplay agents for render positions.
+
+`PresentationEngine` remains as a compatibility name for the first scene root. New presentation work should attach to `PresentationScene`.
 
 This first implementation intentionally proves the boundary with one meaningful example: villager movement. Simulation agents still move discretely between tiles. Presentation agents interpolate smoothly from the previous rendered position to the latest simulation tile. Headless simulation does not create or require a Presentation Engine.
 
@@ -130,6 +133,8 @@ Simulation State
 The Presentation Scene should contain:
 - long-lived presentation objects
 - immutable per-frame snapshots
+- render ordering
+- frame state
 - camera state
 - environment state
 - animation state
@@ -147,6 +152,14 @@ The Presentation Scene should not contain:
 - gameplay balance
 
 The scene is allowed to remember how something looked previously. It is not allowed to decide what happened.
+
+Current implementation:
+- `PresentationScene` owns `PresentationAgent` lifetime.
+- `PresentationScene.render_order` defines the initial presentation layer order.
+- `PresentationScene.frame_state` records presentation frame index and frame delta.
+- `PresentationScene.snapshot_world(...)` generates renderer-facing snapshots.
+- `PygameRenderer` owns a `presentation_scene` and consumes it for agent rendering.
+- Headless simulation does not construct or require a Presentation Scene.
 
 ### Architectural Evolution
 

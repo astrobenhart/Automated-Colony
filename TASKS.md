@@ -352,7 +352,7 @@ Title: Presentation Scene Root
 
 Owner: Architect Agent / Renderer Agent / Gameplay Agent / Docs Agent
 
-Status: Backlog
+Status: Complete
 
 Priority: Critical
 
@@ -375,6 +375,10 @@ Notes:
 - Avoid a risky full renderer rewrite. Establish the scene and migrate domains incrementally.
 - This task should make later camera, motion, environment, animation and UI work share one architectural home.
 - Pair this with TASK-110 and TASK-111 before starting camera or environment work.
+- Implemented as `PresentationScene`, the root owner of presentation agents, frame state, render order and scene snapshots.
+- `PresentationEngine` remains as a compatibility name for the first scene root.
+- `PygameRenderer` now owns `presentation_scene` and consumes scene snapshots for agent rendering.
+- This task establishes the root node; general presentation time, camera and full entity registry work remain in TASK-110, TASK-102 and TASK-111.
 
 ---
 
