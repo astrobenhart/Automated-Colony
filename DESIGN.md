@@ -111,6 +111,222 @@ Non-responsibilities:
 
 Future implementation should treat presentation data as derived state. If the presentation layer is removed, the simulation should still produce the same village history.
 
+### Presentation Scene
+
+The Presentation Scene is the long-term renderer-facing representation of the simulation.
+
+It exists because a renderer should not need to understand the full gameplay model. The simulation may contain households, jobs, pathfinding, weather events, mysteries, memories, family lineage, task state, farms, water tiles and construction rules. The renderer should receive draw-ready presentation state: what visual entities exist, where they currently appear, which animation state they are in, which overlay effects are active and which camera transform should be used.
+
+The Presentation Scene should eventually sit here:
+
+```text
+Simulation State
+  -> Presentation Engine
+  -> Presentation Scene
+  -> Renderer Layers
+  -> Screen
+```
+
+The Presentation Scene should contain:
+- long-lived presentation objects
+- immutable per-frame snapshots
+- camera state
+- environment state
+- animation state
+- visual-only timing
+- renderer-facing layer data
+
+The Presentation Scene should not contain:
+- job selection
+- pathfinding decisions
+- resource creation
+- household rules
+- birth or death logic
+- Chronicle authorship
+- terrain mutation
+- gameplay balance
+
+The scene is allowed to remember how something looked previously. It is not allowed to decide what happened.
+
+### Architectural Evolution
+
+The Presentation Layer should evolve in this order:
+
+```text
+1. Presentation Engine
+   established by TASK-99 for villager movement interpolation
+
+2. Presentation Scene
+   one renderer-facing visual model for the current frame
+
+3. Presentation Camera
+   continuous world-space viewport and sub-tile transforms
+
+4. Presentation Entities
+   long-lived visual objects beyond agents
+
+5. Presentation Motion
+   movement intent, path queues, easing and blending
+
+6. Presentation Animation
+   idle, walk, work, shared moment, celebration and mystery animation states
+
+7. Presentation Environment
+   weather, clouds, particles, foliage, water, wind and lighting hooks
+
+8. Renderer Migration
+   renderer layers consume Presentation Scene data instead of gameplay state
+
+9. Visual Content
+   sprites, artwork, effects and polish built on the architecture
+```
+
+This order matters. Visual content added before the Presentation Scene is ready will tend to create renderer-specific branches and hidden gameplay dependencies. Architecture should make later art easier, not trap it inside gameplay objects.
+
+### Why Presentation Remembers
+
+The simulation is discrete. It can say:
+- the villager moved to tile `(10, 7)`
+- rain began
+- a tree exists here
+- a fire ceremony is active
+- a strange light was witnessed
+
+Presentation needs memory to make those facts feel continuous:
+- where the villager was visually a moment ago
+- how quickly they are easing toward the new position
+- which way they were facing before turning
+- how strong the rain opacity was last frame
+- what phase the tree sway is in
+- how bright the mystery glow is becoming
+
+That memory should live in Presentation Objects. It should not be written back into simulation. This keeps deterministic gameplay clean while allowing the visual layer to feel alive.
+
+### Presentation Camera
+
+The simulation should remain tile based, but the camera should become world-space presentation state.
+
+Long-term camera flow:
+
+```text
+input or target entity
+  -> camera target in world coordinates
+  -> smoothed presentation camera
+  -> viewport transform
+  -> renderer draw positions
+```
+
+The camera should support:
+- sub-tile positioning
+- smoothing
+- easing
+- future cinematic framing
+- future camera shake
+- stable mouse picking through inverse transforms
+
+Camera motion belongs to Presentation because it changes how the player sees the world, not what the world is. A smoothed camera should never change pathfinding, selection truth, villager position, terrain state or simulation timing.
+
+### Presentation Entities
+
+Presentation Entities are long-lived visual objects derived from simulation facts.
+
+Examples:
+- a living villager becomes a `PresentationAgent`
+- a forest tile may become a `PresentationTree`
+- a river segment may become a `PresentationWater` object
+- an active weather state may become `PresentationWeather`
+- a strange light event may become `PresentationMystery`
+- a selected villager may become `PresentationSelection`
+- a Chronicle notification may become a UI presentation object
+
+These entities exist so visual state can persist across frames. They may own animation phase, opacity, facing, easing progress, particle emitters, glow strength, shadow offsets or sprite selection. They must not create or remove gameplay facts.
+
+### Presentation Motion
+
+Motion should move toward simulation truth without exposing every simulation tick.
+
+The current movement interpolation observes tile position changes. Future motion should consume movement intent where available:
+
+```text
+simulation tile position and path intent
+  -> presentation path queue
+  -> continuous position
+  -> animation state
+  -> renderer draw position
+```
+
+The simulation remains authoritative. Presentation may smooth short gaps, blend target changes and choose easing curves, but it must converge to the current simulation position.
+
+### Presentation Animation
+
+Animation state should be derived from simulation state but advanced by presentation time.
+
+Examples:
+- `current_goal = Build` may imply a working animation
+- `shared_moment = Conversation` may imply a talking or listening animation
+- `visitor_status = Departing` may imply walking with travel posture
+- `celebration attendance` may imply watching, warming or mourning animation
+- `mystery witness` may imply looking or pausing animation
+
+The simulation should expose the factual state. Presentation should choose the animation interpretation. The renderer should draw the selected frame.
+
+Animation must not add productivity, survival effects, dialogue, romance mechanics, schedules or AI.
+
+### Presentation Environment
+
+Environment presentation should be driven by continuous presentation time.
+
+The simulation should expose stable factual values:
+- weather state
+- weather intensity
+- season
+- day of season
+- active environmental events
+- active mysteries
+- durable terrain facts
+
+Presentation should own:
+- rain particles
+- snow particles
+- cloud movement
+- fog opacity
+- water ripples
+- foliage sway
+- falling leaves
+- mystery glow
+- lighting overlays
+- wind phase
+
+This separation prevents atmospheric effects from invalidating terrain caches and prevents visual motion from speeding up or freezing merely because simulation tick rate changed.
+
+### Renderer Migration
+
+The renderer currently still queries gameplay state directly in many places. Migration should be gradual and layer-based.
+
+Preferred long-term flow:
+
+```text
+World
+  -> Presentation Scene
+  -> TerrainPresentationSnapshot
+  -> VegetationPresentationSnapshot
+  -> StructurePresentationSnapshot
+  -> EnvironmentPresentationSnapshot
+  -> AgentPresentationSnapshot
+  -> UIPresentationSnapshot
+  -> Renderer
+```
+
+Renderer migration rules:
+- migrate one layer at a time
+- keep headless simulation independent
+- avoid large rewrites that obscure behaviour
+- do not move gameplay decisions into presentation snapshots
+- do not let renderer layers infer gameplay events from visual proximity
+- keep cached terrain protected from transient atmosphere
+
+The final renderer should become simpler. It should draw what the Presentation Scene gives it.
+
 ### Presentation Snapshots
 
 Presentation snapshots are immutable renderer-facing descriptions of what should be drawn now. They deliberately avoid exposing full gameplay objects.

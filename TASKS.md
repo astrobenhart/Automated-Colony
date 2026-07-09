@@ -341,7 +341,268 @@ Notes:
 - The world should feel alive even when nothing important is happening.
 - Prefer reusable visual systems over feature-specific renderer branches.
 - Prioritise readability, mood, and memorable moments over visual density.
-- This task depends on TASK-99.
+- This task depends on TASK-99 through TASK-109. Visual content should not arrive before the Presentation Scene, camera, motion, animation, environment and renderer snapshot boundaries can support it.
+- Sprite and artwork systems should consume Presentation state, not gameplay objects directly.
+- Hyper Light Drifter and Stardew Valley are references for movement, readability, atmosphere and colour confidence only; do not copy their artwork.
+
+---
+
+### TASK-101
+Title: Presentation Scene and Snapshot Expansion
+
+Owner: Architect Agent / Renderer Agent / Gameplay Agent / Docs Agent
+
+Status: Backlog
+
+Priority: Critical
+
+Description:
+Expand the Presentation Engine into a Presentation Scene that becomes the renderer-facing visual representation of the simulation.
+
+Expected Output:
+Layer-specific presentation snapshots and a scene-level presentation object registry that allow renderer layers to consume Presentation state instead of gameplay objects where practical.
+
+Acceptance Criteria:
+- Presentation Scene exists as the root visual model between Simulation and Renderer.
+- Agent snapshots continue working.
+- Initial camera, environment, selection and UI snapshot shapes are documented or stubbed.
+- Presentation objects remain visual-only and never write back to simulation.
+- Headless simulation remains independent of Presentation.
+
+Notes:
+- This is the first task after the audit because the current Presentation Engine is agent-only.
+- Presentation remembers; simulation decides; renderer draws.
+- Avoid a risky full renderer rewrite. Establish the scene and migrate domains incrementally.
+- This task should make later camera, motion, environment, animation and UI work share one architectural home.
+
+---
+
+### TASK-102
+Title: Presentation Camera and World-Space Viewport
+
+Owner: Renderer Agent / Architect Agent / UX Agent / Tester Agent
+
+Status: Backlog
+
+Priority: Critical
+
+Description:
+Introduce a continuous world-space presentation camera with smoothing, sub-tile positioning and viewport transforms.
+
+Expected Output:
+A camera presentation object that can move smoothly through world space while the simulation remains tile based.
+
+Acceptance Criteria:
+- Camera has continuous world-space position.
+- Renderer can apply sub-tile viewport offsets.
+- Mouse picking works through the camera transform.
+- Camera smoothing does not change gameplay selection, pathfinding or simulation state.
+- Future cinematic camera and camera shake can build on the same system.
+
+Notes:
+- The audit identified tile-snapped camera motion as one of the largest contributors to the mechanical feel.
+- Terrain culling may remain tile based; final draw transforms should become presentation-space.
+- This task depends on TASK-101.
+
+---
+
+### TASK-103
+Title: Agent Motion Intent and Presentation Path Queues
+
+Owner: Renderer Agent / Gameplay Agent / Architect Agent / Tester Agent
+
+Status: Backlog
+
+Priority: High
+
+Description:
+Extend agent presentation motion beyond simple tile-position interpolation by allowing Presentation to consume short movement intent and path queues.
+
+Expected Output:
+Villager visual motion that remains continuous across discrete simulation updates while converging to authoritative simulation positions.
+
+Acceptance Criteria:
+- Simulation remains authoritative for path decisions and tile positions.
+- Presentation can maintain visual path queues.
+- Movement speed and easing are presentation state.
+- Target changes blend without visible snapping where practical.
+- Headless simulation is unaffected.
+
+Notes:
+- This is not a pathfinding change.
+- Presentation may smooth short timing gaps but must never invent durable movement outcomes.
+- This task depends on TASK-101 and benefits from TASK-102.
+
+---
+
+### TASK-104
+Title: Presentation Animation State Machine
+
+Owner: Renderer Agent / Architect Agent / UX Agent / Tester Agent
+
+Status: Backlog
+
+Priority: High
+
+Description:
+Introduce time-driven animation state derived from simulation facts such as action, goal, shared moment, celebration attendance, visitor state and mystery reaction.
+
+Expected Output:
+A reusable presentation animation state machine that future sprites can consume.
+
+Acceptance Criteria:
+- Animation state is presentation-owned.
+- Simulation exposes factual state only.
+- Renderer consumes animation state rather than gameplay internals.
+- Idle, walking, working, resting, watching and ceremony-facing hooks are represented.
+- No productivity, survival, schedule or AI behaviour changes are introduced.
+
+Notes:
+- This task prepares for sprites without adding final artwork.
+- Animation should make existing behaviour readable, not create new behaviour.
+- This task depends on TASK-101 and TASK-103.
+
+---
+
+### TASK-105
+Title: Idle Life Presentation
+
+Owner: Renderer Agent / UX Agent / Narrative Agent / Tester Agent
+
+Status: Backlog
+
+Priority: High
+
+Description:
+Add presentation-only idle life so non-moving villagers no longer appear frozen.
+
+Expected Output:
+Visual-only idle behaviours such as breathing, blinking, looking around, weight shifting and subtle social orientation hooks.
+
+Acceptance Criteria:
+- Idle presentation never interrupts survival, work or movement.
+- Idle motion is driven by Presentation time.
+- Idle state can reflect existing shared moments, gatherings, celebrations and mystery reactions.
+- No new AI, dialogue or social scheduling is introduced.
+
+Notes:
+- The audit identified frozen idle villagers as a major source of lifelessness.
+- This task should build on TASK-104 rather than creating one-off renderer effects.
+
+---
+
+### TASK-106
+Title: Time-Driven Environmental Presentation
+
+Owner: Renderer Agent / Performance Agent / Architect Agent / Tester Agent
+
+Status: Backlog
+
+Priority: High
+
+Description:
+Move weather, clouds, particles, fog, Strange Lights and other atmospheric effects from simulation-tick animation to Presentation time.
+
+Expected Output:
+Environmental presentation objects that consume simulation state and own visual phase, opacity, drift, particle lifetime and glow.
+
+Acceptance Criteria:
+- Weather state remains simulation-owned.
+- Weather animation is presentation-owned.
+- Clouds and particles no longer use `world.tick` as the long-term animation clock.
+- Atmospheric effects do not invalidate terrain caches.
+- Strange Lights and future mysteries can use the same environmental presentation architecture.
+
+Notes:
+- This task extends the existing dynamic environmental overlay into the Presentation Scene.
+- Simulation exposes what is happening; Presentation decides how it fades, drifts, rains, glows and breathes.
+- This task depends on TASK-101.
+
+---
+
+### TASK-107
+Title: Renderer Snapshot Boundary Migration
+
+Owner: Architect Agent / Renderer Agent / Performance Agent / Tester Agent
+
+Status: Backlog
+
+Priority: High
+
+Description:
+Gradually migrate renderer layers away from direct gameplay queries and toward Presentation Scene snapshots.
+
+Expected Output:
+Renderer layer contracts that consume prepared Presentation data for one layer at a time.
+
+Acceptance Criteria:
+- Direct world queries in renderer layers are audited and prioritised.
+- At least one additional renderer layer consumes Presentation snapshots.
+- No gameplay decisions are moved into renderer code.
+- Terrain cache behaviour remains stable.
+- Migration plan preserves existing visuals.
+
+Notes:
+- Do not rewrite the renderer all at once.
+- The renderer should become simpler over time: draw prepared presentation state.
+- This task depends on TASK-101 and should proceed layer by layer.
+
+---
+
+### TASK-108
+Title: Selection and UI Presentation
+
+Owner: UX Agent / Renderer Agent / Architect Agent / Tester Agent
+
+Status: Backlog
+
+Priority: Medium
+
+Description:
+Separate gameplay selection truth from visual selection and UI presentation.
+
+Expected Output:
+Selection highlights, recent history, notifications and diagnostics that can present smoothly and remain stable while still reflecting simulation truth.
+
+Acceptance Criteria:
+- Selection highlights can follow presentation positions.
+- Gameplay selection remains authoritative.
+- Recent events and Chronicle notifications can use presentation view models.
+- Diagnostics refreshes do not destabilise UI layout.
+- No gameplay or Chronicle authorship changes are introduced.
+
+Notes:
+- This task should build on Presentation Scene snapshots.
+- It should also support the existing GUI scroll stability polish direction.
+
+---
+
+### TASK-109
+Title: Foliage and Water Presentation Objects
+
+Owner: Renderer Agent / Worldgen Agent / Performance Agent / Tester Agent
+
+Status: Backlog
+
+Priority: Medium
+
+Description:
+Introduce persistent presentation objects for trees, foliage and water so natural features can animate continuously without terrain cache churn.
+
+Expected Output:
+Presentation-owned foliage and water visual state such as sway phase, seasonal colour targets, ripple phase, shoreline shimmer and weather intensity response.
+
+Acceptance Criteria:
+- Terrain remains the durable physical world.
+- Foliage and water animation are presentation-owned.
+- Weather and wind can influence presentation without changing terrain.
+- Terrain caches are not invalidated by foliage or water animation.
+- Future sprites and lighting can use the same presentation objects.
+
+Notes:
+- This task should happen after camera and environment timing are stable.
+- It prepares for animated trees, animated water, wind, particles and lighting without adding gameplay systems.
+- This task depends on TASK-101, TASK-102 and TASK-106.
 
 ---
 
