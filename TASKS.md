@@ -519,25 +519,30 @@ Title: Action Intent Contracts
 
 Owner: Gameplay Agent / Architect Agent / Renderer Agent / Tester Agent
 
-Status: Backlog
+Status: Complete
 
 Priority: High
 
 Description:
-Extend the Intent Layer beyond walking so simulation actions such as harvesting, building, depositing resources, eating, drinking, sleeping and resting expose presentation-facing action intent.
+Extend the Intent Layer beyond walking so representative simulation actions expose presentation-facing action intent and can be performed by Presentation Actions.
 
 Expected Output:
-Reusable action intent objects that describe what a villager is attempting without moving action logic, resource mutation or task decisions into Presentation.
+Reusable action intent objects and Presentation Actions that describe what a villager is attempting without moving action logic, resource mutation or task decisions into Presentation.
 
 Acceptance Criteria:
 - Simulation remains authoritative for action success and world changes.
 - Presentation can observe action intent for animation and timing.
 - Action intent never creates resources, changes needs or completes work.
+- Presentation Actions expose lifecycle phase and progress.
 - Headless simulation remains unaffected.
 
 Notes:
 - This should build on `AgentIntent` and `IntentQueue`.
 - Keep queues short and rolling; do not schedule entire days.
+- Implemented representative Harvest, Deposit, Eat and Sleep action intent.
+- Implemented `PresentationAction` with Waiting, Starting, Performing, Finishing and Complete phases.
+- `PresentationAgentSnapshot` exposes presentation action state for renderer and future animation work.
+- Build, Drink, Rest, Craft, Trade, Fish and future social/mystery actions should extend the same execution model rather than creating one-off renderer state.
 
 ---
 
@@ -564,6 +569,7 @@ Acceptance Criteria:
 
 Notes:
 - This narrows TASK-104 by defining the intent-to-animation boundary first.
+- Animation mapping should consume `PresentationAction` state where available.
 - Avoid adding final artwork in this task.
 
 ---
@@ -591,7 +597,62 @@ Acceptance Criteria:
 
 Notes:
 - This should happen after action intent and animation mapping are stable.
+- Social and mystery hooks should become Presentation Actions where they represent visible participation.
 - Intent should describe participation, not create events.
+
+---
+
+### TASK-115
+Title: Expanded Presentation Actions
+
+Owner: Gameplay Agent / Renderer Agent / Architect Agent / Tester Agent
+
+Status: Backlog
+
+Priority: Medium
+
+Description:
+Extend Presentation Actions to additional existing and future activities such as building, drinking, resting, crafting, trading, fishing, reading and play.
+
+Expected Output:
+Additional action intent mappings that reuse the established Presentation Action lifecycle without changing simulation outcomes.
+
+Acceptance Criteria:
+- New actions reuse `PresentationAction`.
+- Gameplay outcomes remain simulation-owned.
+- Renderer continues consuming presentation snapshots.
+- Headless simulation remains unaffected.
+
+Notes:
+- Add actions only when the simulation already exposes a factual state or future feature requires a visual hook.
+- Do not add gameplay mechanics merely to justify a presentation action.
+
+---
+
+### TASK-116
+Title: Social Presentation Actions
+
+Owner: Narrative Agent / Renderer Agent / Architect Agent / Tester Agent
+
+Status: Backlog
+
+Priority: Medium
+
+Description:
+Map existing social states such as shared moments, celebrations, funeral attendance, companionship and mystery witnessing into Presentation Actions.
+
+Expected Output:
+Social Presentation Actions that make existing community behaviour visually readable without adding social scheduling or dialogue.
+
+Acceptance Criteria:
+- Existing social systems remain authoritative.
+- Presentation Actions describe participation and visual performance only.
+- No new relationship mechanics, dialogue or event scheduling are introduced.
+- Future sprites and animations can consume the same action state.
+
+Notes:
+- This should build on TASK-114 and the `PresentationAction` lifecycle.
+- Ordinary gatherings should remain light; meaningful ceremonies and mysteries deserve clearer presentation hooks.
 
 ---
 

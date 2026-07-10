@@ -1890,6 +1890,25 @@ def test_renderer_consumes_presentation_scene_for_agents(monkeypatch):
     assert consumed[0].agents[0].agent_id == "ari"
 
 
+def test_renderer_receives_presentation_action_state(monkeypatch):
+    world = make_world(width=3, height=3)
+    agent = Agent("Ari", 1, 1, agent_id="ari", current_action="Eating")
+    world.agents.append(agent)
+    renderer = make_renderer(world)
+    consumed = []
+
+    def spy_draw_agent_symbol(agent, x, y, offset=(0, 0)):
+        consumed.append(agent)
+
+    monkeypatch.setattr(renderer, "draw_agent_symbol", spy_draw_agent_symbol)
+
+    renderer.update_agent_render_motion(0.20)
+    renderer.draw_world()
+
+    assert consumed[0].presentation_action == "Eating"
+    assert consumed[0].presentation_action_state == "Performing"
+
+
 def test_renderer_reuses_cached_map_surface_between_world_ticks(monkeypatch):
     world = make_world(width=3, height=3)
     renderer = make_renderer(world)

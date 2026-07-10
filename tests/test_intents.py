@@ -1,6 +1,16 @@
 from src.actions import _step_along_path
 from src.agent import Agent
-from src.intents import IntentQueue, WALK_INTENT, movement_intent_for
+from src.intents import (
+    DEPOSIT_INTENT,
+    EAT_INTENT,
+    HARVEST_INTENT,
+    SLEEP_INTENT,
+    IntentQueue,
+    WALK_INTENT,
+    action_intent_for,
+    intent_queue_for,
+    movement_intent_for,
+)
 from src.presentation import PresentationScene
 from src.simulation_runner import SimulationRunner
 from src.tile import Tile
@@ -24,6 +34,32 @@ def test_movement_intent_is_created_from_simulation_path_state():
     assert intent.label == "Moving to field"
     assert intent.target == (4, 0)
     assert intent.path == ((1, 0), (2, 0), (3, 0), (4, 0))
+
+
+def test_action_intents_are_created_from_simulation_action_state():
+    examples = [
+        ("Harvesting farm", HARVEST_INTENT),
+        ("Depositing", DEPOSIT_INTENT),
+        ("Eating", EAT_INTENT),
+        ("Sleeping", SLEEP_INTENT),
+    ]
+
+    for action, expected_kind in examples:
+        intent = action_intent_for(Agent("Ari", 1, 0, current_action=action))
+
+        assert intent.kind == expected_kind
+        assert intent.label == action
+        assert intent.target == (1, 0)
+
+
+def test_intent_queue_places_movement_before_action_execution():
+    agent = Agent("Ari", 0, 0, current_action="Harvesting farm")
+    agent.current_target = (2, 0)
+    agent.current_path = [(1, 0), (2, 0)]
+
+    queue = intent_queue_for(agent)
+
+    assert [intent.kind for intent in queue.items] == [WALK_INTENT, HARVEST_INTENT]
 
 
 def test_intent_queue_replaces_with_rolling_lookahead_limit():
@@ -55,6 +91,41 @@ def test_presentation_consumes_movement_intent_without_waiting_for_tile_updates(
     assert presented.tile_x == 0
     assert 2 < presented.render_x < 3
     assert scene.intent_queues["ari"].peek().target == (4, 0)
+
+
+def test_presentation_action_lifecycle_progresses_without_changing_simulation():
+    world = make_world(width=3, height=1)
+    agent = Agent("Ari", 1, 0, agent_id="ari", current_action="Harvesting")
+    world.agents.append(agent)
+    scene = PresentationScene()
+
+    first = scene.update(world, 0.10, tiles_per_second=4.0).agents[0]
+    second = scene.update(world, 0.80, tiles_per_second=4.0).agents[0]
+    final = scene.update(world, 1.00, tiles_per_second=4.0).agents[0]
+
+    assert first.presentation_action == "Harvesting"
+    assert first.presentation_action_state == "Starting"
+    assert second.presentation_action_state == "Performing"
+    assert final.presentation_action_state == "Complete"
+    assert final.presentation_action_progress == 1.0
+    assert agent.current_action == "Harvesting"
+    assert (agent.x, agent.y) == (1, 0)
+
+
+def test_presentation_action_transition_resets_lifecycle():
+    world = make_world(width=3, height=1)
+    agent = Agent("Ari", 1, 0, agent_id="ari", current_action="Eating")
+    world.agents.append(agent)
+    scene = PresentationScene()
+
+    eating = scene.update(world, 0.60, tiles_per_second=4.0).agents[0]
+    agent.current_action = "Sleeping"
+    sleeping = scene.update(world, 0.10, tiles_per_second=4.0).agents[0]
+
+    assert eating.presentation_action == "Eating"
+    assert eating.presentation_action_progress > sleeping.presentation_action_progress
+    assert sleeping.presentation_action == "Sleeping"
+    assert sleeping.presentation_action_state == "Starting"
 
 
 def test_simulation_path_step_remains_authoritative_and_deterministic():

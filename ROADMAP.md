@@ -1074,7 +1074,7 @@ Presentation World is the bridge from one interpolated feature to a true scene m
 #### Milestone 3 - Intent Layer
 
 Status:
-Complete for the first movement workflow.
+Complete for the first movement and presentation-action workflows.
 
 Purpose:
 
@@ -1099,10 +1099,17 @@ Implementation checklist:
 - [x] Movement intent from simulation path state
 - [x] Presentation-owned per-agent intent queues
 - [x] Presentation movement consumes intent
+- [x] Intent Execution
+- [x] Presentation Action lifecycle
+- [x] Walk action
+- [x] Harvest action
+- [x] Deposit action
+- [x] Eat action
+- [x] Sleep action
 - [x] Headless compatibility
 - [x] Documentation
 - [x] Tests
-- [ ] Action intent
+- [x] Action intent
 - [ ] Animation intent
 - [ ] Social and mystery intent hooks
 
@@ -1110,7 +1117,9 @@ Completion criteria:
 
 - Intent exists between Simulation and Presentation.
 - Movement demonstrates the contract.
+- Presentation Actions demonstrate execution.
 - Presentation can perform a walking intent through continuous presentation time.
+- Presentation can expose action phase and progress without changing gameplay.
 - Simulation remains deterministic and authoritative.
 - Renderer does not consume Intent directly.
 
@@ -1123,7 +1132,7 @@ Common mistakes to avoid:
 
 Long-term architectural role:
 
-Intent is the vocabulary Presentation uses to understand what villagers are trying to do. Future animation, idle life, celebrations, mysteries, companionship and cinematic camera work should observe Intent rather than reaching into gameplay internals.
+Intent is the vocabulary Presentation uses to understand what villagers are trying to do. Presentation Actions are how that vocabulary becomes visible performance. Future animation, idle life, celebrations, mysteries, companionship and cinematic camera work should observe Intent and Presentation Actions rather than reaching into gameplay internals.
 
 #### Milestone 4 - Presentation Motion
 
@@ -1134,6 +1143,7 @@ Make visible movement continuous by performing Intent without changing discrete 
 Responsibilities:
 
 - Consume movement intent.
+- Execute Presentation Actions.
 - Maintain presentation path queues.
 - Smooth target changes.
 - Own facing interpolation.
@@ -1148,6 +1158,7 @@ Dependencies:
 Implementation checklist:
 
 - [x] Motion intent snapshots
+- [x] Presentation Action snapshots
 - [x] Path queues
 - [x] Continuous movement for walking intent
 - [ ] Speed classes

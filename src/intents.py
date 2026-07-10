@@ -4,6 +4,11 @@ from dataclasses import dataclass, field
 
 
 WALK_INTENT = "walk"
+HARVEST_INTENT = "harvest"
+DEPOSIT_INTENT = "deposit"
+EAT_INTENT = "eat"
+SLEEP_INTENT = "sleep"
+ACTION_INTENTS = {HARVEST_INTENT, DEPOSIT_INTENT, EAT_INTENT, SLEEP_INTENT}
 
 
 @dataclass(frozen=True)
@@ -67,9 +72,28 @@ def movement_intent_for(agent) -> AgentIntent | None:
 def intent_queue_for(agent) -> IntentQueue:
     queue = IntentQueue()
     movement_intent = movement_intent_for(agent)
-    if movement_intent is not None:
-        queue.replace([movement_intent])
+    action_intent = action_intent_for(agent)
+    queue.replace([intent for intent in (movement_intent, action_intent) if intent is not None])
     return queue
+
+
+def action_intent_for(agent) -> AgentIntent | None:
+    source_action = getattr(agent, "current_action", "") or ""
+    source_goal = getattr(agent, "current_goal", "") or ""
+    kind = _action_kind(source_action)
+    if kind is None:
+        return None
+
+    position = (getattr(agent, "x", 0), getattr(agent, "y", 0))
+    intent_id = f"{kind}:{position}:{source_action}:{source_goal}"
+    return AgentIntent(
+        intent_id=intent_id,
+        kind=kind,
+        label=_action_label(kind, source_action),
+        target=position,
+        source_action=source_action,
+        source_goal=source_goal,
+    )
 
 
 def _movement_label(source_action: str, source_goal: str, target: tuple[int, int] | None) -> str:
@@ -80,3 +104,27 @@ def _movement_label(source_action: str, source_goal: str, target: tuple[int, int
     if target is not None:
         return f"Walk to {target[0]},{target[1]}"
     return "Walk"
+
+
+def _action_kind(source_action: str) -> str | None:
+    normalized = source_action.lower()
+    if "harvest" in normalized:
+        return HARVEST_INTENT
+    if "deposit" in normalized:
+        return DEPOSIT_INTENT
+    if "eat" in normalized:
+        return EAT_INTENT
+    if "sleep" in normalized:
+        return SLEEP_INTENT
+    return None
+
+
+def _action_label(kind: str, source_action: str) -> str:
+    if source_action:
+        return source_action
+    return {
+        HARVEST_INTENT: "Harvest",
+        DEPOSIT_INTENT: "Deposit",
+        EAT_INTENT: "Eat",
+        SLEEP_INTENT: "Sleep",
+    }.get(kind, kind.title())

@@ -125,8 +125,10 @@ Current implementation:
 - `src.intents.AgentIntent` describes one behavioural intent.
 - `src.intents.IntentQueue` stores a short rolling queue.
 - `movement_intent_for(agent)` derives the first walking intent from `current_target` and `current_path`.
+- `action_intent_for(agent)` derives representative action intent for Harvest, Deposit, Eat and Sleep from existing simulation action labels.
 - `PresentationScene.intent_queues` owns per-agent intent queues as optional presentation-facing state.
 - `PresentationAgent` consumes walking intent as a visual waypoint queue while simulation remains authoritative.
+- `PresentationAction` executes intent through a presentation-only action lifecycle.
 
 Intent lifecycle:
 
@@ -141,12 +143,69 @@ Simulation updates agent action, goal, target and path
 Rolling look-ahead should remain short. The simulation may revise future intent whenever needs, blocked paths, resources, celebrations, mysteries or emergencies change. Presentation may finish or blend the current visual segment, but it must not create durable movement outcomes that the simulation did not allow.
 
 Future extensions:
-- Action Intent: harvest, build, deposit resources, eat, drink, sleep and rest.
+- Expanded Action Intent: build, drink, rest, craft, trade, fish and other future activities.
 - Animation Intent: walking, working, carrying, watching, warming, mourning and socialising.
 - Social Intent: spend free time together, attend celebrations, observe mysteries or join shared moments.
 - Cinematic Intent: camera following, framing and replay hooks that observe what the villager is trying to do.
 
 Intent should make the simulation more readable, not more complex. It is a contract for presentation, not a new planner.
+
+### Intent Execution
+
+Intent Execution is how Presentation performs intent without changing gameplay.
+
+```text
+Simulation
+  -> Intent
+  -> Presentation Action
+  -> Presentation Snapshot
+  -> Renderer
+```
+
+Simulation remains responsible for gameplay outcomes: harvest yield, deposited resources, hunger reduction, sleep recovery, job completion, inventory changes, family state, memories and Chronicle events.
+
+Presentation owns how the intent appears: current presentation action, timing, progress, phase, transitions, future animation hooks and future particles or sound cues.
+
+Presentation Actions follow this lifecycle:
+
+```text
+Waiting
+  -> Starting
+  -> Performing
+  -> Finishing
+  -> Complete
+```
+
+Current implementation:
+- Walk is a Presentation Action backed by movement intent and a waypoint queue.
+- Harvest, Deposit, Eat and Sleep are Presentation Actions backed by existing simulation action labels.
+- `PresentationAgentSnapshot` exposes `presentation_action`, `presentation_action_state` and `presentation_action_progress`.
+- The renderer receives action state through Presentation snapshots. It does not inspect gameplay action rules.
+
+Action transitions:
+
+```text
+Walk
+  -> Harvest
+  -> Walk
+  -> Deposit
+```
+
+Presentation should reset or blend action lifecycle state when intent changes. It may make a transition feel readable, but it must not delay or force gameplay outcomes. If the simulation changes from Harvest to Sleep because the villager became exhausted, Presentation follows the new intent; it does not argue with the simulation.
+
+Future Presentation Actions should plug into the same lifecycle:
+- Chat
+- Rest
+- Celebrate
+- Observe Mystery
+- Attend Funeral
+- Play
+- Read
+- Craft
+- Trade
+- Fish
+
+The rule is simple: gameplay facts belong to Simulation; visible performance belongs to Presentation.
 
 ### Presentation Layer Responsibilities
 
@@ -265,7 +324,7 @@ The Presentation Layer should evolve in this order:
    long-lived visual objects beyond agents
 
 6. Presentation Motion
-   movement intent, path queues, easing and blending
+   movement intent, presentation actions, path queues, easing and blending
 
 7. Presentation Animation
    idle, walk, work, shared moment, celebration and mystery animation states
@@ -312,7 +371,7 @@ Presentation World is complete when a Presentation Scene exists, owns presentati
 
 Intent Layer is complete when simulation-derived intent queues exist, movement intent demonstrates the contract, Presentation can consume intent without changing gameplay truth and headless simulation remains independent.
 
-Presentation Motion is complete when ordinary villager movement no longer visually exposes simulation ticks. Presentation may consume movement intent, path queues, easing and facing state, but it must converge to authoritative simulation positions.
+Presentation Motion is complete when ordinary villager movement no longer visually exposes simulation ticks. Presentation may consume movement intent, Presentation Actions, path queues, easing and facing state, but it must converge to authoritative simulation positions.
 
 Presentation Environment is complete when weather, clouds, particles, water, foliage, wind, lighting hooks and mystery effects use presentation time instead of simulation tick timing. Temporary atmosphere should never invalidate terrain caches.
 
@@ -403,17 +462,18 @@ The current movement interpolation consumes walking intent where available and f
 ```text
 simulation action, target and path
   -> intent queue
+  -> presentation action
   -> presentation waypoint queue
   -> continuous position
   -> animation state
   -> renderer draw position
 ```
 
-The simulation remains authoritative. Presentation may smooth short gaps, consume look-ahead waypoints, blend target changes and choose easing curves, but it must converge back to simulation truth when intent changes or disappears.
+The simulation remains authoritative. Presentation may smooth short gaps, consume look-ahead waypoints, execute Presentation Actions, blend target changes and choose easing curves, but it must converge back to simulation truth when intent changes or disappears.
 
 ### Presentation Animation
 
-Animation state should be derived from simulation state and Intent, then advanced by presentation time.
+Animation state should be derived from simulation state, Intent and Presentation Actions, then advanced by presentation time.
 
 Examples:
 - `current_goal = Build` may imply a working animation

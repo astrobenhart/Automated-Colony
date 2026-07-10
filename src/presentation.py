@@ -3,7 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import math
 
-from src.intents import AgentIntent, IntentQueue, WALK_INTENT, movement_intent_for
+from src.intents import AgentIntent, IntentQueue, WALK_INTENT, intent_queue_for
+
+
+ACTION_WAITING = "Waiting"
+ACTION_STARTING = "Starting"
+ACTION_PERFORMING = "Performing"
+ACTION_FINISHING = "Finishing"
+ACTION_COMPLETE = "Complete"
 
 
 def presentation_id_for(agent) -> str:
@@ -26,6 +33,9 @@ class PresentationAgentSnapshot:
     current_action: str
     current_goal: str
     facing: tuple[int, int] = (0, 1)
+    presentation_action: str = "Idle"
+    presentation_action_state: str = ACTION_WAITING
+    presentation_action_progress: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -186,6 +196,54 @@ class ObserverCamera:
 
 
 @dataclass
+class PresentationAction:
+    intent_id: str = ""
+    kind: str = "idle"
+    label: str = "Idle"
+    state: str = ACTION_WAITING
+    progress: float = 0.0
+    duration: float = 1.0
+
+    @classmethod
+    def from_intent(cls, intent: AgentIntent | None) -> "PresentationAction":
+        if intent is None:
+            return cls()
+        return cls(
+            intent_id=intent.intent_id,
+            kind=intent.kind,
+            label=intent.label,
+            duration=action_duration(intent.kind),
+        )
+
+    def advance(self, time_delta: float) -> None:
+        if self.kind == "idle":
+            self.state = ACTION_WAITING
+            self.progress = 0.0
+            return
+
+        if self.state == ACTION_COMPLETE:
+            return
+
+        self.progress = min(1.0, self.progress + max(0.0, time_delta) / max(0.001, self.duration))
+        if self.progress <= 0.0:
+            self.state = ACTION_WAITING
+        elif self.progress < 0.15:
+            self.state = ACTION_STARTING
+        elif self.progress < 0.82:
+            self.state = ACTION_PERFORMING
+        elif self.progress < 1.0:
+            self.state = ACTION_FINISHING
+        else:
+            self.state = ACTION_COMPLETE
+
+    def complete(self) -> None:
+        if self.kind == "idle":
+            return
+        self.progress = 1.0
+        self.state = ACTION_COMPLETE
+
+
+@dataclass
 class PresentationAgent:
     agent_id: str
     name: str
@@ -204,6 +262,7 @@ class PresentationAgent:
     current_goal: str = "Explore"
     active_intent_id: str | None = None
     movement_queue: tuple[tuple[int, int], ...] = ()
+    presentation_action: PresentationAction = field(default_factory=PresentationAction)
 
     @classmethod
     def from_agent(cls, agent) -> "PresentationAgent":
@@ -233,6 +292,7 @@ class PresentationAgent:
         self.role = getattr(agent, "role", self.role)
         self.current_action = getattr(agent, "current_action", self.current_action)
         self.current_goal = getattr(agent, "current_goal", self.current_goal)
+        self.observe_presentation_action(intent)
         if intent is not None and intent.kind == WALK_INTENT:
             self.observe_movement_intent(agent, intent)
             return
@@ -246,6 +306,12 @@ class PresentationAgent:
         self.tile_x = next_x
         self.tile_y = next_y
         self.start_motion_to(next_x, next_y)
+
+    def observe_presentation_action(self, intent: AgentIntent | None) -> None:
+        intent_id = intent.intent_id if intent is not None else ""
+        if self.presentation_action.intent_id == intent_id:
+            return
+        self.presentation_action = PresentationAction.from_intent(intent)
 
     def observe_movement_intent(self, agent, intent: AgentIntent) -> None:
         self.tile_x = getattr(agent, "x", self.tile_x)
@@ -286,6 +352,7 @@ class PresentationAgent:
             self.start_motion_to(next_x, next_y)
 
     def advance(self, time_delta: float, tiles_per_second: float) -> None:
+        self.presentation_action.advance(time_delta)
         remaining_time = max(0.0, time_delta)
         while True:
             if self.progress >= 1.0:
@@ -299,6 +366,8 @@ class PresentationAgent:
                     else:
                         return
                 else:
+                    if self.presentation_action.kind == WALK_INTENT:
+                        self.presentation_action.complete()
                     return
 
             if remaining_time <= 0:
@@ -332,6 +401,9 @@ class PresentationAgent:
             current_action=self.current_action,
             current_goal=self.current_goal,
             facing=self.facing,
+            presentation_action=self.presentation_action.label,
+            presentation_action_state=self.presentation_action.state,
+            presentation_action_progress=self.presentation_action.progress,
         )
 
 
@@ -384,8 +456,8 @@ class PresentationScene:
         for agent in living_agents:
             agent_key = presentation_key_for(agent)
             intent_queue = self.intent_queues.setdefault(agent_key, IntentQueue())
-            movement_intent = movement_intent_for(agent)
-            intent_queue.replace([movement_intent] if movement_intent is not None else [])
+            derived_queue = intent_queue_for(agent)
+            intent_queue.replace(derived_queue.items)
             presentation_agent = self.agents.get(agent_key)
             if presentation_agent is None:
                 presentation_agent = PresentationAgent.from_agent(agent)
@@ -457,3 +529,13 @@ def sign(value: int | float) -> int:
     if value < 0:
         return -1
     return 0
+
+
+def action_duration(kind: str) -> float:
+    return {
+        WALK_INTENT: 1.0,
+        "harvest": 1.4,
+        "deposit": 0.9,
+        "eat": 1.2,
+        "sleep": 2.0,
+    }.get(kind, 1.0)
