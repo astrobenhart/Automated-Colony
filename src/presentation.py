@@ -36,6 +36,8 @@ class PresentationAgentSnapshot:
     presentation_action: str = "Idle"
     presentation_action_state: str = ACTION_WAITING
     presentation_action_progress: float = 0.0
+    presentation_route_remaining: int = 0
+    route_recovery_reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -261,8 +263,22 @@ class PresentationAgent:
     current_action: str = "Idle"
     current_goal: str = "Explore"
     active_intent_id: str | None = None
-    movement_queue: tuple[tuple[int, int], ...] = ()
+    presentation_route: tuple[tuple[int, int], ...] = ()
+    route_recovery_reason: str | None = None
     presentation_action: PresentationAction = field(default_factory=PresentationAction)
+
+    @property
+    def movement_queue(self) -> tuple[tuple[int, int], ...]:
+        """Compatibility alias for older tests and tooling.
+
+        The presentation layer now owns a persistent route; Intent updates
+        reconcile into it instead of replacing it every simulation tick.
+        """
+        return self.presentation_route
+
+    @movement_queue.setter
+    def movement_queue(self, value: tuple[tuple[int, int], ...]) -> None:
+        self.presentation_route = tuple(value)
 
     @classmethod
     def from_agent(cls, agent) -> "PresentationAgent":
@@ -298,7 +314,7 @@ class PresentationAgent:
             return
 
         self.active_intent_id = None
-        self.movement_queue = ()
+        self.presentation_route = ()
 
         if (next_x, next_y) == (self.tile_x, self.tile_y):
             return
@@ -316,12 +332,64 @@ class PresentationAgent:
     def observe_movement_intent(self, agent, intent: AgentIntent) -> None:
         self.tile_x = getattr(agent, "x", self.tile_x)
         self.tile_y = getattr(agent, "y", self.tile_y)
-        if self.active_intent_id == intent.intent_id:
+        if self.active_intent_id == intent.intent_id and self.presentation_route:
             return
 
         self.active_intent_id = intent.intent_id
-        self.movement_queue = tuple(intent.path)
+        self.reconcile_presentation_route(intent.path)
+
+    def reconcile_presentation_route(self, intent_path: tuple[tuple[int, int], ...]) -> None:
+        incoming_route = normalize_route(intent_path)
+        if not incoming_route:
+            return
+
+        if not self.presentation_route:
+            self.initialize_presentation_route(incoming_route)
+            return
+
+        merged_route = merge_route_update(self.presentation_route, incoming_route)
+        if merged_route is None:
+            self.recover_presentation_route(incoming_route, "intent_diverged")
+            return
+
+        self.route_recovery_reason = None
+        self.presentation_route = merged_route
+        if self.progress >= 1.0:
+            self.advance_to_next_waypoint()
+
+    def initialize_presentation_route(self, incoming_route: tuple[tuple[int, int], ...]) -> None:
+        first_waypoint = incoming_route[0]
+        if not self.can_reach_next_waypoint(first_waypoint):
+            self.recover_presentation_route(incoming_route, "route_started_ahead_of_render")
+            return
+
+        self.route_recovery_reason = None
+        self.presentation_route = incoming_route
         self.advance_to_next_waypoint()
+
+    def recover_presentation_route(self, incoming_route: tuple[tuple[int, int], ...], reason: str) -> None:
+        """Explicitly recover from a route that Presentation cannot faithfully play.
+
+        Normal movement never rebuilds the route. Recovery is reserved for cases
+        where Presentation did not receive enough adjacent simulation-approved
+        waypoints to preserve a visually faithful path.
+        """
+        first_x, first_y = incoming_route[0]
+        self.render_x = float(first_x)
+        self.render_y = float(first_y)
+        self.from_x = self.render_x
+        self.from_y = self.render_y
+        self.target_x = self.render_x
+        self.target_y = self.render_y
+        self.progress = 1.0
+        self.route_recovery_reason = reason
+        self.presentation_route = incoming_route[1:]
+        self.advance_to_next_waypoint()
+
+    def can_reach_next_waypoint(self, waypoint: tuple[int, int]) -> bool:
+        rounded_x = int(round(self.render_x))
+        rounded_y = int(round(self.render_y))
+        return abs(waypoint[0] - rounded_x) + abs(waypoint[1] - rounded_y) <= 1
 
     def start_motion_to(self, next_x: int | float, next_y: int | float) -> None:
         if (float(next_x), float(next_y)) == (self.target_x, self.target_y) and self.progress < 1.0:
@@ -339,16 +407,16 @@ class PresentationAgent:
         self.progress = 0.0
 
     def advance_to_next_waypoint(self) -> None:
-        remaining = list(self.movement_queue)
+        remaining = list(self.presentation_route)
         while remaining and (
             abs(remaining[0][0] - self.render_x) < 0.001
             and abs(remaining[0][1] - self.render_y) < 0.001
         ):
             remaining.pop(0)
 
-        self.movement_queue = tuple(remaining)
-        if self.movement_queue:
-            next_x, next_y = self.movement_queue[0]
+        self.presentation_route = tuple(remaining)
+        if self.presentation_route:
+            next_x, next_y = self.presentation_route[0]
             self.start_motion_to(next_x, next_y)
 
     def advance(self, time_delta: float, tiles_per_second: float) -> None:
@@ -358,10 +426,10 @@ class PresentationAgent:
             if self.progress >= 1.0:
                 self.render_x = self.target_x
                 self.render_y = self.target_y
-                if self.movement_queue:
-                    self.movement_queue = self.movement_queue[1:]
-                    if self.movement_queue:
-                        next_x, next_y = self.movement_queue[0]
+                if self.presentation_route:
+                    self.presentation_route = self.presentation_route[1:]
+                    if self.presentation_route:
+                        next_x, next_y = self.presentation_route[0]
                         self.start_motion_to(next_x, next_y)
                     else:
                         return
@@ -404,6 +472,8 @@ class PresentationAgent:
             presentation_action=self.presentation_action.label,
             presentation_action_state=self.presentation_action.state,
             presentation_action_progress=self.presentation_action.progress,
+            presentation_route_remaining=len(self.presentation_route),
+            route_recovery_reason=self.route_recovery_reason,
         )
 
 
@@ -529,6 +599,33 @@ def sign(value: int | float) -> int:
     if value < 0:
         return -1
     return 0
+
+
+def normalize_route(route: tuple[tuple[int, int], ...]) -> tuple[tuple[int, int], ...]:
+    normalized: list[tuple[int, int]] = []
+    for waypoint in route:
+        point = (int(waypoint[0]), int(waypoint[1]))
+        if not normalized or normalized[-1] != point:
+            normalized.append(point)
+    return tuple(normalized)
+
+
+def merge_route_update(
+    existing_route: tuple[tuple[int, int], ...],
+    incoming_route: tuple[tuple[int, int], ...],
+) -> tuple[tuple[int, int], ...] | None:
+    existing = list(existing_route)
+    incoming = list(incoming_route)
+
+    for existing_position, point in enumerate(existing):
+        if point in incoming:
+            incoming_position = incoming.index(point)
+            return normalize_route(tuple(existing[: existing_position + 1] + incoming[incoming_position + 1 :]))
+
+    if existing and incoming and existing[-1] == incoming[0]:
+        return normalize_route(tuple(existing + incoming[1:]))
+
+    return None
 
 
 def action_duration(kind: str) -> float:

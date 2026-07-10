@@ -1,5 +1,6 @@
 from src.agent import Agent
-from src.presentation import PresentationEngine, PresentationScene, PresentationSnapshot, PresentationTime
+from src.pathfinding import find_path
+from src.presentation import PresentationAgent, PresentationEngine, PresentationScene, PresentationSnapshot, PresentationTime
 from src.simulation_runner import SimulationRunner
 from src.tile import Tile
 from src.world import World
@@ -124,6 +125,94 @@ def test_presentation_interpolates_agent_position_without_changing_simulation():
     assert presented.tile_y == 0
     assert 0 < presented.render_x < 2
     assert presented.render_y == 0
+
+
+def test_presentation_route_preserves_unreached_waypoints_when_intent_advances():
+    world = make_world(width=5, height=1)
+    agent = Agent("Ari Stone", 0, 0, agent_id="ari", current_action="Walking")
+    agent.current_target = (4, 0)
+    agent.current_path = [(1, 0), (2, 0), (3, 0), (4, 0)]
+    world.agents.append(agent)
+    scene = PresentationScene()
+
+    scene.update(world, 0.0, tiles_per_second=4.0)
+    presentation_agent = scene.agents["ari"]
+
+    agent.x = 2
+    agent.current_path = [(3, 0), (4, 0)]
+    scene.update(world, 0.0, tiles_per_second=4.0)
+
+    assert presentation_agent.presentation_route == ((1, 0), (2, 0), (3, 0), (4, 0))
+    assert (presentation_agent.target_x, presentation_agent.target_y) == (1.0, 0.0)
+    assert presentation_agent.route_recovery_reason is None
+
+
+def test_presentation_route_merges_future_intent_without_duplicate_waypoints():
+    world = make_world(width=6, height=1)
+    agent = Agent("Ari Stone", 0, 0, agent_id="ari", current_action="Walking")
+    agent.current_target = (3, 0)
+    agent.current_path = [(1, 0), (2, 0), (3, 0)]
+    world.agents.append(agent)
+    scene = PresentationScene()
+
+    scene.update(world, 0.0, tiles_per_second=4.0)
+    presentation_agent = scene.agents["ari"]
+
+    agent.x = 2
+    agent.current_target = (5, 0)
+    agent.current_path = [(3, 0), (4, 0), (5, 0)]
+    scene.update(world, 0.0, tiles_per_second=4.0)
+
+    assert presentation_agent.presentation_route == ((1, 0), (2, 0), (3, 0), (4, 0), (5, 0))
+    assert presentation_agent.presentation_route.count((3, 0)) == 1
+
+
+def test_presentation_route_respects_water_barrier_when_simulation_advances_ahead():
+    world = make_world(width=5, height=5)
+    for y in range(1, 5):
+        world.tiles[y][2] = Tile("water")
+
+    target = (4, 2)
+    route = find_path(world, (0, 2), target)
+    agent = Agent("Ari Stone", 0, 2, agent_id="ari", current_action="Walking")
+    agent.current_target = target
+    agent.current_path = list(route)
+    world.agents.append(agent)
+    scene = PresentationScene()
+
+    scene.update(world, 0.0, tiles_per_second=4.0)
+    presentation_agent = scene.agents["ari"]
+
+    agent.x, agent.y = (4, 1)
+    agent.current_path = [(4, 2)]
+    scene.update(world, 0.0, tiles_per_second=4.0)
+
+    assert presentation_agent.presentation_route[: len(route)] == tuple(route)
+    assert (presentation_agent.target_x, presentation_agent.target_y) == tuple(float(value) for value in route[0])
+    for waypoint in presentation_agent.presentation_route:
+        assert world.tile_at(*waypoint).walkable
+    assert presentation_agent.route_recovery_reason is None
+
+
+def test_presentation_route_recovery_is_explicit_when_route_starts_too_far_ahead():
+    world = make_world(width=5, height=5)
+    for y in range(1, 5):
+        world.tiles[y][2] = Tile("water")
+
+    visual_agent = Agent("Ari Stone", 0, 2, agent_id="ari", current_action="Walking")
+    agent = Agent("Ari Stone", 4, 1, agent_id="ari", current_action="Walking")
+    agent.current_target = (4, 2)
+    agent.current_path = [(4, 2)]
+    world.agents.append(agent)
+    scene = PresentationScene()
+    scene.agents["ari"] = PresentationAgent.from_agent(visual_agent)
+
+    scene.update(world, 0.0, tiles_per_second=4.0)
+    presentation_agent = scene.agents["ari"]
+
+    assert presentation_agent.route_recovery_reason == "route_started_ahead_of_render"
+    assert (presentation_agent.render_x, presentation_agent.render_y) == (4.0, 1.0)
+    assert (presentation_agent.target_x, presentation_agent.target_y) == (4.0, 2.0)
 
 
 def test_presentation_engine_remains_scene_compatible():

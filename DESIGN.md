@@ -88,7 +88,7 @@ World / Agent simulation state
 
 `PresentationEngine` remains as a compatibility name for the first scene root. New presentation work should attach to `PresentationScene`.
 
-This first implementation intentionally proves the boundary with one meaningful example: villager movement. Simulation agents still move discretely between tiles. The Intent Layer derives short walking intent from simulation path state. Presentation agents consume that intent as a visual path queue and continue moving through presentation time. Headless simulation does not create or require a Presentation Engine or Intent queues.
+This first implementation intentionally proves the boundary with one meaningful example: villager movement. Simulation agents still move discretely between tiles. The Intent Layer derives short walking intent from simulation path state. Presentation agents reconcile that intent into a persistent visual route and continue moving through presentation time. Headless simulation does not create or require a Presentation Engine or Intent queues.
 
 The old design placed render-motion fields on `Agent`. That coupling has been removed. Agent state now represents gameplay identity, needs, tasks, relationships, memories, lifecycle, and tile position. Continuous motion belongs to presentation.
 
@@ -100,7 +100,8 @@ Intent sits here:
 
 ```text
 Simulation
-  -> Intent Queue
+  -> Intent Updates
+  -> Persistent Presentation Route
   -> Presentation Scene
   -> Renderer
 ```
@@ -127,7 +128,7 @@ Current implementation:
 - `movement_intent_for(agent)` derives the first walking intent from `current_target` and `current_path`.
 - `action_intent_for(agent)` derives representative action intent for Harvest, Deposit, Eat and Sleep from existing simulation action labels.
 - `PresentationScene.intent_queues` owns per-agent intent queues as optional presentation-facing state.
-- `PresentationAgent` consumes walking intent as a visual waypoint queue while simulation remains authoritative.
+- `PresentationAgent` reconciles walking intent into a persistent visual route while simulation remains authoritative.
 - `PresentationAction` executes intent through a presentation-only action lifecycle.
 
 Intent lifecycle:
@@ -141,6 +142,43 @@ Simulation updates agent action, goal, target and path
 ```
 
 Rolling look-ahead should remain short. The simulation may revise future intent whenever needs, blocked paths, resources, celebrations, mysteries or emergencies change. Presentation may finish or blend the current visual segment, but it must not create durable movement outcomes that the simulation did not allow.
+
+### Persistent Presentation Routes
+
+Persistent Presentation Routes exist to preserve path fidelity between discrete simulation updates and continuous rendering.
+
+The simulation owns navigation. It decides where a villager can move and produces paths that avoid water, rivers, lakes, buildings and obstacles. Intent communicates the current movement facts and future route changes. Presentation owns visual traversal of the route it has already received.
+
+The route contract is:
+
+```text
+Simulation pathfinding
+  -> Intent update
+  -> Persistent Presentation Route
+  -> Presentation Action
+  -> Renderer snapshot
+```
+
+Presentation Route responsibilities:
+- preserve every unreached waypoint already approved by simulation
+- merge incoming intent updates onto the existing route
+- remove a waypoint only after the rendered agent reaches it
+- smooth timing, easing, facing and animation over Presentation Time
+- recover explicitly when the route can no longer be reconciled
+
+Intent update responsibilities:
+- communicate that the current route continues
+- provide newly known future waypoints
+- support future append, replace, cancel and invalidate semantics
+- never act as the renderer-facing movement queue
+
+Permanent design rule:
+
+Presentation may smooth timing, easing and animation, but it may only interpolate between adjacent simulation-approved waypoints. Presentation must never simplify, shortcut or replace the navigation route during normal movement.
+
+This rule exists because replacing the presentation route with the newest simulation intent can create visually false straight-line movement. If simulation advances from one side of a lake to the other while Presentation is still rendering earlier motion, a replacement queue would interpolate from the stale rendered position directly to the new simulation position. That makes villagers appear to cross water even though pathfinding remained correct. Persistent routes prevent that by allowing Presentation to finish the unreached visual waypoints it already owns.
+
+Recovery is explicit. Teleportation, route invalidation, pathfinding failure or a major simulation correction may force Presentation to rebuild or snap the route. These cases should be visible in presentation state and tests. They should not be hidden inside normal queue reconciliation.
 
 Future extensions:
 - Expanded Action Intent: build, drink, rest, craft, trade, fish and other future activities.
@@ -463,13 +501,13 @@ The current movement interpolation consumes walking intent where available and f
 simulation action, target and path
   -> intent queue
   -> presentation action
-  -> presentation waypoint queue
+  -> persistent presentation route
   -> continuous position
   -> animation state
   -> renderer draw position
 ```
 
-The simulation remains authoritative. Presentation may smooth short gaps, consume look-ahead waypoints, execute Presentation Actions, blend target changes and choose easing curves, but it must converge back to simulation truth when intent changes or disappears.
+The simulation remains authoritative. Presentation may smooth short gaps, consume look-ahead waypoints, execute Presentation Actions, blend target changes and choose easing curves, but it must converge back to simulation truth when intent changes or disappears. Presentation must preserve unreached simulation-approved waypoints. It may reconcile incoming route updates, but it must not discard an old waypoint merely because simulation has already consumed it.
 
 ### Presentation Animation
 

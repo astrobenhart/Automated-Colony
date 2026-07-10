@@ -496,7 +496,11 @@ Villager visual motion that remains continuous across discrete simulation update
 
 Acceptance Criteria:
 - Simulation remains authoritative for path decisions and tile positions.
-- Presentation can maintain visual path queues.
+- Presentation owns Persistent Presentation Routes.
+- Intent updates reconcile into existing presentation routes instead of replacing them.
+- Presentation preserves unreached simulation-approved waypoints.
+- Presentation only interpolates between adjacent simulation-approved waypoints during normal movement.
+- Explicit recovery handles route invalidation, missing route history or major simulation correction.
 - Movement speed and easing are presentation state.
 - Target changes blend without visible snapping where practical.
 - Headless simulation is unaffected.
@@ -504,11 +508,15 @@ Acceptance Criteria:
 Notes:
 - This is not a pathfinding change.
 - Presentation may smooth short timing gaps but must never invent durable movement outcomes.
+- Presentation must never simplify, shortcut or replace the navigation route during normal movement.
+- Simulation consumes waypoints for gameplay; Presentation removes waypoints only after the rendered agent reaches them.
+- Recovery is explicit and reserved for teleportation, route invalidation, pathfinding failure or major simulation correction.
 - This task depends on TASK-101, TASK-102, TASK-110 and TASK-111.
 - Implemented the first Intent Layer slice in `src.intents`.
 - `AgentIntent` and `IntentQueue` describe short rolling presentation-facing intent.
 - Movement intent is derived from existing simulation path state, not new AI.
-- `PresentationScene` owns per-agent intent queues and `PresentationAgent` consumes walking intent as visual waypoints.
+- `PresentationScene` owns per-agent intent queues and `PresentationAgent` reconciles walking intent into a Persistent Presentation Route.
+- Persistent Presentation Routes preserve unreached waypoints across simulation updates so renderer motion cannot skip across water, rivers, lakes, buildings or obstacles.
 - Renderer does not consume Intent directly.
 - Future action, animation, social and mystery intent should build on this contract.
 

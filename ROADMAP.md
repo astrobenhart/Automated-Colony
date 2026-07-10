@@ -1160,6 +1160,9 @@ Implementation checklist:
 - [x] Motion intent snapshots
 - [x] Presentation Action snapshots
 - [x] Path queues
+- [x] Persistent Presentation Routes
+- [x] Route reconciliation
+- [x] Explicit route recovery
 - [x] Continuous movement for walking intent
 - [ ] Speed classes
 - [ ] Easing profiles
@@ -1175,18 +1178,23 @@ Completion criteria:
 
 - Villagers no longer visually expose simulation ticks during ordinary movement.
 - Movement still converges to authoritative simulation tile positions.
+- Presentation preserves unreached simulation-approved waypoints when Intent updates.
+- Presentation only interpolates between adjacent simulation-approved waypoints during normal movement.
+- Recovery from invalid or missing routes is explicit rather than part of normal movement.
 - Facing and selection presentation no longer snap unnecessarily.
 - No pathfinding or movement gameplay rules change.
 
 Common mistakes to avoid:
 
 - Do not let presentation path queues create durable movement outcomes.
+- Do not replace the persistent Presentation Route every time simulation emits a new Intent.
+- Do not simplify, shortcut or reroute simulation-approved paths in Presentation.
 - Do not use smoothing to hide gameplay bugs.
 - Do not turn speed classes into gameplay modifiers.
 
 Long-term architectural role:
 
-Presentation Motion turns intent into watchable motion. It is required before sprite animation can feel believable.
+Presentation Motion turns intent into watchable motion. Intent communicates route changes, but Presentation owns visual traversal through a Persistent Presentation Route. This is required before sprite animation can feel believable because walk cycles, facing, carried items, shadows and selection highlights must follow the same continuous route rather than the latest simulation tile.
 
 #### Milestone 5 - Presentation Environment
 
