@@ -185,6 +185,8 @@ class PygameRenderer:
         self.selected_tile: tuple[int, int] | None = None
         self.panel_padding = 14
         self.panel_gap = 8
+        self.presentation_scene = PresentationScene()
+        self.configure_observer_camera()
         self.camera_x = 0
         self.camera_y = 0
         self.map_surface = pygame.Surface((VIEWPORT_WIDTH * TILE_SIZE, VIEWPORT_HEIGHT * TILE_SIZE)).convert()
@@ -211,7 +213,6 @@ class PygameRenderer:
         self.terrain_renderer = TerrainRenderer()
         self.grass_transition_state = GrassMoistureTransitionState()
         self.water_transition_state = WaterTransitionState()
-        self.presentation_scene = PresentationScene()
         self.presentation_scene.sync_world(world)
         self.presentation_engine = self.presentation_scene
         self.frame_count = 0
@@ -260,11 +261,56 @@ class PygameRenderer:
             ),
         )
 
+    def configure_observer_camera(self) -> None:
+        self.presentation_scene.configure_camera(
+            world_width=self.world.width,
+            world_height=self.world.height,
+            viewport_width=VIEWPORT_WIDTH,
+            viewport_height=VIEWPORT_HEIGHT,
+        )
+
+    @property
+    def observer_camera(self):
+        return self.presentation_scene.observer_camera
+
+    @property
+    def camera_x(self) -> int:
+        return int(self.observer_camera.target_x)
+
+    @camera_x.setter
+    def camera_x(self, value: int | float) -> None:
+        if not hasattr(self, "presentation_scene"):
+            self._legacy_camera_x = value
+            return
+        self.observer_camera.set_position(
+            value,
+            self.observer_camera.target_y,
+            snap=True,
+            clamp=False,
+        )
+
+    @property
+    def camera_y(self) -> int:
+        return int(self.observer_camera.target_y)
+
+    @camera_y.setter
+    def camera_y(self, value: int | float) -> None:
+        if not hasattr(self, "presentation_scene"):
+            self._legacy_camera_y = value
+            return
+        self.observer_camera.set_position(
+            self.observer_camera.target_x,
+            value,
+            snap=True,
+            clamp=False,
+        )
+
     def set_world(self, world: World):
         self.world = world
         self.grass_transition_state = GrassMoistureTransitionState()
         self.water_transition_state = WaterTransitionState()
         self.presentation_scene = PresentationScene()
+        self.configure_observer_camera()
         self.presentation_scene.sync_world(world)
         self.presentation_engine = self.presentation_scene
         self.clear_selection()
@@ -289,13 +335,18 @@ class PygameRenderer:
         gui_consumed = self.ui_manager.process_events(event)
         return overlay_consumed or gui_consumed
 
-    def update_ui(self, time_delta: float):
-        self.update_presentation(time_delta)
+    def update_ui(self, time_delta: float, paused: bool = False):
+        self.update_presentation(time_delta, paused=paused)
         self.overlay_manager.update(time_delta)
         self.ui_manager.update(time_delta)
 
-    def update_presentation(self, time_delta: float):
-        self.presentation_scene.update(self.world, time_delta, VILLAGER_RENDER_TILES_PER_SECOND)
+    def update_presentation(self, time_delta: float, paused: bool = False):
+        self.presentation_scene.update(
+            self.world,
+            time_delta,
+            VILLAGER_RENDER_TILES_PER_SECOND,
+            paused=paused,
+        )
 
     def update_agent_render_motion(self, time_delta: float):
         self.update_presentation(time_delta)
@@ -322,7 +373,8 @@ class PygameRenderer:
             "last_chunk_redraws": self.last_chunk_redraw_count,
             "last_partial_redraws": self.last_partial_redraw_count,
             "presentation_agents": len(self.presentation_scene.agents),
-            "presentation_frame": self.presentation_scene.frame_state.frame_index,
+            "presentation_frame": self.presentation_scene.presentation_time.frame_index,
+            "presentation_time": round(self.presentation_scene.presentation_time.elapsed_seconds, 3),
         }
 
     def selected_villager(self):
@@ -351,31 +403,27 @@ class PygameRenderer:
             return None
 
         return (
-            self.camera_x + mouse_x // TILE_SIZE,
-            self.camera_y + mouse_y // TILE_SIZE,
+            self.observer_camera.screen_to_tile(mouse_x, mouse_y, TILE_SIZE)
         )
 
     def camera_step(self) -> int:
         return CAMERA_STEP
 
     def pan_camera(self, dx: int, dy: int):
-        self.camera_x += dx
-        self.camera_y += dy
+        self.observer_camera.pan_by(dx, dy, snap=True)
         self.clamp_camera()
 
     def clamp_camera(self):
-        max_x = max(0, self.world.width - VIEWPORT_WIDTH)
-        max_y = max(0, self.world.height - VIEWPORT_HEIGHT)
-        self.camera_x = max(0, min(self.camera_x, max_x))
-        self.camera_y = max(0, min(self.camera_y, max_y))
+        self.configure_observer_camera()
+        self.observer_camera.set_position(
+            self.observer_camera.target_x,
+            self.observer_camera.target_y,
+            snap=True,
+        )
 
     def visible_tile_bounds(self) -> tuple[int, int, int, int]:
         self.clamp_camera()
-        start_x = self.camera_x
-        start_y = self.camera_y
-        end_x = min(self.world.width, start_x + VIEWPORT_WIDTH)
-        end_y = min(self.world.height, start_y + VIEWPORT_HEIGHT)
-        return start_x, start_y, end_x, end_y
+        return self.observer_camera.visible_tile_bounds()
 
     def select_tile(self, tile_x: int, tile_y: int):
         if not (0 <= tile_x < self.world.width and 0 <= tile_y < self.world.height):
@@ -1027,12 +1075,8 @@ class PygameRenderer:
             index = self._agent_tile_drawn.get(key, 0)
             self._agent_tile_drawn[key] = index + 1
             offset = VILLAGER_TILE_OFFSETS[index % len(VILLAGER_TILE_OFFSETS)]
-            self.draw_agent_symbol(
-                agent,
-                render_x - start_x,
-                render_y - start_y,
-                offset,
-            )
+            screen_x, screen_y = self.observer_camera.world_to_screen(render_x, render_y, TILE_SIZE)
+            self.draw_agent_symbol(agent, screen_x / TILE_SIZE, screen_y / TILE_SIZE, offset)
 
     def draw_agent_symbol(
         self,
@@ -1045,6 +1089,20 @@ class PygameRenderer:
             "@",
             screen_tile_x * TILE_SIZE + TILE_SIZE // 2 + pixel_offset[0],
             screen_tile_y * TILE_SIZE + TILE_SIZE // 2 + pixel_offset[1],
+            color_for_role(agent.role),
+        )
+
+    def draw_agent_symbol_at_pixels(
+        self,
+        agent: PresentationAgentSnapshot,
+        screen_x: float,
+        screen_y: float,
+        pixel_offset: tuple[int, int] = (0, 0),
+    ):
+        self.draw_centered_symbol_at_pixels(
+            "@",
+            screen_x + TILE_SIZE // 2 + pixel_offset[0],
+            screen_y + TILE_SIZE // 2 + pixel_offset[1],
             color_for_role(agent.role),
         )
 
@@ -1063,12 +1121,11 @@ class PygameRenderer:
         if not (start_x <= x < end_x and start_y <= y < end_y):
             return
 
-        screen_x = x - start_x
-        screen_y = y - start_y
+        screen_x, screen_y = self.observer_camera.world_to_screen(x, y, TILE_SIZE)
 
         rect = pygame.Rect(
-            screen_x * TILE_SIZE,
-            screen_y * TILE_SIZE,
+            round(screen_x),
+            round(screen_y),
             TILE_SIZE,
             TILE_SIZE,
         )

@@ -156,10 +156,31 @@ The scene is allowed to remember how something looked previously. It is not allo
 Current implementation:
 - `PresentationScene` owns `PresentationAgent` lifetime.
 - `PresentationScene.render_order` defines the initial presentation layer order.
-- `PresentationScene.frame_state` records presentation frame index and frame delta.
+- `PresentationScene.presentation_time` records presentation frame index, elapsed presentation time, frame delta, pause state, interpolation alpha and future time scale.
 - `PresentationScene.snapshot_world(...)` generates renderer-facing snapshots.
 - `PygameRenderer` owns a `presentation_scene` and consumes it for agent rendering.
 - Headless simulation does not construct or require a Presentation Scene.
+
+### Presentation Time
+
+Presentation Time is the heartbeat of the visual world.
+
+The simulation owns gameplay time: ticks, days, seasons, aging, weather duration, jobs, births, deaths and Chronicle timing.
+
+Presentation owns visual time: frame delta, elapsed presentation seconds, interpolation alpha, animation phase, pause behaviour and future time scaling hooks.
+
+Current implementation:
+- `PresentationTime` lives on `PresentationScene`.
+- `PresentationTime.advance(...)` is called by the renderer through `PresentationScene.update(...)`.
+- Agent interpolation consumes `PresentationTime.delta_seconds`.
+- Pausing stops presentation elapsed time and delta while preserving the current visual state.
+- `PresentationSnapshot` exposes frame index, elapsed seconds, delta seconds, interpolation alpha and pause state.
+
+Long-term rule:
+
+No presentation system should use `world.tick` as its animation clock. Weather, clouds, water, foliage, particles, lighting, camera smoothing, idle animation, sprite animation and mystery effects should eventually consume Presentation Time instead. Simulation may expose factual state and intensity; Presentation Time determines how those facts move, fade, pulse, sway and interpolate visually.
+
+Presentation Time must remain optional. Headless simulation should not create it, advance it or depend on it.
 
 ### Architectural Evolution
 
@@ -172,7 +193,7 @@ The Presentation Layer should evolve in this order:
 2. Presentation Scene
    one renderer-facing visual model for the current frame
 
-3. Presentation Camera
+3. Observer Camera
    continuous world-space viewport and sub-tile transforms
 
 4. Presentation Entities
@@ -251,21 +272,35 @@ Presentation needs memory to make those facts feel continuous:
 
 That memory should live in Presentation Objects. It should not be written back into simulation. This keeps deterministic gameplay clean while allowing the visual layer to feel alive.
 
-### Presentation Camera
+### Observer Camera
 
-The simulation should remain tile based, but the camera should become world-space presentation state.
+The simulation should remain tile based, but the camera should become world-space presentation state. The player is an observer of the settlement, not a world editor. The camera exists to observe the simulation through a continuous viewport without changing what the simulation decides.
 
-Long-term camera flow:
+Coordinate systems:
+
+- Simulation: tile coordinates, used by AI, pathfinding, jobs, resources and gameplay truth.
+- Presentation: continuous world coordinates, used by agents, camera motion, transforms and future visual entities.
+- Renderer: pixel coordinates, used only when drawing to the screen.
+
+Observer Camera flow:
 
 ```text
-input or target entity
-  -> camera target in world coordinates
-  -> smoothed presentation camera
-  -> viewport transform
-  -> renderer draw positions
+Simulation tile state
+  -> Presentation world coordinates
+  -> Observer Camera
+  -> Renderer pixel coordinates
+  -> Screen
 ```
 
-The camera should support:
+Current implementation:
+
+- `ObserverCamera` lives on `PresentationScene`.
+- `ObserverCamera` owns continuous world-space position, target position, viewport size and world bounds.
+- `PresentationSnapshot` includes an immutable camera snapshot.
+- `PygameRenderer` routes mouse picking, visible bounds and agent/selection draw transforms through the Observer Camera.
+- Legacy `camera_x` and `camera_y` properties remain compatibility accessors for existing keyboard panning and tests.
+
+The Observer Camera should support:
 - sub-tile positioning
 - smoothing
 - easing
@@ -274,6 +309,8 @@ The camera should support:
 - stable mouse picking through inverse transforms
 
 Camera motion belongs to Presentation because it changes how the player sees the world, not what the world is. A smoothed camera should never change pathfinding, selection truth, villager position, terrain state or simulation timing.
+
+The Observer Camera should remain passive. Future follow modes, cinematic framing, screenshot mode, camera shake and zoom should all be presentation behaviours. They should not introduce world editing, tile manipulation or gameplay interaction.
 
 ### Presentation Entities
 
@@ -411,7 +448,7 @@ Future objects:
 - `PresentationWeather`: particle emitters, opacity, wind offset, cloud state
 - `PresentationStructure`: sprite state, construction animation, smoke, window glow
 - `PresentationMystery`: glow, drift, fade, particle state
-- `PresentationCamera`: smoothed camera position, shake, cinematic framing
+- `ObserverCamera`: smoothed camera position, viewport transform, shake, cinematic framing
 
 Presentation objects may remember previous visual state. They must not write back to simulation objects.
 

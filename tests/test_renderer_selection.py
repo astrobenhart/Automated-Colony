@@ -225,6 +225,16 @@ def test_camera_coordinate_conversion_accounts_for_offset():
     assert tile == (12, 8)
 
 
+def test_renderer_screen_conversion_uses_observer_camera():
+    world = make_world(width=80, height=45)
+    renderer = make_renderer(world)
+    renderer.observer_camera.set_position(7.5, 4.25, snap=True, clamp=False)
+
+    tile = renderer.screen_to_world_tile(TILE_SIZE, TILE_SIZE)
+
+    assert tile == (8, 5)
+
+
 def test_clicking_panel_clears_selection_instead_of_selecting_hidden_tile():
     world = make_world(width=80, height=45)
     renderer = make_renderer(world)
@@ -1795,6 +1805,24 @@ def test_renderer_offsets_agents_that_share_a_tile(monkeypatch):
     ]
 
 
+def test_renderer_draws_agents_through_observer_camera_transform(monkeypatch):
+    world = make_world(width=100, height=80)
+    agent = Agent("Ari", 3, 2)
+    world.agents.append(agent)
+    renderer = make_renderer(world)
+    renderer.observer_camera.set_position(1, 1, snap=True)
+    calls = []
+
+    def spy_draw_agent_symbol(agent, x, y, offset=(0, 0)):
+        calls.append((x, y, offset))
+
+    monkeypatch.setattr(renderer, "draw_agent_symbol", spy_draw_agent_symbol)
+
+    renderer.draw_world()
+
+    assert calls == [(2.0, 1.0, VILLAGER_TILE_OFFSETS[0])]
+
+
 def test_renderer_advances_agent_interpolation_without_world_update():
     world = make_world(width=3, height=3)
     agent = Agent("Ari", 0, 0)
@@ -1824,6 +1852,20 @@ def test_renderer_advances_agent_across_multiple_path_nodes_without_logic_update
     render_x, render_y = snapshot.render_x, snapshot.render_y
     assert 1 < render_x < 3
     assert render_y == 1
+
+
+def test_renderer_update_ui_passes_pause_to_presentation_time():
+    world = make_world(width=3, height=3)
+    agent = Agent("Ari", 0, 0)
+    world.agents.append(agent)
+    renderer = make_renderer(world)
+    agent.x = 1
+
+    renderer.update_ui(0.25, paused=True)
+
+    assert renderer.presentation_scene.presentation_time.paused
+    assert renderer.presentation_scene.presentation_time.elapsed_seconds == 0
+    assert renderer.presentation_scene.last_snapshot.agents[0].render_x == 0
 
 
 def test_renderer_consumes_presentation_scene_for_agents(monkeypatch):

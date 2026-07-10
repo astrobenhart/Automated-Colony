@@ -1,5 +1,5 @@
 from src.agent import Agent
-from src.presentation import PresentationEngine, PresentationScene, PresentationSnapshot
+from src.presentation import PresentationEngine, PresentationScene, PresentationSnapshot, PresentationTime
 from src.simulation_runner import SimulationRunner
 from src.tile import Tile
 from src.world import World
@@ -54,10 +54,57 @@ def test_presentation_scene_tracks_frame_state_without_changing_world():
 
     snapshot = scene.update(world, 0.25, tiles_per_second=4.0)
 
-    assert scene.frame_state.frame_index == 1
-    assert scene.frame_state.time_delta == 0.25
+    assert scene.presentation_time.frame_index == 1
+    assert scene.presentation_time.delta_seconds == 0.25
+    assert scene.presentation_time.elapsed_seconds == 0.25
     assert snapshot.frame_index == 1
+    assert snapshot.delta_seconds == 0.25
+    assert snapshot.elapsed_seconds == 0.25
     assert (agent.x, agent.y) == (0, 0)
+
+
+def test_presentation_time_advances_independently_from_simulation_ticks():
+    world = make_world()
+    world.agents.append(Agent("Ari Stone", 0, 0, agent_id="ari"))
+    scene = PresentationScene()
+
+    scene.update(world, 0.10, tiles_per_second=4.0)
+    scene.update(world, 0.15, tiles_per_second=4.0)
+
+    assert world.tick == 0
+    assert scene.presentation_time.frame_index == 2
+    assert round(scene.presentation_time.elapsed_seconds, 2) == 0.25
+
+
+def test_presentation_time_pause_stops_elapsed_time_and_interpolation():
+    world = make_world()
+    agent = Agent("Ari Stone", 0, 0, agent_id="ari")
+    world.agents.append(agent)
+    scene = PresentationScene()
+    scene.sync_world(world)
+    agent.x = 1
+
+    snapshot = scene.update(world, 0.5, tiles_per_second=4.0, paused=True)
+
+    presented = snapshot.agents[0]
+    assert scene.presentation_time.paused
+    assert scene.presentation_time.frame_index == 1
+    assert scene.presentation_time.elapsed_seconds == 0
+    assert scene.presentation_time.delta_seconds == 0
+    assert presented.render_x == 0
+    assert presented.tile_x == 1
+
+
+def test_presentation_time_supports_scale_and_interpolation_alpha():
+    clock = PresentationTime()
+
+    clock.advance(0.5, time_scale=0.5, interpolation_alpha=1.25)
+
+    assert clock.frame_index == 1
+    assert clock.delta_seconds == 0.25
+    assert clock.elapsed_seconds == 0.25
+    assert clock.interpolation_alpha == 1.0
+    assert clock.time_scale == 0.5
 
 
 def test_presentation_interpolates_agent_position_without_changing_simulation():
@@ -71,6 +118,7 @@ def test_presentation_interpolates_agent_position_without_changing_simulation():
     snapshot = engine.update(world, 0.10, tiles_per_second=4.0)
 
     presented = snapshot.agents[0]
+    assert snapshot.delta_seconds == 0.10
     assert (agent.x, agent.y) == (2, 0)
     assert presented.tile_x == 2
     assert presented.tile_y == 0

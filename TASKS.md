@@ -387,7 +387,7 @@ Title: Presentation Time and Clock
 
 Owner: Architect Agent / Renderer Agent / Performance Agent / Tester Agent
 
-Status: Backlog
+Status: Complete
 
 Priority: Critical
 
@@ -408,6 +408,11 @@ Notes:
 - This task directly addresses the audit finding that atmosphere still exposes simulation timing.
 - Presentation time should not become gameplay time.
 - Simulation remains responsible for day, season, weather state and event timing.
+- Implemented as `PresentationTime` owned by `PresentationScene`.
+- `PresentationSnapshot` now exposes frame index, elapsed seconds, delta seconds, interpolation alpha and pause state.
+- Agent interpolation consumes `PresentationTime.delta_seconds`.
+- `PygameRenderer.update_ui(...)` passes pause state to Presentation without changing simulation timing.
+- Environmental systems still need future migration away from `world.tick` under TASK-106.
 
 ---
 
@@ -441,22 +446,22 @@ Notes:
 ---
 
 ### TASK-102
-Title: Presentation Camera and World-Space Viewport
+Title: Observer Camera and World-Space Viewport
 
 Owner: Renderer Agent / Architect Agent / UX Agent / Tester Agent
 
-Status: Backlog
+Status: Complete
 
 Priority: Critical
 
 Description:
-Introduce a continuous world-space presentation camera with smoothing, sub-tile positioning and viewport transforms.
+Introduce a continuous world-space Observer Camera with smoothing, sub-tile positioning and viewport transforms.
 
 Expected Output:
-A camera presentation object that can move smoothly through world space while the simulation remains tile based.
+An Observer Camera presentation object that can move smoothly through world space while the simulation remains tile based.
 
 Acceptance Criteria:
-- Camera has continuous world-space position.
+- Observer Camera has continuous world-space position.
 - Renderer can apply sub-tile viewport offsets.
 - Mouse picking works through the camera transform.
 - Camera smoothing does not change gameplay selection, pathfinding or simulation state.
@@ -466,6 +471,11 @@ Notes:
 - The audit identified tile-snapped camera motion as one of the largest contributors to the mechanical feel.
 - Terrain culling may remain tile based; final draw transforms should become presentation-space.
 - This task depends on TASK-101, TASK-110 and TASK-111.
+- Implemented as `ObserverCamera` owned by `PresentationScene`.
+- The renderer now routes mouse picking, visible bounds, agent drawing and selection drawing through the Observer Camera transform.
+- `PresentationSnapshot` carries an immutable camera snapshot for future renderer migration.
+- Legacy `camera_x` and `camera_y` remain compatibility accessors; future work should prefer `observer_camera`.
+- The Observer Camera is passive: it changes how the world is viewed, not how the simulation behaves.
 
 ---
 

@@ -998,6 +998,7 @@ Completed checklist:
 - [x] Renderer consumes agent presentation snapshots
 - [x] Presentation Scene root object
 - [x] Presentation object lifetime for agents
+- [x] Presentation Time
 - [x] Headless compatibility
 - [x] Boundary tests
 - [x] Documentation
@@ -1023,7 +1024,7 @@ Responsibilities:
 
 - Hold scene-level presentation state.
 - Own presentation time.
-- Own camera presentation.
+- Own Observer Camera presentation.
 - Register long-lived presentation entities.
 - Generate renderer-facing snapshots.
 - Define presentation ownership boundaries.
@@ -1035,24 +1036,24 @@ Dependencies:
 Implementation checklist:
 
 - [x] Presentation Scene root object
-- [ ] Presentation Time
-- [ ] Presentation Camera
+- [x] Presentation Time
+- [x] Observer Camera
 - [x] Presentation object lifetime for agents
 - [ ] General Presentation Entities registry
-- [ ] World-space coordinates
+- [x] World-space coordinates
 - [ ] Presentation ownership boundaries
 - [x] Agent snapshot generation through Presentation Scene
 - [ ] Layer-wide snapshot generation
 - [x] Renderer receives Presentation Scene snapshot for agents
-- [ ] Documentation
-- [ ] Tests
+- [x] Documentation
+- [x] Tests
 
 Completion criteria:
 
 - Presentation Scene exists as the renderer-facing root.
 - Renderer begins consuming Presentation Scene data rather than gameplay state for at least one additional domain beyond agents.
 - Presentation time exists separately from simulation tick.
-- Camera and entity boundaries are documented and tested.
+- Observer Camera boundaries are documented and tested.
 - Headless simulation remains independent.
 
 Common mistakes to avoid:
@@ -1082,7 +1083,7 @@ Responsibilities:
 Dependencies:
 
 - Depends on Presentation World.
-- Benefits from Presentation Camera.
+- Benefits from Observer Camera.
 
 Implementation checklist:
 

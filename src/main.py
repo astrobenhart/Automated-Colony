@@ -89,7 +89,7 @@ def main():
 
         last_sim_ms = (time.perf_counter() - sim_start) * 1000
 
-        renderer.update_ui(dt)
+        renderer.update_ui(dt, paused=paused)
         renderer.draw(paused, sim_speed, last_sim_ms=last_sim_ms, sim_ticks=sim_ticks_this_frame)
         renderer.limit_fps()
         frame_count += 1

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import math
 
 
 def presentation_id_for(agent) -> str:
@@ -28,14 +29,158 @@ class PresentationAgentSnapshot:
 @dataclass(frozen=True)
 class PresentationSnapshot:
     agents: tuple[PresentationAgentSnapshot, ...]
+    camera: "ObserverCameraSnapshot | None" = None
     render_order: tuple[str, ...] = ("agents",)
     frame_index: int = 0
+    elapsed_seconds: float = 0.0
+    delta_seconds: float = 0.0
+    interpolation_alpha: float = 0.0
+    paused: bool = False
+
+
+@dataclass
+class PresentationTime:
+    frame_index: int = 0
+    elapsed_seconds: float = 0.0
+    delta_seconds: float = 0.0
+    interpolation_alpha: float = 0.0
+    time_scale: float = 1.0
+    paused: bool = False
+
+    def advance(
+        self,
+        time_delta: float,
+        *,
+        paused: bool = False,
+        time_scale: float | None = None,
+        interpolation_alpha: float | None = None,
+    ) -> "PresentationTime":
+        scale = self.time_scale if time_scale is None else max(0.0, time_scale)
+        scaled_delta = 0.0 if paused else max(0.0, time_delta) * scale
+        self.frame_index += 1
+        self.delta_seconds = scaled_delta
+        self.elapsed_seconds += scaled_delta
+        self.interpolation_alpha = max(0.0, min(1.0, interpolation_alpha if interpolation_alpha is not None else self.interpolation_alpha))
+        self.time_scale = scale
+        self.paused = paused
+        return self
 
 
 @dataclass(frozen=True)
-class PresentationFrameState:
-    frame_index: int = 0
-    time_delta: float = 0.0
+class ObserverCameraSnapshot:
+    world_x: float
+    world_y: float
+    target_x: float
+    target_y: float
+    viewport_width: int
+    viewport_height: int
+    world_width: int
+    world_height: int
+
+
+@dataclass
+class ObserverCamera:
+    """Presentation-owned camera in continuous world coordinates."""
+
+    world_x: float = 0.0
+    world_y: float = 0.0
+    target_x: float = 0.0
+    target_y: float = 0.0
+    viewport_width: int = 0
+    viewport_height: int = 0
+    world_width: int = 0
+    world_height: int = 0
+    smoothing: float = 12.0
+
+    def configure_viewport(
+        self,
+        *,
+        world_width: int,
+        world_height: int,
+        viewport_width: int,
+        viewport_height: int,
+    ) -> None:
+        self.world_width = max(0, world_width)
+        self.world_height = max(0, world_height)
+        self.viewport_width = max(0, viewport_width)
+        self.viewport_height = max(0, viewport_height)
+        self.target_x, self.target_y = self.clamped_position(self.target_x, self.target_y)
+        self.world_x, self.world_y = self.clamped_position(self.world_x, self.world_y)
+
+    def set_position(
+        self,
+        world_x: float,
+        world_y: float,
+        *,
+        snap: bool = False,
+        clamp: bool = True,
+    ) -> None:
+        if clamp:
+            self.target_x, self.target_y = self.clamped_position(world_x, world_y)
+        else:
+            self.target_x = float(world_x)
+            self.target_y = float(world_y)
+        if snap:
+            self.world_x = self.target_x
+            self.world_y = self.target_y
+
+    def pan_by(self, dx: float, dy: float, *, snap: bool = False) -> None:
+        self.set_position(self.target_x + dx, self.target_y + dy, snap=snap, clamp=True)
+
+    def advance(self, time_delta: float) -> None:
+        if time_delta <= 0:
+            return
+
+        blend = 1.0 - math.exp(-self.smoothing * time_delta)
+        self.world_x += (self.target_x - self.world_x) * blend
+        self.world_y += (self.target_y - self.world_y) * blend
+        if abs(self.target_x - self.world_x) < 0.001:
+            self.world_x = self.target_x
+        if abs(self.target_y - self.world_y) < 0.001:
+            self.world_y = self.target_y
+
+    def clamped_position(self, world_x: float, world_y: float) -> tuple[float, float]:
+        max_x = max(0.0, self.world_width - self.viewport_width)
+        max_y = max(0.0, self.world_height - self.viewport_height)
+        return (
+            max(0.0, min(float(world_x), max_x)),
+            max(0.0, min(float(world_y), max_y)),
+        )
+
+    def visible_tile_bounds(self) -> tuple[int, int, int, int]:
+        start_x = int(math.floor(self.world_x))
+        start_y = int(math.floor(self.world_y))
+        end_x = min(self.world_width, start_x + self.viewport_width)
+        end_y = min(self.world_height, start_y + self.viewport_height)
+        return start_x, start_y, end_x, end_y
+
+    def world_to_screen(self, world_x: float, world_y: float, tile_size: int) -> tuple[float, float]:
+        return (
+            (world_x - self.world_x) * tile_size,
+            (world_y - self.world_y) * tile_size,
+        )
+
+    def screen_to_world(self, screen_x: float, screen_y: float, tile_size: int) -> tuple[float, float]:
+        return (
+            self.world_x + screen_x / tile_size,
+            self.world_y + screen_y / tile_size,
+        )
+
+    def screen_to_tile(self, screen_x: float, screen_y: float, tile_size: int) -> tuple[int, int]:
+        world_x, world_y = self.screen_to_world(screen_x, screen_y, tile_size)
+        return int(math.floor(world_x)), int(math.floor(world_y))
+
+    def snapshot(self) -> ObserverCameraSnapshot:
+        return ObserverCameraSnapshot(
+            world_x=self.world_x,
+            world_y=self.world_y,
+            target_x=self.target_x,
+            target_y=self.target_y,
+            viewport_width=self.viewport_width,
+            viewport_height=self.viewport_height,
+            world_width=self.world_width,
+            world_height=self.world_height,
+        )
 
 
 @dataclass
@@ -139,7 +284,31 @@ class PresentationScene:
     agents: dict[str, PresentationAgent] = field(default_factory=dict)
     last_snapshot: PresentationSnapshot = field(default_factory=lambda: PresentationSnapshot(agents=()))
     render_order: tuple[str, ...] = ("agents",)
-    frame_state: PresentationFrameState = field(default_factory=PresentationFrameState)
+    presentation_time: PresentationTime = field(default_factory=PresentationTime)
+    observer_camera: ObserverCamera = field(default_factory=ObserverCamera)
+
+    @property
+    def frame_state(self) -> PresentationTime:
+        return self.presentation_time
+
+    @property
+    def camera(self) -> ObserverCamera:
+        return self.observer_camera
+
+    def configure_camera(
+        self,
+        *,
+        world_width: int,
+        world_height: int,
+        viewport_width: int,
+        viewport_height: int,
+    ) -> None:
+        self.observer_camera.configure_viewport(
+            world_width=world_width,
+            world_height=world_height,
+            viewport_width=viewport_width,
+            viewport_height=viewport_height,
+        )
 
     def sync_world(self, world) -> None:
         living_agents = [agent for agent in getattr(world, "agents", ()) if getattr(agent, "alive", False)]
@@ -157,22 +326,45 @@ class PresentationScene:
 
         self.last_snapshot = self.snapshot()
 
-    def update(self, world, time_delta: float, tiles_per_second: float) -> PresentationSnapshot:
-        self.frame_state = PresentationFrameState(
-            frame_index=self.frame_state.frame_index + 1,
-            time_delta=max(0.0, time_delta),
+    def update(
+        self,
+        world,
+        time_delta: float,
+        tiles_per_second: float,
+        *,
+        paused: bool = False,
+        time_scale: float | None = None,
+        interpolation_alpha: float | None = None,
+    ) -> PresentationSnapshot:
+        self.presentation_time.advance(
+            time_delta,
+            paused=paused,
+            time_scale=time_scale,
+            interpolation_alpha=interpolation_alpha,
         )
         self.sync_world(world)
+        self.observer_camera.configure_viewport(
+            world_width=getattr(world, "width", self.observer_camera.world_width),
+            world_height=getattr(world, "height", self.observer_camera.world_height),
+            viewport_width=self.observer_camera.viewport_width,
+            viewport_height=self.observer_camera.viewport_height,
+        )
+        self.observer_camera.advance(self.presentation_time.delta_seconds)
         for agent in self.agents.values():
-            agent.advance(time_delta, tiles_per_second)
+            agent.advance(self.presentation_time.delta_seconds, tiles_per_second)
         self.last_snapshot = self.snapshot()
         return self.last_snapshot
 
     def snapshot(self) -> PresentationSnapshot:
         return PresentationSnapshot(
             agents=tuple(agent.snapshot() for agent in self.agents.values()),
+            camera=self.observer_camera.snapshot(),
             render_order=self.render_order,
-            frame_index=self.frame_state.frame_index,
+            frame_index=self.presentation_time.frame_index,
+            elapsed_seconds=self.presentation_time.elapsed_seconds,
+            delta_seconds=self.presentation_time.delta_seconds,
+            interpolation_alpha=self.presentation_time.interpolation_alpha,
+            paused=self.presentation_time.paused,
         )
 
     def snapshot_world(self, world) -> PresentationSnapshot:
