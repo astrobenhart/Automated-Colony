@@ -484,7 +484,7 @@ Title: Agent Motion Intent and Presentation Path Queues
 
 Owner: Renderer Agent / Gameplay Agent / Architect Agent / Tester Agent
 
-Status: Backlog
+Status: Complete
 
 Priority: High
 
@@ -505,6 +505,93 @@ Notes:
 - This is not a pathfinding change.
 - Presentation may smooth short timing gaps but must never invent durable movement outcomes.
 - This task depends on TASK-101, TASK-102, TASK-110 and TASK-111.
+- Implemented the first Intent Layer slice in `src.intents`.
+- `AgentIntent` and `IntentQueue` describe short rolling presentation-facing intent.
+- Movement intent is derived from existing simulation path state, not new AI.
+- `PresentationScene` owns per-agent intent queues and `PresentationAgent` consumes walking intent as visual waypoints.
+- Renderer does not consume Intent directly.
+- Future action, animation, social and mystery intent should build on this contract.
+
+---
+
+### TASK-112
+Title: Action Intent Contracts
+
+Owner: Gameplay Agent / Architect Agent / Renderer Agent / Tester Agent
+
+Status: Backlog
+
+Priority: High
+
+Description:
+Extend the Intent Layer beyond walking so simulation actions such as harvesting, building, depositing resources, eating, drinking, sleeping and resting expose presentation-facing action intent.
+
+Expected Output:
+Reusable action intent objects that describe what a villager is attempting without moving action logic, resource mutation or task decisions into Presentation.
+
+Acceptance Criteria:
+- Simulation remains authoritative for action success and world changes.
+- Presentation can observe action intent for animation and timing.
+- Action intent never creates resources, changes needs or completes work.
+- Headless simulation remains unaffected.
+
+Notes:
+- This should build on `AgentIntent` and `IntentQueue`.
+- Keep queues short and rolling; do not schedule entire days.
+
+---
+
+### TASK-113
+Title: Animation Intent Mapping
+
+Owner: Renderer Agent / UX Agent / Architect Agent / Tester Agent
+
+Status: Backlog
+
+Priority: High
+
+Description:
+Map movement and action intent into presentation animation states before sprite artwork arrives.
+
+Expected Output:
+A small presentation-owned mapping from intent kind and factual simulation state to animation labels such as walking, working, carrying, eating, sleeping, watching and socialising.
+
+Acceptance Criteria:
+- Animation intent is presentation-owned.
+- Renderer consumes presentation animation state rather than gameplay internals.
+- No productivity, survival, schedule or AI behaviour changes are introduced.
+- Sprite work can consume these labels later.
+
+Notes:
+- This narrows TASK-104 by defining the intent-to-animation boundary first.
+- Avoid adding final artwork in this task.
+
+---
+
+### TASK-114
+Title: Social and Mystery Intent Hooks
+
+Owner: Gameplay Agent / Narrative Agent / Renderer Agent / Tester Agent
+
+Status: Backlog
+
+Priority: Medium
+
+Description:
+Expose lightweight intent hooks for shared moments, celebrations, mystery witnessing and companionship so future presentation can animate them without querying gameplay internals directly.
+
+Expected Output:
+Presentation-facing social and mystery intent contracts that describe what villagers are participating in while preserving the existing social systems.
+
+Acceptance Criteria:
+- Existing social, celebration and mystery systems remain authoritative.
+- Intent hooks are rare, lightweight and derived from existing state.
+- Presentation can use hooks for animation, camera framing and Chronicle-adjacent visual moments.
+- No new social scheduling, dialogue or mystery mechanics are introduced.
+
+Notes:
+- This should happen after action intent and animation mapping are stable.
+- Intent should describe participation, not create events.
 
 ---
 
@@ -533,7 +620,7 @@ Acceptance Criteria:
 Notes:
 - This task prepares for sprites without adding final artwork.
 - Animation should make existing behaviour readable, not create new behaviour.
-- This task depends on TASK-101, TASK-103, TASK-110 and TASK-111.
+- This task depends on TASK-101, TASK-103, TASK-110, TASK-111, TASK-112 and TASK-113.
 
 ---
 

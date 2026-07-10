@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import math
 
+from src.intents import AgentIntent, IntentQueue, WALK_INTENT, movement_intent_for
+
 
 def presentation_id_for(agent) -> str:
     return getattr(agent, "agent_id", None) or getattr(agent, "name", "")
@@ -200,6 +202,8 @@ class PresentationAgent:
     role: str = ""
     current_action: str = "Idle"
     current_goal: str = "Explore"
+    active_intent_id: str | None = None
+    movement_queue: tuple[tuple[int, int], ...] = ()
 
     @classmethod
     def from_agent(cls, agent) -> "PresentationAgent":
@@ -222,19 +226,43 @@ class PresentationAgent:
             current_goal=getattr(agent, "current_goal", "Explore"),
         )
 
-    def observe(self, agent) -> None:
+    def observe(self, agent, intent: AgentIntent | None = None) -> None:
         next_x = getattr(agent, "x", self.tile_x)
         next_y = getattr(agent, "y", self.tile_y)
         self.name = getattr(agent, "name", self.name)
         self.role = getattr(agent, "role", self.role)
         self.current_action = getattr(agent, "current_action", self.current_action)
         self.current_goal = getattr(agent, "current_goal", self.current_goal)
+        if intent is not None and intent.kind == WALK_INTENT:
+            self.observe_movement_intent(agent, intent)
+            return
+
+        self.active_intent_id = None
+        self.movement_queue = ()
 
         if (next_x, next_y) == (self.tile_x, self.tile_y):
             return
 
-        dx = next_x - self.tile_x
-        dy = next_y - self.tile_y
+        self.tile_x = next_x
+        self.tile_y = next_y
+        self.start_motion_to(next_x, next_y)
+
+    def observe_movement_intent(self, agent, intent: AgentIntent) -> None:
+        self.tile_x = getattr(agent, "x", self.tile_x)
+        self.tile_y = getattr(agent, "y", self.tile_y)
+        if self.active_intent_id == intent.intent_id:
+            return
+
+        self.active_intent_id = intent.intent_id
+        self.movement_queue = tuple(intent.path)
+        self.advance_to_next_waypoint()
+
+    def start_motion_to(self, next_x: int | float, next_y: int | float) -> None:
+        if (float(next_x), float(next_y)) == (self.target_x, self.target_y) and self.progress < 1.0:
+            return
+
+        dx = float(next_x) - self.render_x
+        dy = float(next_y) - self.render_y
         if dx or dy:
             self.facing = (sign(dx), sign(dy))
 
@@ -242,21 +270,55 @@ class PresentationAgent:
         self.from_y = self.render_y
         self.target_x = float(next_x)
         self.target_y = float(next_y)
-        self.tile_x = next_x
-        self.tile_y = next_y
         self.progress = 0.0
 
-    def advance(self, time_delta: float, tiles_per_second: float) -> None:
-        if self.progress >= 1.0:
-            self.render_x = self.target_x
-            self.render_y = self.target_y
-            return
+    def advance_to_next_waypoint(self) -> None:
+        remaining = list(self.movement_queue)
+        while remaining and (
+            abs(remaining[0][0] - self.render_x) < 0.001
+            and abs(remaining[0][1] - self.render_y) < 0.001
+        ):
+            remaining.pop(0)
 
-        distance = max(0.001, abs(self.target_x - self.from_x) + abs(self.target_y - self.from_y))
-        self.progress = min(1.0, self.progress + max(0.0, time_delta) * tiles_per_second / distance)
-        eased = smoothstep(self.progress)
-        self.render_x = self.from_x + (self.target_x - self.from_x) * eased
-        self.render_y = self.from_y + (self.target_y - self.from_y) * eased
+        self.movement_queue = tuple(remaining)
+        if self.movement_queue:
+            next_x, next_y = self.movement_queue[0]
+            self.start_motion_to(next_x, next_y)
+
+    def advance(self, time_delta: float, tiles_per_second: float) -> None:
+        remaining_time = max(0.0, time_delta)
+        while True:
+            if self.progress >= 1.0:
+                self.render_x = self.target_x
+                self.render_y = self.target_y
+                if self.movement_queue:
+                    self.movement_queue = self.movement_queue[1:]
+                    if self.movement_queue:
+                        next_x, next_y = self.movement_queue[0]
+                        self.start_motion_to(next_x, next_y)
+                    else:
+                        return
+                else:
+                    return
+
+            if remaining_time <= 0:
+                return
+
+            distance = max(0.001, abs(self.target_x - self.from_x) + abs(self.target_y - self.from_y))
+            progress_delta = remaining_time * tiles_per_second / distance
+            if self.progress + progress_delta >= 1.0:
+                time_to_target = (1.0 - self.progress) * distance / max(0.001, tiles_per_second)
+                self.progress = 1.0
+                self.render_x = self.target_x
+                self.render_y = self.target_y
+                remaining_time = max(0.0, remaining_time - time_to_target)
+                continue
+
+            self.progress += progress_delta
+            eased = smoothstep(self.progress)
+            self.render_x = self.from_x + (self.target_x - self.from_x) * eased
+            self.render_y = self.from_y + (self.target_y - self.from_y) * eased
+            return
 
     def snapshot(self) -> PresentationAgentSnapshot:
         return PresentationAgentSnapshot(
@@ -282,6 +344,7 @@ class PresentationScene:
     """
 
     agents: dict[str, PresentationAgent] = field(default_factory=dict)
+    intent_queues: dict[str, IntentQueue] = field(default_factory=dict)
     last_snapshot: PresentationSnapshot = field(default_factory=lambda: PresentationSnapshot(agents=()))
     render_order: tuple[str, ...] = ("agents",)
     presentation_time: PresentationTime = field(default_factory=PresentationTime)
@@ -315,14 +378,21 @@ class PresentationScene:
         live_ids = {presentation_key_for(agent) for agent in living_agents}
         for stale_id in set(self.agents) - live_ids:
             del self.agents[stale_id]
+        for stale_id in set(self.intent_queues) - live_ids:
+            del self.intent_queues[stale_id]
 
         for agent in living_agents:
             agent_key = presentation_key_for(agent)
+            intent_queue = self.intent_queues.setdefault(agent_key, IntentQueue())
+            movement_intent = movement_intent_for(agent)
+            intent_queue.replace([movement_intent] if movement_intent is not None else [])
             presentation_agent = self.agents.get(agent_key)
             if presentation_agent is None:
-                self.agents[agent_key] = PresentationAgent.from_agent(agent)
+                presentation_agent = PresentationAgent.from_agent(agent)
+                self.agents[agent_key] = presentation_agent
+                presentation_agent.observe(agent, intent_queue.peek())
             else:
-                presentation_agent.observe(agent)
+                presentation_agent.observe(agent, intent_queue.peek())
 
         self.last_snapshot = self.snapshot()
 
@@ -381,7 +451,7 @@ def smoothstep(progress: float) -> float:
     return progress * progress * (3.0 - 2.0 * progress)
 
 
-def sign(value: int) -> int:
+def sign(value: int | float) -> int:
     if value > 0:
         return 1
     if value < 0:

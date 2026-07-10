@@ -32,7 +32,8 @@ Automated Colony is now built around two equally important ambitions:
 
 The project should protect these principles across future work:
 - Simulation decides.
-- Presentation presents.
+- Intent plans.
+- Presentation performs and presents.
 - Renderer draws.
 - Systems create behaviours.
 - Behaviours create stories.
@@ -50,6 +51,7 @@ The long-term architecture is:
 
 ```text
 Simulation
+  -> Intent Layer
   -> Presentation Layer
   -> Renderer
   -> Display
@@ -57,12 +59,15 @@ Simulation
 
 The simulation determines what happened. It owns decisions, world state, movement goals, AI, jobs, needs, households, relationships, weather state, season state, births, deaths, memories, and history.
 
+The Intent Layer describes what a villager is trying to accomplish next. It is the behavioural contract between simulation truth and presentation performance. It may expose short rolling queues such as "walk to the field" or "return home", but it does not choose jobs, mutate resources, create events or replace gameplay logic.
+
 The Presentation Layer determines how that state feels. It owns interpolation, animation state, easing, sprite selection, facing, shadows, particles, foliage motion, cloud movement, water animation, lighting overlays, camera polish, and other visual effects that make discrete simulation state feel continuous.
 
 The renderer draws the presentation state. It should compose layers, draw sprites, draw cached terrain, draw overlays, and present the frame. It should not invent gameplay facts.
 
 Boundary rule:
 - Simulation answers: what, where, when, why.
+- Intent answers: what is being attempted next.
 - Presentation answers: how it moves, how it eases, how it glows, how it breathes.
 - Renderer answers: which pixels are drawn this frame.
 
@@ -72,6 +77,7 @@ Current implementation:
 
 ```text
 World / Agent simulation state
+  -> Intent Queue
   -> PresentationEngine
   -> PresentationScene
   -> PresentationSnapshot
@@ -82,9 +88,65 @@ World / Agent simulation state
 
 `PresentationEngine` remains as a compatibility name for the first scene root. New presentation work should attach to `PresentationScene`.
 
-This first implementation intentionally proves the boundary with one meaningful example: villager movement. Simulation agents still move discretely between tiles. Presentation agents interpolate smoothly from the previous rendered position to the latest simulation tile. Headless simulation does not create or require a Presentation Engine.
+This first implementation intentionally proves the boundary with one meaningful example: villager movement. Simulation agents still move discretely between tiles. The Intent Layer derives short walking intent from simulation path state. Presentation agents consume that intent as a visual path queue and continue moving through presentation time. Headless simulation does not create or require a Presentation Engine or Intent queues.
 
 The old design placed render-motion fields on `Agent`. That coupling has been removed. Agent state now represents gameplay identity, needs, tasks, relationships, memories, lifecycle, and tile position. Continuous motion belongs to presentation.
+
+### Intent Layer
+
+The Intent Layer exists because tile interpolation alone still exposes the simulation tick. If Presentation only reacts after each tile coordinate changes, the player can feel the cadence of the simulation even when individual steps are smoothed.
+
+Intent sits here:
+
+```text
+Simulation
+  -> Intent Queue
+  -> Presentation Scene
+  -> Renderer
+```
+
+Responsibilities:
+- translate simulation facts into short behavioural contracts
+- maintain small rolling look-ahead queues per villager
+- expose movement, action and future social/mystery intent without exposing full gameplay objects
+- allow Presentation to perform continuously between discrete simulation updates
+- allow Simulation to revise future intent when circumstances change
+
+Non-responsibilities:
+- choosing jobs
+- pathfinding
+- changing tile positions
+- modifying needs, resources or relationships
+- authoring Chronicle events
+- scheduling a full day of behaviour
+- making renderer decisions
+
+Current implementation:
+- `src.intents.AgentIntent` describes one behavioural intent.
+- `src.intents.IntentQueue` stores a short rolling queue.
+- `movement_intent_for(agent)` derives the first walking intent from `current_target` and `current_path`.
+- `PresentationScene.intent_queues` owns per-agent intent queues as optional presentation-facing state.
+- `PresentationAgent` consumes walking intent as a visual waypoint queue while simulation remains authoritative.
+
+Intent lifecycle:
+
+```text
+Simulation updates agent action, goal, target and path
+  -> Intent Layer derives a short intent queue
+  -> Presentation observes the queue
+  -> Presentation performs visual motion over continuous time
+  -> Renderer draws the resulting presentation snapshot
+```
+
+Rolling look-ahead should remain short. The simulation may revise future intent whenever needs, blocked paths, resources, celebrations, mysteries or emergencies change. Presentation may finish or blend the current visual segment, but it must not create durable movement outcomes that the simulation did not allow.
+
+Future extensions:
+- Action Intent: harvest, build, deposit resources, eat, drink, sleep and rest.
+- Animation Intent: walking, working, carrying, watching, warming, mourning and socialising.
+- Social Intent: spend free time together, attend celebrations, observe mysteries or join shared moments.
+- Cinematic Intent: camera following, framing and replay hooks that observe what the villager is trying to do.
+
+Intent should make the simulation more readable, not more complex. It is a contract for presentation, not a new planner.
 
 ### Presentation Layer Responsibilities
 
@@ -196,19 +258,22 @@ The Presentation Layer should evolve in this order:
 3. Observer Camera
    continuous world-space viewport and sub-tile transforms
 
-4. Presentation Entities
+4. Intent Layer
+   rolling behavioural contracts between simulation and presentation
+
+5. Presentation Entities
    long-lived visual objects beyond agents
 
-5. Presentation Motion
+6. Presentation Motion
    movement intent, path queues, easing and blending
 
-6. Presentation Animation
+7. Presentation Animation
    idle, walk, work, shared moment, celebration and mystery animation states
 
-7. Presentation Environment
+8. Presentation Environment
    weather, clouds, particles, foliage, water, wind and lighting hooks
 
-8. Renderer Migration
+9. Renderer Migration
    renderer layers consume Presentation Scene data instead of gameplay state
 
 9. Visual Content
@@ -244,6 +309,8 @@ If this order is violated, later work will tend to leak presentation state back 
 Presentation Foundations are complete when the first renderer-facing presentation snapshots exist, the renderer consumes them, and headless simulation remains independent. TASK-99 completed this for agents.
 
 Presentation World is complete when a Presentation Scene exists, owns presentation time, owns the camera boundary, registers long-lived presentation entities and generates scene snapshots. The renderer should begin consuming scene data for at least one domain beyond agents.
+
+Intent Layer is complete when simulation-derived intent queues exist, movement intent demonstrates the contract, Presentation can consume intent without changing gameplay truth and headless simulation remains independent.
 
 Presentation Motion is complete when ordinary villager movement no longer visually exposes simulation ticks. Presentation may consume movement intent, path queues, easing and facing state, but it must converge to authoritative simulation positions.
 
@@ -331,21 +398,22 @@ These entities exist so visual state can persist across frames. They may own ani
 
 Motion should move toward simulation truth without exposing every simulation tick.
 
-The current movement interpolation observes tile position changes. Future motion should consume movement intent where available:
+The current movement interpolation consumes walking intent where available and falls back to tile-position changes where no intent exists:
 
 ```text
-simulation tile position and path intent
-  -> presentation path queue
+simulation action, target and path
+  -> intent queue
+  -> presentation waypoint queue
   -> continuous position
   -> animation state
   -> renderer draw position
 ```
 
-The simulation remains authoritative. Presentation may smooth short gaps, blend target changes and choose easing curves, but it must converge to the current simulation position.
+The simulation remains authoritative. Presentation may smooth short gaps, consume look-ahead waypoints, blend target changes and choose easing curves, but it must converge back to simulation truth when intent changes or disappears.
 
 ### Presentation Animation
 
-Animation state should be derived from simulation state but advanced by presentation time.
+Animation state should be derived from simulation state and Intent, then advanced by presentation time.
 
 Examples:
 - `current_goal = Build` may imply a working animation

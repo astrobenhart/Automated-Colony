@@ -922,9 +922,10 @@ This section is the engineering roadmap for the renderer overhaul. It is organis
 Progress:
 
 - [x] Engine
-- [ ] Scene
-- [ ] Time
-- [ ] Camera
+- [x] Scene
+- [x] Time
+- [x] Observer Camera
+- [x] Intent Layer
 - [ ] Entities
 - [ ] Motion
 - [ ] Animation
@@ -941,6 +942,8 @@ Make Automated Colony feel fluid, expressive and continuous while remaining driv
 Principles:
 
 - Simulation decides.
+- Intent plans.
+- Presentation performs.
 - Presentation remembers.
 - Presentation interpolates.
 - Renderer draws.
@@ -957,15 +960,17 @@ Implementation should proceed in this order:
 
 1. Presentation Foundations
 2. Presentation World
-3. Presentation Motion
-4. Presentation Environment
-5. Renderer Migration
-6. Visual Content
+3. Intent Layer
+4. Presentation Motion
+5. Presentation Environment
+6. Renderer Migration
+7. Visual Content
 
 Dependencies:
 
 - Presentation World depends on Presentation Foundations.
-- Presentation Motion depends on Presentation World.
+- Intent Layer depends on Presentation World.
+- Presentation Motion depends on Presentation World and Intent Layer.
 - Presentation Environment depends on Presentation World.
 - Renderer Migration depends on Presentation World and should absorb Motion and Environment snapshots as they mature.
 - Visual Content depends on Renderer Migration and the relevant Presentation systems.
@@ -1066,11 +1071,65 @@ Long-term architectural role:
 
 Presentation World is the bridge from one interpolated feature to a true scene model. It gives all later motion, animation, environment and UI work one shared place to live.
 
-#### Milestone 3 - Presentation Motion
+#### Milestone 3 - Intent Layer
+
+Status:
+Complete for the first movement workflow.
 
 Purpose:
 
-Make visible movement continuous without changing discrete simulation movement.
+Create the behavioural contract between simulation decisions and presentation performance.
+
+Responsibilities:
+
+- Derive short rolling intent queues from simulation state.
+- Keep simulation authoritative for pathfinding, tasks, needs and world changes.
+- Let Presentation consume intent continuously.
+- Avoid exposing Intent directly to the renderer.
+- Keep headless simulation independent.
+
+Dependencies:
+
+- Depends on Presentation World.
+
+Implementation checklist:
+
+- [x] `AgentIntent`
+- [x] `IntentQueue`
+- [x] Movement intent from simulation path state
+- [x] Presentation-owned per-agent intent queues
+- [x] Presentation movement consumes intent
+- [x] Headless compatibility
+- [x] Documentation
+- [x] Tests
+- [ ] Action intent
+- [ ] Animation intent
+- [ ] Social and mystery intent hooks
+
+Completion criteria:
+
+- Intent exists between Simulation and Presentation.
+- Movement demonstrates the contract.
+- Presentation can perform a walking intent through continuous presentation time.
+- Simulation remains deterministic and authoritative.
+- Renderer does not consume Intent directly.
+
+Common mistakes to avoid:
+
+- Do not turn Intent into a second AI planner.
+- Do not schedule whole days of behaviour.
+- Do not let Intent mutate gameplay state.
+- Do not let the renderer query Intent directly.
+
+Long-term architectural role:
+
+Intent is the vocabulary Presentation uses to understand what villagers are trying to do. Future animation, idle life, celebrations, mysteries, companionship and cinematic camera work should observe Intent rather than reaching into gameplay internals.
+
+#### Milestone 4 - Presentation Motion
+
+Purpose:
+
+Make visible movement continuous by performing Intent without changing discrete simulation movement.
 
 Responsibilities:
 
@@ -1083,13 +1142,14 @@ Responsibilities:
 Dependencies:
 
 - Depends on Presentation World.
+- Depends on Intent Layer.
 - Benefits from Observer Camera.
 
 Implementation checklist:
 
-- [ ] Motion intent snapshots
-- [ ] Path queues
-- [ ] Continuous movement
+- [x] Motion intent snapshots
+- [x] Path queues
+- [x] Continuous movement for walking intent
 - [ ] Speed classes
 - [ ] Easing profiles
 - [ ] Motion blending when targets change
@@ -1115,9 +1175,9 @@ Common mistakes to avoid:
 
 Long-term architectural role:
 
-Presentation Motion turns tile movement into watchable motion. It is required before sprite animation can feel believable.
+Presentation Motion turns intent into watchable motion. It is required before sprite animation can feel believable.
 
-#### Milestone 4 - Presentation Environment
+#### Milestone 5 - Presentation Environment
 
 Purpose:
 
@@ -1170,7 +1230,7 @@ Long-term architectural role:
 
 Presentation Environment makes the world feel alive even when villagers are still. It prepares the renderer for weather, wind, water, foliage, lighting and mysteries without gameplay refactors.
 
-#### Milestone 5 - Renderer Migration
+#### Milestone 6 - Renderer Migration
 
 Purpose:
 
@@ -1224,7 +1284,7 @@ Long-term architectural role:
 
 Renderer Migration is the final architectural conversion. It turns the renderer from a gameplay interpreter into a presentation compositor.
 
-#### Milestone 6 - Visual Content
+#### Milestone 7 - Visual Content
 
 Purpose:
 
